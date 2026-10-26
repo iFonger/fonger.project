@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fonger</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="expect" href="#logo" blocking="render">
+  <link rel="prefetch" href="soon.html">
+  <link rel="prefetch" href="reach.html">
+  <link rel="prefetch" href="game.html">
+  <script src="transition.js"></script>
+  <style>
+    /* Výška písmen */
+    :root { --h: clamp(4rem, 17vw, 13rem); }
+
+    body { overflow: hidden; }
+
+    /* ---------- Světelné orby ---------- */
+    .orbs {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+      animation: fadeIn 3s ease 1.2s both;
+    }
+
+    /* Jeden orb: měkká zářící kulička. Vlastnosti mu nastaví skript dole. */
+    .orb {
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      width: var(--s);
+      height: var(--s);
+      margin: calc(var(--s) * -0.5) 0 0 calc(var(--s) * -0.5);
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--c1) 0%, var(--c2) 30%, transparent 70%);
+      opacity: var(--o);
+      filter: blur(var(--b));
+      will-change: transform, translate, opacity;
+      /* Tři nezávislé pohyby: do stran, nahoru a dolů, a pulzování jasu */
+      animation:
+        floatX var(--t) ease-in-out infinite alternate,
+        floatY var(--t2) ease-in-out infinite alternate,
+        twinkle var(--k) ease-in-out infinite;
+      animation-delay: var(--d), var(--d3), var(--d2);
+    }
+
+    /* Pohyb do stran a pohyb nahoru a dolů mají různé délky,
+       takže orb pluje po plynulých obloucích, ne po přímce */
+    @keyframes floatX {
+      from { translate: calc(var(--dx) * -0.5) 0; }
+      to   { translate: calc(var(--dx) * 0.5) 0; }
+    }
+
+    @keyframes floatY {
+      from { transform: translateY(calc(var(--dy) * -0.5)); }
+      to   { transform: translateY(calc(var(--dy) * 0.5)); }
+    }
+
+    /* Jemné pulzování jasu */
+    @keyframes twinkle {
+      0%, 100% { opacity: var(--o); }
+      50%      { opacity: calc(var(--o) * 0.4); }
+    }
+
+    /* ---------- Nápis ---------- */
+
+    /* Všech šest písmen vedle sebe */
+    .logo {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      gap: calc(var(--h) * 0.12);
+    }
+
+    /* Jedno písmeno = jeden odkaz. Při načtení se nafoukne od země. */
+    .letter {
+      position: relative;
+      display: block;
+      text-decoration: none;
+      outline: none;
+      transform-origin: 50% 100%;
+      animation: inflate 1.15s ease-out both;
+      animation-delay: calc(var(--i) * 150ms);
+    }
+
+    @keyframes inflate {
+      0%   { opacity: 0; transform: translateY(1.2rem) scale(0.2, 0.05); }
+      35%  { opacity: 1; transform: translateY(0) scale(0.8, 1.25); }
+      55%  { transform: scale(1.18, 0.88); }
+      72%  { transform: scale(0.94, 1.08); }
+      86%  { transform: scale(1.04, 0.97); }
+      100% { opacity: 1; transform: scale(1, 1); }
+    }
+
+    /* Při návratu z podstránky se úvodní animace nepřehrávají znovu */
+    html.vt .letter,
+    html.vt .frame,
+    html.vt .meta,
+    html.vt .orbs { animation: none; }
+
+    /* Chromové písmeno. Tvar a odlesky dělá filtr "bubble" z transition.js.
+       Pohyb (pružení) řídí skript dole. */
+    .letter svg {
+      display: block;
+      overflow: visible;
+      height: var(--h);
+      width: calc(var(--h) * 0.7);
+      transform-origin: 50% 100%;
+      filter: drop-shadow(0 0 0.2rem rgba(0, 0, 0, 0.95)) drop-shadow(0 0 0.7rem rgba(0, 0, 0, 0.75)) drop-shadow(0 0.5rem 0.9rem rgba(0, 0, 0, 0.7));
+      transition: filter 0.4s ease;
+    }
+
+    .letter path {
+      fill: url(#irid) #2b2b3a;           /* barevný přechod, kdyby se filtr nenačetl, tmavá šedá */
+      filter: url(#bubble);
+    }
+
+    /* Po najetí se písmeno rozjasní */
+    .letter:hover svg,
+    .letter:focus-visible svg {
+      filter: brightness(1.25) drop-shadow(0 0 0.2rem rgba(0, 0, 0, 0.95)) drop-shadow(0 0 0.7rem rgba(0, 0, 0, 0.75)) drop-shadow(0 0.9rem 1.1rem rgba(0, 0, 0, 0.75));
+    }
+
+    /* Popisek pod písmenem */
+    .tag {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 1.5rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+      color: var(--ink);
+      text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .letter:hover .tag,
+    .letter:focus-visible .tag { opacity: 1; }
+
+    /* ---------- Plakátové detaily ---------- */
+
+    /* Tenký rámeček kolem celé stránky */
+    .frame {
+      position: fixed;
+      inset: 16px;
+      z-index: 1;
+      border: 1px solid rgba(228, 232, 244, 0.1);
+      pointer-events: none;
+      animation: fadeIn 1.6s ease 1.7s both;
+    }
+
+    /* Drobné texty v rozích */
+    .meta {
+      position: fixed;
+      z-index: 2;
+      font-size: 0.74rem;
+      line-height: 1.55;
+      letter-spacing: 0.08em;
+      color: rgba(228, 232, 244, 0.55);
+      font-variant-numeric: tabular-nums;
+      pointer-events: none;
+      animation: fadeIn 1.6s ease 1.9s both;
+    }
+
+    .meta b {
+      display: block;
+      font-weight: 600;
+      color: rgba(228, 232, 244, 0.88);
+    }
+
+    .meta.tl { top: 32px; left: 36px; text-align: left; }
+    .meta.tr { top: 32px; right: 36px; text-align: right; }
+    .meta.br { bottom: 32px; right: 36px; text-align: right; }
+
+    /* Tečky za "loading the rest" se postupně objevují */
+    .dots::after {
+      content: "";
+      animation: dots 1.8s steps(1) infinite;
+    }
+
+    @keyframes dots {
+      0%   { content: ""; }
+      25%  { content: "."; }
+      50%  { content: ".."; }
+      75%  { content: "..."; }
+    }
+
+    /* Na dotykových zařízeních a malých obrazovkách: popisky jsou vidět pořád, detaily se zmenší */
+    @media (hover: none) {
+      .tag { opacity: 1; font-size: 0.8rem; margin-top: 1rem; }
+    }
+
+    @media (max-width: 700px) {
+      .meta { font-size: 0.66rem; }
+      .meta.tl { left: 28px; top: 28px; }
+      .meta.tr { right: 28px; top: 28px; }
+      .meta.br { right: 28px; bottom: 28px; }
+    }
+
+    /* Kdo má vypnuté animace: orby stojí na místě, tečky jsou prostě vidět */
+    @media (prefers-reduced-motion: reduce) {
+      .dots::after { animation: none; content: "..."; }
+      .orb { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Světelné orby: vytvoří je skript dole -->
+  <div class="orbs" id="orbs" aria-hidden="true"></div>
+
+  <!-- Rámeček a drobné texty v rozích. Texty se vyplňují skriptem dole. -->
+  <div class="frame" aria-hidden="true"></div>
+
+  <div class="meta tl"><b id="greet">Hello</b></div>
+  <div class="meta tr"><b>Local time</b><span id="clock">--:--</span></div>
+  <div class="meta br"><b>Level <span id="level">26</span></b>loading the rest<span class="dots"></span></div>
+
+  <!-- Tvar každého písmene je v atributu d. Můžeš si ho zkusit upravit. -->
+  <nav class="logo" id="logo" aria-label="Hlavní menu">
+    <a class="letter" style="--i: 0" href="soon.html" aria-label="F, Soon">
+      <svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H70V20H20V40H58V60H20V100H0Z"/></svg>
+      <span class="tag">Soon</span>
+    </a>
+
+    <a class="letter" style="--i: 1" href="soon.html" aria-label="O, Soon">
+      <svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 50A35 50 0 1 1 70 50A35 50 0 1 1 0 50ZM20 50A15 30 0 1 0 50 50A15 30 0 1 0 20 50Z"/></svg>
+      <span class="tag">Soon</span>
+    </a>
+
+    <a class="letter" style="--i: 2" href="soon.html" aria-label="N, Soon">
+      <svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H20L50 60V0H70V100H50L20 40V100H0Z"/></svg>
+      <span class="tag">Soon</span>
+    </a>
+
+    <a class="letter" style="--i: 3" href="game.html" aria-label="G, Game">
+      <svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M61.8 17.9A35 50 0 1 0 70 50H38V70H46.2A15 30 0 1 1 46.5 30.7Z"/></svg>
+      <span class="tag">Game</span>
+    </a>
+
+    <a class="letter" style="--i: 4" href="soon.html" aria-label="E, Experience">
+      <svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H70V20H20V40H60V60H20V80H70V100H0Z"/></svg>
+      <span class="tag">Experience</span>
+    </a>
+
+    <a class="letter" style="--i: 5" href="reach.html" aria-label="R, Reach me">
+      <svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H40A30 30 0 0 1 40 60L70 100H50L20 60V100H0ZM20 20H40A10 10 0 0 1 40 40H20Z"/></svg>
+      <span class="tag">Reach me</span>
+    </a>
+  </nav>
+
+  <script>
+    const KEY = 'fonger-letter';
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Filtr musí existovat dřív, než se stránka poprvé vykreslí
+    if (window.fongerEnsureDefs) window.fongerEnsureDefs();
+
+    const items = Array.from(document.querySelectorAll('.letter')).map((a, i) => ({
+      a: a,
+      i: i,
+      svg: a.querySelector('svg'),
+      path: a.querySelector('path'),
+      href: a.getAttribute('href')
+    }));
+
+    /* ---------- Klik: zapamatujeme písmeno a necháme prohlížeč udělat přechod ---------- */
+    let frozen = false;   // po kliknutí se pružení zastaví, ať neruší přechod
+
+    items.forEach(item => {
+      item.a.addEventListener('click', e => {
+        // Stránka ještě neexistuje: nic se nestane
+        if (!item.href || item.href === '#') { e.preventDefault(); return; }
+
+        frozen = true;
+        try {
+          sessionStorage.setItem(KEY, JSON.stringify({
+            i: item.i,
+            d: item.path.getAttribute('d'),
+            href: item.href
+          }));
+        } catch (err) {}
+        item.svg.style.transform = 'none';
+        window.__fongerChosen = item.svg;
+      });
+    });
+
+    window.addEventListener('pageshow', e => { if (e.persisted) frozen = false; });
+
+    /* ---------- Světelné orby ---------- */
+
+    /* Tři vrstvy hloubky:
+       n = počet, size = velikost (px), op = jas, blur = rozmazání (px),
+       drift = jak daleko se vznášejí (px, celkový rozsah pohybu),
+       t = doba jednoho pohybu do strany (s), tw = doba pulzování (s) */
+    const ORB_LAYERS = [
+      { n: 22, size: [5, 12],   op: [0.35, 0.6],  blur: 0,  drift: [70, 150],  t: [12, 22], tw: [4, 8] },
+      { n: 14, size: [12, 26],  op: [0.35, 0.55], blur: 1,  drift: [90, 190],  t: [16, 28], tw: [5, 10] },
+      { n: 6,  size: [50, 120], op: [0.1, 0.2],   blur: 8,  drift: [130, 280], t: [24, 40], tw: [8, 14] }
+    ];
+
+    // Náhoda se vždy stejným výsledkem, ať obloha vypadá pokaždé stejně
+    function makeRandom(seed) {
+      return function () {
+        seed |= 0;
+        seed = (seed + 0x6D2B79F5) | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    (function buildOrbs() {
+      const rnd = makeRandom(11);
+      const between = (r) => r[0] + rnd() * (r[1] - r[0]);
+      const host = document.getElementById('orbs');
+      let html = '';
+
+      ORB_LAYERS.forEach(L => {
+        for (let i = 0; i < L.n; i++) {
+          const warm = rnd() < 0.25;                            // pár teplejších orbů
+          const c1 = warm ? 'rgba(255, 244, 228, 0.95)' : 'rgba(235, 242, 255, 0.95)';
+          const c2 = warm ? 'rgba(255, 214, 170, 0.40)' : 'rgba(190, 210, 255, 0.45)';
+          const dx = between(L.drift);
+          const dy = between(L.drift) * 0.8;
+          const t = between(L.t);
+          const t2 = t * (0.65 + rnd() * 0.3);                  // jiná délka pohybu nahoru a dolů
+          const k = between(L.tw);
+          html +=
+            '<span class="orb" style="' +
+            '--x:' + (rnd() * 100).toFixed(1) + 'vw;' +
+            '--y:' + (rnd() * 100).toFixed(1) + 'vh;' +
+            '--s:' + between(L.size).toFixed(1) + 'px;' +
+            '--o:' + between(L.op).toFixed(2) + ';' +
+            '--b:' + L.blur + 'px;' +
+            '--dx:' + dx.toFixed(0) + 'px;' +
+            '--dy:' + dy.toFixed(0) + 'px;' +
+            '--t:' + t.toFixed(1) + 's;' +
+            '--t2:' + t2.toFixed(1) + 's;' +
+            '--k:' + k.toFixed(1) + 's;' +
+            '--d:-' + (rnd() * t).toFixed(1) + 's;' +
+            '--d3:-' + (rnd() * t2).toFixed(1) + 's;' +
+            '--d2:-' + (rnd() * k).toFixed(1) + 's;' +
+            '--c1:' + c1 + ';--c2:' + c2 + ';"></span>';
+        }
+      });
+
+      host.innerHTML = html;
+    })();
+
+    /* ---------- Texty v rozích ---------- */
+    const BIRTH_YEAR = 2000;    // rok narození
+    const BIRTH_MONTH = 6;      // měsíc narození (červen)
+    const BIRTH_DAY = 12;       // den narození
+
+    const greet = document.getElementById('greet');
+    const clock = document.getElementById('clock');
+    const level = document.getElementById('level');
+
+    // Pozdrav podle denní doby návštěvníka
+    function greeting(hour) {
+      if (hour >= 5 && hour < 12) return 'Good morning';
+      if (hour >= 12 && hour < 18) return 'Good afternoon';
+      if (hour >= 18) return 'Good evening';
+      return 'Up late?';
+    }
+
+    // Level = kolik je ti let. Zvedne se každý rok 12. června.
+    function currentLevel(now) {
+      let age = now.getFullYear() - BIRTH_YEAR;
+      const m = now.getMonth() + 1;
+      if (m < BIRTH_MONTH || (m === BIRTH_MONTH && now.getDate() < BIRTH_DAY)) age--;
+      return age;
+    }
+
+    function tick() {
+      const now = new Date();
+      clock.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      greet.textContent = greeting(now.getHours());
+      level.textContent = currentLevel(now);
+    }
+    tick();
+    setInterval(tick, 10000);
+
+    /* ---------- Pružná písmena (želé) ---------- */
+    if (!calm) {
+      const LIFT = -0.4 * parseFloat(getComputedStyle(document.documentElement).fontSize);   // o kolik písmeno nadskočí
+      const STIFF = { y: 180, x: 120, r: 160, s: 240 };   // tuhost pružin: větší = rychlejší kmitání
+      const DAMP  = { y: 14,  x: 9,   r: 8,   s: 10 };    // tlumení: menší = déle se kolíbá
+
+      // Stav každého písmene: posun (x, y), natočení (r), zploštění (s) a jejich rychlosti (v...)
+      const state = items.map(() => ({
+        x: 0, vx: 0, y: 0, vy: 0, r: 0, vr: 0, s: 0, vs: 0, hover: false, asleep: true
+      }));
+
+      // Šťouchnutí do písmene: dir = směr (-1 vlevo, 1 vpravo), power = síla
+      function poke(i, dir, power) {
+        const S = state[i];
+        if (!S) return;
+        S.vx += dir * power * 60;
+        S.vr += dir * power * 18;
+        S.vs += power * 3.2;
+        S.asleep = false;
+      }
+
+      // Šťouchnutí se přenese po sousedních písmenech jako vlna
+      function ripple(i, dir, power) {
+        poke(i, dir, power);
+        [-1, 1].forEach(side => {
+          setTimeout(() => poke(i + side, dir, power * 0.4), 70);
+          setTimeout(() => poke(i + side * 2, dir, power * 0.16), 140);
+        });
+      }
+
+      items.forEach((item, i) => {
+        const S = state[i];
+
+        item.a.addEventListener('pointerenter', e => {
+          const b = item.a.getBoundingClientRect();
+          const dir = e.clientX < b.left + b.width / 2 ? 1 : -1;   // vychýlí se od kurzoru
+          S.hover = true;
+          S.asleep = false;
+          ripple(i, dir, 1);
+        });
+
+        item.a.addEventListener('pointerleave', e => {
+          const b = item.a.getBoundingClientRect();
+          const dir = e.clientX < b.left + b.width / 2 ? -1 : 1;
+          S.hover = false;
+          S.asleep = false;
+          poke(i, dir, 0.5);
+        });
+
+        item.a.addEventListener('pointermove', e => {
+          // rychlý pohyb myši přes písmeno ho rozhoupe víc
+          const m = Math.max(-40, Math.min(40, e.movementX || 0));
+          if (Math.abs(m) > 6) {
+            S.vx += m * 2.2;
+            S.vr += m * 0.5;
+            S.asleep = false;
+          }
+        });
+      });
+
+      let last = performance.now();
+      function loop(ts) {
+        const dt = Math.min(0.033, (ts - last) / 1000);
+        last = ts;
+
+        if (!frozen) {
+          items.forEach((item, i) => {
+            const S = state[i];
+            if (S.asleep && !S.hover) return;
+
+            const ty = S.hover ? LIFT : 0;
+            S.vy += (-STIFF.y * (S.y - ty) - DAMP.y * S.vy) * dt;
+            S.y += S.vy * dt;
+            S.vx += (-STIFF.x * S.x - DAMP.x * S.vx) * dt;
+            S.x += S.vx * dt;
+            S.vr += (-STIFF.r * S.r - DAMP.r * S.vr) * dt;
+            S.r += S.vr * dt;
+            S.vs += (-STIFF.s * S.s - DAMP.s * S.vs) * dt;
+            S.s += S.vs * dt;
+
+            S.s = Math.max(-0.35, Math.min(0.45, S.s));
+            S.r = Math.max(-14, Math.min(14, S.r));
+
+            const sx = 1 - S.s * 0.45;
+            const sy = 1 + S.s * 0.6;
+            item.svg.style.transform =
+              'translate(' + S.x.toFixed(2) + 'px,' + S.y.toFixed(2) + 'px) rotate(' + S.r.toFixed(2) + 'deg) scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ')';
+
+            // když se vše uklidnilo, písmeno usne a přestane se přepočítávat
+            const still = Math.abs(S.x) + Math.abs(S.vx) + Math.abs(S.r) + Math.abs(S.vr) +
+                          Math.abs(S.s) * 20 + Math.abs(S.vs) + Math.abs(S.vy) + Math.abs(S.y - ty);
+            if (!S.hover && still < 0.4) {
+              S.x = S.y = S.r = S.s = S.vx = S.vy = S.vr = S.vs = 0;
+              S.asleep = true;
+              item.svg.style.transform = '';
+            }
+          });
+        }
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reach me | Fonger</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="expect" href="#mark" blocking="render">
+  <script src="transition.js"></script>
+  <style>
+    main {
+      width: min(98vw, 1700px);
+      display: grid;
+      justify-items: center;
+    }
+
+    /* ---------- Nadpis REACH ME z chromových písmen ---------- */
+    .word {
+      --hh: clamp(2.6rem, 7.5vw, 5.4rem);        /* výška písmen nadpisu */
+      display: flex;
+      align-items: flex-end;
+      gap: calc(var(--hh) * 0.1);
+      margin: 0 0 clamp(0.5rem, 2.5vh, 1.8rem);
+    }
+
+    .glyph {
+      display: block;
+      transform-origin: 50% 100%;
+      animation: inflate 1.1s ease-out both;
+      animation-delay: calc(var(--i) * 90ms);
+    }
+
+    .gap { display: block; width: calc(var(--hh) * 0.4); }
+
+    @keyframes inflate {
+      0%   { opacity: 0; transform: translateY(0.8rem) scale(0.2, 0.05); }
+      35%  { opacity: 1; transform: translateY(0) scale(0.8, 1.25); }
+      55%  { transform: scale(1.18, 0.88); }
+      72%  { transform: scale(0.94, 1.08); }
+      86%  { transform: scale(1.04, 0.97); }
+      100% { opacity: 1; transform: scale(1, 1); }
+    }
+
+    .glyph svg {
+      display: block;
+      overflow: visible;
+      height: var(--hh);
+      width: calc(var(--hh) * 0.7);
+      filter: drop-shadow(0 0 0.15rem rgba(0, 0, 0, 0.95)) drop-shadow(0 0 0.5rem rgba(0, 0, 0, 0.75)) drop-shadow(0 0.35rem 0.7rem rgba(0, 0, 0, 0.7));
+    }
+
+    .glyph path {
+      fill: url(#irid) #2b2b3a;
+      filter: url(#bubble);
+    }
+
+    /* ---------- Kolotoč ---------- */
+    .carousel {
+      --icon: clamp(104px, 15vw, 190px);         /* velikost ikon */
+      position: relative;
+      isolation: isolate;
+      width: 100%;
+      height: min(calc(var(--icon) * 3.1), 62vh);
+      cursor: grab;
+      user-select: none;
+      touch-action: pan-y;                       /* vodorovně táhneme kolotoč, svisle se stránka posouvá */
+    }
+
+    .carousel.grabbing,
+    .carousel.grabbing .item { cursor: grabbing; }
+
+    /* Vrstva s větrem je za ikonami */
+    .wind {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* Jedna ikona. Polohu jí nastavuje skript. */
+    .item {
+      position: absolute;
+      left: 50%;
+      top: 38%;
+      width: var(--icon);
+      height: var(--icon);
+      cursor: pointer;
+      outline: none;
+    }
+
+    /* Lesklý tmavý disk ve tvaru přelévající se kapky */
+    .disc {
+      --br: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 34% 26%, #667090 0%, #333a52 34%, #141824 72%, #0b0d14 100%);
+      box-shadow:
+        inset 0 3px 5px rgba(255, 255, 255, 0.4),
+        inset 0 -14px 22px rgba(0, 0, 0, 0.7),
+        0 18px 34px rgba(0, 0, 0, 0.65),
+        0 0 0 1px rgba(228, 232, 244, 0.2);
+      filter: brightness(var(--br));
+      /* tvar se pomalu mění, vítr disk prohýbá (--tilt, --sqx, --sqy) a magnet ho přitahuje ke kurzoru */
+      transform: translate(var(--mx, 0px), var(--my, 0px)) rotate(var(--tilt, 0deg)) scale(var(--sqx, 1), var(--sqy, 1));
+      animation: blob var(--bt, 9s) ease-in-out infinite;
+      animation-delay: var(--bd, 0s);
+    }
+
+    @keyframes blob {
+      0%   { border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; }
+      20%  { border-radius: 60% 40% 52% 48% / 44% 58% 42% 56%; }
+      40%  { border-radius: 42% 58% 62% 38% / 58% 42% 58% 42%; }
+      60%  { border-radius: 54% 46% 38% 62% / 40% 60% 40% 60%; }
+      80%  { border-radius: 38% 62% 56% 44% / 56% 38% 62% 44%; }
+      100% { border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; }
+    }
+
+    /* Jemná hologramová záře přejíždějící přes kov */
+    .disc::after {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background: conic-gradient(
+        transparent 0deg,
+        rgba(150, 200, 255, 0.34) 50deg,
+        transparent 110deg,
+        rgba(255, 210, 170, 0.28) 200deg,
+        transparent 270deg,
+        rgba(200, 170, 255, 0.26) 320deg,
+        transparent 360deg
+      );
+      mix-blend-mode: screen;
+      animation: sheen var(--st, 11s) linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes sheen { to { transform: rotate(360deg); } }
+
+    /* Odlesk nahoře na disku: světlo je pevné, takže se odlesk při otáčení posouvá */
+    .disc::before {
+      content: "";
+      position: absolute;
+      inset: 5% 14% 52% 14%;
+      border-radius: 50%;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+      filter: blur(1px);
+      transform: translateX(calc(var(--sx, 0) * -26%));
+      z-index: 2;
+    }
+
+    /* Ikona uvnitř se pomalu vznáší a natáčí */
+    .disc svg {
+      position: relative;
+      z-index: 1;
+      width: 44%;
+      height: 44%;
+      fill: none;
+      stroke: #f2f5ff;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+      animation: bob 4s ease-in-out infinite alternate;
+      animation-delay: var(--bd, 0s);
+    }
+
+    @keyframes bob {
+      from { transform: translateY(-4%) rotate(-5deg); }
+      to   { transform: translateY(4%) rotate(5deg); }
+    }
+
+    /* Dvě družice obíhající kolem ikony */
+    .sat {
+      position: absolute;
+      inset: -13%;
+      pointer-events: none;
+      animation: orbit var(--ot, 7s) linear infinite;
+    }
+
+    .sat::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 7px;
+      height: 7px;
+      margin-left: -3.5px;
+      border-radius: 50%;
+      background: rgba(240, 244, 255, 0.9);
+      box-shadow: 0 0 8px rgba(220, 235, 255, 0.8);
+    }
+
+    .sat.b {
+      inset: -24%;
+      animation-direction: reverse;
+      --ot: 12s;
+    }
+
+    .sat.b::before {
+      width: 5px;
+      height: 5px;
+      margin-left: -2.5px;
+      opacity: 0.7;
+    }
+
+    @keyframes orbit { to { transform: rotate(360deg); } }
+
+    .item:hover .disc,
+    .item.show .disc,
+    .item:focus-visible .disc { --br: 1.22; }
+
+    /* ---------- Okénko s kontaktem (vyskočí pod ikonou) ---------- */
+    .pop {
+      position: absolute;
+      top: calc(100% + 14px);
+      left: 50%;
+      min-width: 13ch;
+      padding: 12px 20px 14px;
+      border-radius: 16px;
+      background: rgba(14, 16, 24, 0.88);
+      border: 1px solid rgba(228, 232, 244, 0.16);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+      text-align: center;
+      white-space: nowrap;
+      cursor: default;
+      /* skryté: malé a o kus výš, jako by vycházelo z ikony */
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(-14px) scale(0.86);
+      transform-origin: 50% 0;
+      transition: opacity 0.22s ease, transform 0.4s cubic-bezier(0.2, 1.25, 0.3, 1);
+    }
+
+    .item.show .pop {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+
+    .pop-label {
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: rgba(228, 232, 244, 0.55);
+    }
+
+    .pop-value {
+      display: block;
+      margin-top: 2px;
+      font-size: clamp(1rem, 1.7vw, 1.4rem);
+      font-weight: 700;
+      color: var(--accent);
+      user-select: text;
+    }
+
+    /* Tlačítko Copy se rozbalí až při najetí na okénko (nebo po klepnutí na dotykovém zařízení) */
+    .copy-wrap {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.28s ease;
+    }
+
+    .copy-wrap > div { overflow: hidden; }
+
+    .pop:hover .copy-wrap,
+    .pop.armed .copy-wrap,
+    .pop:focus-within .copy-wrap { grid-template-rows: 1fr; }
+
+    .copy {
+      margin-top: 10px;
+      padding: 7px 22px;
+      border: 1px solid rgba(228, 232, 244, 0.4);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--accent);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 0.25s ease 0.05s, transform 0.25s ease 0.05s, background 0.2s ease;
+    }
+
+    .pop:hover .copy,
+    .pop.armed .copy,
+    .pop:focus-within .copy {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .copy:hover,
+    .copy:focus-visible {
+      background: rgba(255, 255, 255, 0.16);
+      outline: none;
+    }
+
+    /* Nápověda dole */
+    .hint {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      color: rgba(228, 232, 244, 0.5);
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+
+    .hint.gone { opacity: 0; }
+
+    @media (max-width: 700px) {
+      .pop-value { font-size: 1rem; }
+    }
+
+    /* Kdo má vypnuté animace, disky i družice stojí na místě */
+    @media (prefers-reduced-motion: reduce) {
+      .disc, .disc::after, .disc svg, .sat { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Značka vlevo nahoře: zpočátku domeček, po příchodu z hlavní stránky kliknuté písmeno -->
+  <a class="home" id="mark" href="index.html" aria-label="Zpět na hlavní stránku">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8"/>
+      <path d="M5 10v10h14V10"/>
+      <path d="M10 20v-6h4v6"/>
+    </svg>
+  </a>
+
+  <main>
+    <!-- Nadpis REACH ME: každé písmeno je tvar (atribut d) -->
+    <h1 class="word" aria-label="Reach me">
+      <span class="glyph" style="--i: 0" aria-hidden="true"><svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H40A30 30 0 0 1 40 60L70 100H50L20 60V100H0ZM20 20H40A10 10 0 0 1 40 40H20Z"/></svg></span>
+      <span class="glyph" style="--i: 1" aria-hidden="true"><svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H70V20H20V40H60V60H20V80H70V100H0Z"/></svg></span>
+      <span class="glyph" style="--i: 2" aria-hidden="true"><svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M20 0H50L70 100H50L46 80H24L20 100H0ZM35 25L41.2 56H28.8Z"/></svg></span>
+      <span class="glyph" style="--i: 3" aria-hidden="true"><svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M62.6 19.2A35 50 0 1 0 62.6 80.8L46.8 68.5A15 30 0 1 1 46.8 31.5Z"/></svg></span>
+      <span class="glyph" style="--i: 4" aria-hidden="true"><svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H20V40H50V0H70V100H50V60H20V100H0Z"/></svg></span>
+      <span class="gap" aria-hidden="true"></span>
+      <span class="glyph" style="--i: 5" aria-hidden="true"><svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H20L35 34L50 0H70V100H50V28L35 62L20 28V100H0Z"/></svg></span>
+      <span class="glyph" style="--i: 6" aria-hidden="true"><svg viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H70V20H20V40H60V60H20V80H70V100H0Z"/></svg></span>
+    </h1>
+
+    <!-- Kolotoč. Každá ikona má popisek (data-label) a kontakt (data-value).
+         TADY PŘEPISUJ KONTAKTY. Další ikonu přidáš zkopírováním celého bloku <div class="item">.
+         --bt a --bd určují tempo a zpoždění přelévání tvaru, --st rychlost záře. -->
+    <div class="carousel" id="carousel" role="group" aria-label="Contacts. Drag or use arrow keys to rotate.">
+      <canvas class="wind" id="wind" aria-hidden="true"></canvas>
+
+      <div class="item" tabindex="0" data-label="E-mail" data-value="adamvavra9@gmail.com" aria-label="E-mail">
+        <div class="disc" style="--bt: 8s; --bd: 0s; --st: 11s">
+          <svg viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        </div>
+        <div class="pop">
+          <span class="pop-label"></span>
+          <span class="pop-value"></span>
+          <div class="copy-wrap"><div><button type="button" class="copy">Copy</button></div></div>
+        </div>
+      </div>
+
+      <div class="item" tabindex="0" data-label="Discord" data-value="fonger_" aria-label="Discord">
+        <div class="disc" style="--bt: 10.5s; --bd: -3s; --st: 14s">
+          <svg viewBox="0 0 24 24"><path d="M7 6c2-1 8-1 10 0 2 3 3 6 3 10-2 2-4 3-6 3l-1-2h-2l-1 2c-2 0-4-1-6-3 0-4 1-7 3-10z"/><circle cx="9" cy="12" r="1" fill="#f2f5ff"/><circle cx="15" cy="12" r="1" fill="#f2f5ff"/></svg>
+        </div>
+        <div class="pop">
+          <span class="pop-label"></span>
+          <span class="pop-value"></span>
+          <div class="copy-wrap"><div><button type="button" class="copy">Copy</button></div></div>
+        </div>
+      </div>
+
+      <div class="item" tabindex="0" data-label="Instagram" data-value="@as.god" aria-label="Instagram">
+        <div class="disc" style="--bt: 9.2s; --bd: -6s; --st: 9s">
+          <svg viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+        </div>
+        <div class="pop">
+          <span class="pop-label"></span>
+          <span class="pop-value"></span>
+          <div class="copy-wrap"><div><button type="button" class="copy">Copy</button></div></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="hint" id="hint">Drag to spin, pause on an icon</div>
+
+  <script>
+    const carousel = document.getElementById('carousel');
+    const items = Array.from(carousel.querySelectorAll('.item'));
+    const discs = items.map(el => el.querySelector('.disc'));
+    const hint = document.getElementById('hint');
+    const windCanvas = document.getElementById('wind');
+    const wctx = windCanvas.getContext('2d');
+    const n = items.length;
+    const step = (Math.PI * 2) / n;              // úhel mezi dvěma ikonami
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const DWELL_HOVER = 380;    // jak dlouho musí kurzor zůstat na ikoně, než vyskočí kontakt (ms)
+    const DWELL_SETTLE = 450;   // jak dlouho musí kolotoč stát, než vyskočí kontakt (ms)
+    const TILT_MAX = 20;        // o kolik stupňů se ikony nejvíc prohnou ve větru
+    const WIND_MAX = 70;        // nejvíc nových větrných pruhů za sekundu
+    const WIND_MAX_ON_SCREEN = 180;
+
+    // Texty v okénkách se plní z data-label a data-value
+    items.forEach(el => {
+      el.querySelector('.pop-label').textContent = el.dataset.label;
+      el.querySelector('.pop-value').textContent = el.dataset.value;
+    });
+
+    // Dvě družice u každé ikony
+    items.forEach(el => {
+      ['a', 'b'].forEach(k => {
+        const s = document.createElement('span');
+        s.className = 'sat ' + k;
+        if (k === 'a') s.style.setProperty('--ot', (6 + Math.random() * 3).toFixed(1) + 's');
+        el.insertBefore(s, el.querySelector('.pop'));
+      });
+    });
+
+    /* ---------- Stav kolotoče ---------- */
+    let angle = 0;          // otočení kolotoče
+    let prevAngle = 0;
+    let angVel = 0;         // skutečná úhlová rychlost (vyhlazená), z ní se počítá vítr
+    let velocity = 0;       // rychlost doroztáčení po puštění
+    let radius = 480;       // poloměr kruhu
+    let iconPx = 160;       // velikost ikony v px
+    let settled = true;     // true = kolotoč stojí
+    let snapTarget = null;  // úhel, na který se kolotoč usadí
+
+    let pressed = false;    // je stisknutá myš nebo prst
+    let dragging = false;   // opravdu táhneme (ne jen klikáme)
+    let didDrag = false;
+    let startX = 0;
+    let startAngle = 0;
+    let lastMoveTime = 0;
+    let lastTime = performance.now();
+
+    let shown = -1;         // která ikona má právě otevřené okénko
+    let settleTimer = null;
+    let dwellTimer = null;
+    let backTimer = null;
+
+    // Stav efektů každé ikony: náklon (pružina) a magnet ke kurzoru
+    const fx = items.map(() => ({ tilt: 0, tv: 0, mx: 0, my: 0, tmx: 0, tmy: 0 }));
+    const pos = items.map(() => ({ x: 0, y: 0, s: 1, d: 1 }));   // poloha ikon (pro větrné pruhy)
+
+    function frontIndex() {
+      const k = Math.round(angle / step);
+      return ((-k % n) + n) % n;
+    }
+
+    /* ---------- Okénka s kontakty ---------- */
+    function showItem(i) {
+      shown = i;
+      items.forEach((el, j) => {
+        const on = j === i;
+        el.classList.toggle('show', on);
+        if (!on) el.querySelector('.pop').classList.remove('armed');
+      });
+    }
+
+    function hidePop() {
+      shown = -1;
+      items.forEach(el => {
+        el.classList.remove('show');
+        el.querySelector('.pop').classList.remove('armed');
+      });
+    }
+
+    // Kolotoč se hýbe: okénka zmizí
+    function movementStarted() {
+      clearTimeout(settleTimer);
+      clearTimeout(dwellTimer);
+      clearTimeout(backTimer);
+      hidePop();
+      hint.classList.add('gone');
+    }
+
+    // Kolotoč se usadil: po chvilce vyskočí kontakt u ikony uprostřed
+    function movementEnded() {
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        if (settled && !dragging) showItem(frontIndex());
+      }, DWELL_SETTLE);
+    }
+
+    // Přivede danou ikonu do středu
+    function rotateTo(i) {
+      let diff = (-i * step - angle) % (Math.PI * 2);
+      if (diff > Math.PI) diff -= Math.PI * 2;
+      if (diff < -Math.PI) diff += Math.PI * 2;
+      snapTarget = angle + diff;
+      velocity = 0;
+      settled = false;
+      movementStarted();
+    }
+
+    /* ---------- Rozmístění ikon na kruhu ---------- */
+    function layout() {
+      items.forEach((el, i) => {
+        const a = angle + i * step;
+        const x = Math.sin(a) * radius;
+        const depth = (Math.cos(a) + 1) / 2;            // 1 = vepředu, 0 = vzadu
+        const scale = 0.5 + 0.5 * depth;
+        const y = -(1 - depth) * iconPx * 0.45;         // ikony vzadu jsou o něco výš
+        el.style.transform = 'translate(-50%, -50%) translate(' + x + 'px, ' + y + 'px) scale(' + scale + ')';
+        el.style.opacity = (0.3 + 0.7 * depth).toFixed(3);
+        el.style.zIndex = Math.round(depth * 100);
+        el.style.setProperty('--sx', (x / radius).toFixed(3));   // pro posun odlesku na disku
+        pos[i].x = x; pos[i].y = y; pos[i].s = scale; pos[i].d = depth;
+      });
+    }
+
+    /* ---------- Vítr ---------- */
+    const streaks = [];
+    let windAcc = 0;
+    let WW = 0, WH = 0, wdpr = 1;
+
+    function sizeWind() {
+      wdpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      WW = carousel.clientWidth;
+      WH = carousel.clientHeight;
+      windCanvas.width = Math.round(WW * wdpr);
+      windCanvas.height = Math.round(WH * wdpr);
+    }
+
+    function rnd(a, b) { return a + Math.random() * (b - a); }
+
+    // Nový pruh větru za ikonou. dir je směr pohybu kolotoče, vítr fouká opačně.
+    function spawnWind(speed, dir) {
+      const i = Math.floor(Math.random() * n);
+      const p = pos[i];
+      const r = iconPx * 0.5 * p.s;
+      const cx = WW / 2 + p.x;
+      const cy = WH * 0.38 + p.y;
+      const tiny = Math.random() < 0.4;                         // část jsou drobné unášené jiskřičky
+      const sc = 0.5 + 0.5 * p.d;
+
+      streaks.push({
+        x: cx - dir * r * rnd(0.3, 1.1),
+        y: cy + rnd(-r * 0.95, r * 0.95),
+        vx: -dir * (240 + speed * 150 + rnd(0, 140)),
+        vy: rnd(-20, 20),
+        len: tiny ? rnd(6, 16) : rnd(90, 230) * (0.6 + Math.min(1.2, speed * 0.12)) * sc,
+        w: tiny ? rnd(1.4, 2.4) : rnd(0.8, 1.8) * sc,
+        amp: rnd(6, 24) * sc,
+        freq: rnd(2.5, 5.5),
+        phase: rnd(0, 6.28),
+        a: (tiny ? rnd(0.5, 0.85) : rnd(0.3, 0.65)) * (0.5 + 0.5 * p.d),
+        life: 0,
+        max: tiny ? rnd(0.5, 1) : rnd(0.8, 1.5)
+      });
+    }
+
+    function drawWind(dt) {
+      wctx.setTransform(wdpr, 0, 0, wdpr, 0, 0);
+      wctx.clearRect(0, 0, WW, WH);
+      wctx.lineCap = 'round';
+
+      for (let k = streaks.length - 1; k >= 0; k--) {
+        const s = streaks[k];
+        s.life += dt;
+        if (s.life >= s.max) { streaks.splice(k, 1); continue; }
+
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+
+        const env = Math.sin(Math.PI * s.life / s.max);
+        const sign = s.vx < 0 ? -1 : 1;
+        const tx = s.x - sign * s.len;
+        const bend = s.y + Math.sin(s.phase + s.life * s.freq) * s.amp;
+        const a = (s.a * env).toFixed(3);
+
+        const g = wctx.createLinearGradient(tx, s.y, s.x, s.y);
+        g.addColorStop(0, 'rgba(235, 242, 255, 0)');
+        g.addColorStop(0.7, 'rgba(235, 242, 255, ' + a + ')');
+        g.addColorStop(1, 'rgba(235, 242, 255, 0)');
+
+        wctx.strokeStyle = g;
+        wctx.lineWidth = s.w;
+        wctx.beginPath();
+        wctx.moveTo(tx, s.y);
+        wctx.quadraticCurveTo((tx + s.x) / 2, bend, s.x, s.y);
+        wctx.stroke();
+      }
+    }
+
+    /* ---------- Efekty při otáčení ---------- */
+    function effects(dt) {
+      // skutečná rychlost otáčení, vyhlazená
+      const av = (angle - prevAngle) / Math.max(dt, 0.001);
+      prevAngle = angle;
+      angVel += (av - angVel) * Math.min(1, dt * 12);
+      if (reduceMotion) return;
+
+      const speed = Math.abs(angVel);
+      const dir = Math.sign(angVel);
+
+      // Ikony se ve větru pružně prohnou proti směru pohybu a zploští se
+      const target = -Math.max(-TILT_MAX, Math.min(TILT_MAX, angVel * 2.6));
+      const sq = Math.min(0.2, speed * 0.018);
+
+      items.forEach((el, i) => {
+        const S = fx[i];
+        S.tv += (-90 * (S.tilt - target) - 7 * S.tv) * dt;       // pružina s překmitem
+        S.tilt += S.tv * dt;
+        S.mx += (S.tmx - S.mx) * Math.min(1, dt * 12);
+        S.my += (S.tmy - S.my) * Math.min(1, dt * 12);
+
+        const d = discs[i];
+        d.style.setProperty('--tilt', S.tilt.toFixed(2) + 'deg');
+        d.style.setProperty('--sqx', (1 + sq).toFixed(3));
+        d.style.setProperty('--sqy', (1 - sq * 0.7).toFixed(3));
+        d.style.setProperty('--mx', S.mx.toFixed(2) + 'px');
+        d.style.setProperty('--my', S.my.toFixed(2) + 'px');
+      });
+
+      // Nové větrné pruhy podle rychlosti
+      if (speed > 0.6) {
+        windAcc += dt * Math.min(WIND_MAX, speed * 11);
+        while (windAcc >= 1 && streaks.length < WIND_MAX_ON_SCREEN) {
+          windAcc -= 1;
+          spawnWind(speed, dir);
+        }
+      } else {
+        windAcc = 0;
+      }
+
+      drawWind(dt);
+    }
+
+    function frame(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.033);
+      lastTime = now;
+
+      if (!dragging && !settled) {
+        if (Math.abs(velocity) > 0.6 && !reduceMotion) {
+          // doroztáčení po puštění
+          angle += velocity * dt;
+          velocity *= Math.pow(0.05, dt);
+        } else {
+          // usazení tak, aby byla jedna ikona uprostřed
+          velocity = 0;
+          if (snapTarget === null) snapTarget = Math.round(angle / step) * step;
+          const diff = snapTarget - angle;
+          if (Math.abs(diff) < 0.002 || reduceMotion) {
+            angle = snapTarget;
+            snapTarget = null;
+            settled = true;
+            movementEnded();
+          } else {
+            angle += diff * Math.min(1, dt * 10);
+          }
+        }
+      }
+
+      layout();
+      effects(dt);
+      requestAnimationFrame(frame);
+    }
+
+    function resize() {
+      iconPx = items[0].offsetWidth || 160;
+      radius = Math.min(carousel.clientWidth / 2 - iconPx / 2 - 16, 680);
+      if (radius < 120) radius = 120;
+      sizeWind();
+    }
+
+    /* ---------- Najetí, zastavení a kliknutí na ikonu ---------- */
+    items.forEach((el, i) => {
+      el.addEventListener('pointerenter', e => {
+        if (e.pointerType === 'touch') return;
+        clearTimeout(backTimer);
+        clearTimeout(dwellTimer);
+        if (!settled || dragging) return;
+        dwellTimer = setTimeout(() => {
+          if (settled && !dragging) showItem(i);
+        }, DWELL_HOVER);
+      });
+
+      el.addEventListener('pointerleave', e => {
+        if (e.pointerType === 'touch') return;
+        clearTimeout(dwellTimer);
+        fx[i].tmx = 0;
+        fx[i].tmy = 0;
+        // po odjetí se zase ukáže ikona uprostřed
+        if (shown === i && i !== frontIndex()) {
+          backTimer = setTimeout(() => {
+            if (settled && !dragging) showItem(frontIndex());
+          }, 250);
+        }
+      });
+
+      // Magnet: disk se jemně nakloní ke kurzoru
+      el.addEventListener('pointermove', e => {
+        if (dragging || e.pointerType === 'touch' || e.target.closest('.pop')) return;
+        const r = el.getBoundingClientRect();
+        const nx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+        const ny = ((e.clientY - r.top) / r.height - 0.5) * 2;
+        fx[i].tmx = nx * iconPx * 0.07;
+        fx[i].tmy = ny * iconPx * 0.07;
+      });
+
+      el.addEventListener('click', e => {
+        if (e.target.closest('.pop')) return;
+        if (didDrag) return;
+        if (i !== frontIndex()) rotateTo(i);
+        else showItem(i);
+      });
+
+      el.addEventListener('focus', () => {
+        if (settled && !dragging) showItem(i);
+      });
+    });
+
+    /* ---------- Chycení a otáčení kolotoče ---------- */
+    carousel.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (e.target.closest('.pop')) return;          // klikání v okénku nespouští tažení
+      pressed = true;
+      dragging = false;
+      didDrag = false;
+      startX = e.clientX;
+      startAngle = angle;
+      lastMoveTime = performance.now();
+      velocity = 0;
+    });
+
+    carousel.addEventListener('pointermove', e => {
+      if (!pressed) return;
+      const dx = e.clientX - startX;
+
+      // Táhnutí začne až po pár pixelech, aby šlo i obyčejně kliknout
+      if (!dragging && Math.abs(dx) > 6) {
+        dragging = true;
+        didDrag = true;
+        settled = false;
+        snapTarget = null;
+        carousel.setPointerCapture(e.pointerId);
+        carousel.classList.add('grabbing');
+        fx.forEach(S => { S.tmx = 0; S.tmy = 0; });
+        movementStarted();
+      }
+
+      if (dragging) {
+        const now = performance.now();
+        const newAngle = startAngle + dx / radius;
+        const inst = (newAngle - angle) / Math.max((now - lastMoveTime) / 1000, 0.001);
+        velocity = Math.max(-12, Math.min(12, 0.7 * velocity + 0.3 * inst));
+        angle = newAngle;
+        lastMoveTime = now;
+      }
+    });
+
+    function release() {
+      if (!pressed) return;
+      pressed = false;
+      if (dragging) {
+        dragging = false;
+        carousel.classList.remove('grabbing');
+        if (performance.now() - lastMoveTime > 80) velocity = 0;
+        setTimeout(() => { didDrag = false; }, 0);
+      }
+    }
+
+    carousel.addEventListener('pointerup', release);
+    carousel.addEventListener('pointercancel', release);
+
+    // Na dotykovém zařízení klepnutí na okénko ukáže tlačítko Copy
+    items.forEach(el => {
+      const pop = el.querySelector('.pop');
+      pop.addEventListener('pointerdown', () => pop.classList.add('armed'));
+    });
+
+    // Otáčení šipkami na klávesnici
+    carousel.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      const dir = e.key === 'ArrowRight' ? 1 : -1;
+      const base = snapTarget !== null ? snapTarget : Math.round(angle / step) * step;
+      snapTarget = base + dir * step;
+      velocity = 0;
+      settled = false;
+      movementStarted();
+    });
+
+    /* ---------- Kopírování kontaktu ---------- */
+    items.forEach(el => {
+      const btn = el.querySelector('.copy');
+      btn.addEventListener('click', async e => {
+        e.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(el.dataset.value);
+          btn.textContent = 'Copied!';
+        } catch (err) {
+          // záloha: text se označí a stačí stisknout Ctrl+C
+          const range = document.createRange();
+          range.selectNodeContents(el.querySelector('.pop-value'));
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          btn.textContent = 'Press Ctrl+C';
+        }
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1800);
+      });
+    });
+
+    window.addEventListener('resize', resize);
+    resize();
+    requestAnimationFrame(frame);
+
+    // Při prvním otevření se po chvilce ukáže kontakt u ikony uprostřed
+    setTimeout(() => { if (settled && !dragging && shown === -1) showItem(frontIndex()); }, 1400);
+  </script>
+</body>
+</html>

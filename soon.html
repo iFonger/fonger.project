@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>To be continued | Fonger</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="expect" href="#mark" blocking="render">
+  <script src="transition.js"></script>
+  <style>
+    h1 {
+      margin: 0 0 24px;
+      font-size: clamp(2.2rem, 8vw, 5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      animation: fadeIn 2.5s ease 0.6s both;
+    }
+
+    /* Odkaz zpět se objeví až po nadpisu */
+    .back {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+      animation: fadeIn 1.5s ease 2.2s both;
+    }
+
+    .back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <!-- Značka vlevo nahoře: zpočátku domeček, po příchodu z hlavní stránky kliknuté písmeno -->
+  <a class="home" id="mark" href="index.html" aria-label="Zpět na hlavní stránku">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8"/>
+      <path d="M5 10v10h14V10"/>
+      <path d="M10 20v-6h4v6"/>
+    </svg>
+  </a>
+
+  <main>
+    <h1 class="riso">To be continued…</h1>
+    <a class="back" href="index.html">← Back</a>
+  </main>
+</body>
+</html>

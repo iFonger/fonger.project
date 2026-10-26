@@ -1,0 +1,187 @@
+/* Barvy celého webu. Změníš je tady a změní se na všech stránkách */
+:root {
+  --bg: #07090f;        /* téměř černé pozadí s jemným studeným nádechem */
+  --bg-2: #111723;      /* o něco světlejší střed pozadí */
+  --ink: #e4e8f4;       /* hlavní barva textu: studená bílá */
+  --ink-2: #232a3a;     /* tmavá modrošedá (stíny) */
+  --accent: #ffffff;    /* nejsvětlejší odstín pro odkazy a zvýraznění */
+}
+
+/* Zapne plynulé přechody mezi stránkami (kdo má vypnuté animace, nic neuvidí) */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background-color: var(--bg);
+  background-image: radial-gradient(circle at 50% 40%, var(--bg-2), var(--bg) 70%);
+  color: var(--ink);
+  font-family: system-ui, sans-serif;
+  text-align: center;
+}
+
+/* ---------- Pozadí: mráčky ve čtyřech vrstvách (vloží je transition.js) ---------- */
+.mist {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Jedna vrstva je dvakrát tak široká než obrazovka a plave zleva doprava.
+   Uvnitř jsou dvě stejné poloviny, takže se pohyb nikdy nepřetrhne. */
+.mist .layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200vw;
+  height: 100%;
+  opacity: var(--o);                  /* průhlednost celé vrstvy */
+  will-change: transform;
+  animation: slide var(--t) linear infinite;
+}
+
+.mist .set {
+  position: absolute;
+  top: 0;
+  width: 100vw;
+  height: 100%;
+}
+.mist .set:nth-child(1) { left: 0; }
+.mist .set:nth-child(2) { left: 100vw; }
+
+@keyframes slide {
+  from { transform: translateX(-100vw); }
+  to   { transform: translateX(0); }
+}
+
+/* Jeden mráček. Polohu, velikost a odstín mu nastaví transition.js */
+.mist .cloud {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+  height: auto;
+  overflow: visible;
+  stroke-width: var(--sw, 1);         /* tloušťka obrysu */
+  stroke-opacity: 0.8;
+}
+
+/* Pět odstínů jedné ocelové šedomodré */
+.mist .cloud.c0 { fill: url(#cg0); stroke: #c9d3ea; }
+.mist .cloud.c1 { fill: url(#cg1); stroke: #9fb4d9; }
+.mist .cloud.c2 { fill: url(#cg2); stroke: #8aa0c8; }
+.mist .cloud.c3 { fill: url(#cg3); stroke: #b4c0dc; }
+.mist .cloud.c4 { fill: url(#cg4); stroke: #7e92bd; }
+
+/* Ztmavení okrajů, ať pozornost zůstane uprostřed */
+.mist::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, transparent 30%, rgba(2, 4, 10, 0.65) 100%);
+}
+
+/* Jemné zrno přes celý web, to dělá matný dojem */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Nadpisy: stříbrný chromový přechod s jemným stínem */
+.riso {
+  background-image: linear-gradient(180deg, #ffffff 0%, #c4c8d8 50%, #6f7590 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0.12em 0.18em rgba(0, 0, 0, 0.6));
+}
+
+/* Značka vlevo nahoře na podstránkách. Zpočátku domeček,
+   po příchodu z hlavní stránky písmeno, které jsi kliknul */
+.home {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  display: block;
+  width: 32px;
+  height: 32px;
+  color: var(--ink);
+  transition: transform 0.2s ease, color 0.2s ease;
+  view-transition-name: letter;      /* díky tomu se písmeno z hlavní stránky přesune sem */
+}
+
+.home.is-letter {
+  width: 28px;
+  height: 40px;
+  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.6));
+}
+
+.home:hover,
+.home:focus-visible {
+  color: var(--accent);
+  transform: scale(1.12);
+  outline: none;
+}
+
+.home svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Z domečku se stane stejné chromové písmeno jako na hlavní stránce */
+.home.is-letter svg {
+  fill: none;
+  stroke: none;
+}
+
+.home.is-letter path {
+  fill: url(#irid) #2b2f3a;
+  filter: url(#bubble);
+}
+
+/* Jak se přechody animují */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.45s;
+  animation-timing-function: ease;
+}
+
+::view-transition-group(letter) {
+  animation-duration: 0.75s;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.2, 1);
+}
+
+/* Kdo má v systému vypnuté animace, nic se nehýbe (mráčky stojí na svých místech) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .mist .layer {
+    animation: none !important;
+    transform: translateX(-100vw);
+  }
+}
