@@ -417,7 +417,8 @@
     .scroll {
       height: 100%;
       overflow-y: auto;
-      padding: calc(var(--u) * 22) calc(var(--u) * 18) calc(var(--u) * 24);
+      box-sizing: border-box;              /* ať padding nepřetéká a jde doscrollovat úplně dolů */
+      padding: calc(var(--u) * 22) calc(var(--u) * 18) calc(var(--u) * 40);
       background: rgba(5, 10, 22, 0.94);
       text-align: left;
       scrollbar-width: thin;
@@ -463,6 +464,64 @@
     .empty-note { margin: calc(var(--u) * 8) 0; font-size: max(10px, calc(var(--u) * 12)); color: rgba(190, 225, 255, 0.4); }
 
     .note { margin: calc(var(--u) * 18) 0 0; font-size: max(9px, calc(var(--u) * 10.5)); line-height: 1.5; color: rgba(190, 225, 255, 0.45); }
+
+    .lang { display: flex; justify-content: flex-end; gap: calc(var(--u) * 6); margin-bottom: calc(var(--u) * 14); }
+    .lang button {
+      min-height: max(26px, calc(var(--u) * 28));
+      padding: 0 calc(var(--u) * 12);
+      border: 1px solid rgba(160, 215, 255, 0.35);
+      border-radius: 999px;
+      background: transparent;
+      color: rgba(190, 225, 255, 0.6);
+      font: 700 max(10px, calc(var(--u) * 11)) system-ui, sans-serif;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+    }
+    .lang button.on { color: #ffffff; background: rgba(255, 130, 195, 0.22); border-color: #ffa8d6; }
+
+    /* Obrázky v pravidlech jsou malá plátna zvětšená bez vyhlazení */
+    .ico {
+      display: block;
+      flex: none;
+      width: calc(var(--u) * 112);
+      height: auto;
+      image-rendering: pixelated;
+      border-radius: 8px;
+      border: 1px solid rgba(160, 215, 255, 0.2);
+    }
+
+    .how { display: flex; gap: calc(var(--u) * 12); align-items: center; }
+    .how-t p { margin: 0; }
+
+    .ctrl { list-style: none; margin: calc(var(--u) * 12) 0 0; padding: 0; display: grid; gap: calc(var(--u) * 8); }
+    .ctrl li { display: grid; grid-template-columns: 5.2em 1fr; gap: calc(var(--u) * 8); align-items: baseline; font-size: max(11px, calc(var(--u) * 13)); line-height: 1.5; color: rgba(225, 240, 255, 0.82); }
+    .ctrl .ck { font-weight: 700; letter-spacing: 0.08em; color: #ffa8d6; font-size: max(9px, calc(var(--u) * 10.5)); text-transform: uppercase; }
+    .key {
+      display: inline-block;
+      min-width: 1.6em;
+      margin-right: 0.25em;
+      padding: 0.05em 0.35em;
+      border: 1px solid rgba(160, 215, 255, 0.55);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.06);
+      text-align: center;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .rules p.tip { margin-top: calc(var(--u) * 12); color: rgba(190, 225, 255, 0.6); font-size: max(10.5px, calc(var(--u) * 12.5)); }
+
+    .rules p + .lvs { margin-top: calc(var(--u) * 12); }
+    .lvs { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(var(--u) * 10); }
+    .lvs li { display: flex; gap: calc(var(--u) * 12); align-items: center; }
+    .lvs .ln { font-weight: 700; letter-spacing: 0.1em; font-size: max(10.5px, calc(var(--u) * 12.5)); }
+    .lvs .ltime { margin-left: 0.7em; font-weight: 500; letter-spacing: 0.04em; color: rgba(190, 225, 255, 0.5); font-variant-numeric: tabular-nums; }
+    .lvs .lnote { margin-top: 2px; font-size: max(10.5px, calc(var(--u) * 12.5)); line-height: 1.4; color: rgba(225, 240, 255, 0.78); }
+
+    .gears { display: flex; justify-content: space-between; gap: calc(var(--u) * 6); }
+    .gv { flex: 1; text-align: center; }
+    .gv canvas { display: block; margin: 0 auto; width: calc(var(--u) * 64); height: calc(var(--u) * 64); image-rendering: pixelated; }
+    .gcap { margin-top: 2px; font-size: max(9px, calc(var(--u) * 10.5)); font-weight: 700; letter-spacing: 0.08em; color: rgba(225, 240, 255, 0.8); }
 
     .rules p { margin: 0; font-size: max(11px, calc(var(--u) * 13.5)); line-height: 1.55; color: rgba(225, 240, 255, 0.82); }
     .rules p b { color: #ffffff; }
@@ -908,6 +967,7 @@
       padding: 0;
     }
     .mute-btn.off { opacity: 0.55; text-decoration: line-through; }
+    .screen[data-mode="score"] .mute-btn, .screen[data-mode="rules"] .mute-btn { display: none; }
 
     /* ---------- Telefon: menší okraje a celoobrazovkový režim hry ---------- */
     .fs-exit {
@@ -1238,36 +1298,7 @@
 
           <!-- RULES -->
           <div class="pane" id="paneRules">
-            <div class="scroll rules">
-              <section>
-                <h2>HOW TO PLAY</h2>
-                <p>Pull the lever (or press <b>START</b>) to begin. <b>Drag</b> left and right to run, or use the arrow keys. Don't get hit by the falling drops.</p>
-              </section>
-              <section>
-                <h2>YOUR SCORE</h2>
-                <p>Your score is how long you survive, to the hundredth of a second. After each run, type a name to join the board. Only your best time of the week counts.</p>
-              </section>
-              <section>
-                <h2>THE WEEK</h2>
-                <p>Every week has its own level, <b>the same for everyone</b>. A new week starts every Monday at 00:00 Prague time. The board shows this week's top 10, last week's top 3 and the best player of all time.</p>
-              </section>
-              <section>
-                <h2>LEVELS</h2>
-                <p>The longer you survive, the wilder it gets. There are <b>10 levels</b>, from the quiet <b>Drizzle</b> to the <b>Void</b> after ten minutes. Every level changes the weather: wind, wobbling acid, hail volleys, bouncing balls, meteors, curtains of rain, shattering ice and more..</p>
-              </section>
-              <section>
-                <h2>THE EDGES</h2>
-                <p>Don't hide by the wall. Stay near an edge for <b>5 seconds</b> and a boxing glove will punch you back toward the middle. It doesn't hurt, but it costs you your spot.</p>
-              </section>
-              <section>
-                <h2>GEAR</h2>
-                <p>The top 3 players of the week get glowing gear: <b>red</b> for 1st, <b>purple</b> for 2nd and <b>green</b> for 3rd. It is only for looks and it disappears every Monday. The best player of all time wears <b>diamond</b> for good.</p>
-              </section>
-              <section>
-                <h2>SHORTCUTS</h2>
-                <p>Use the buttons below the machine to switch between <b>GAME</b>, <b>SCORE</b> and <b>RULES</b>, or press <b>1</b>, <b>2</b> and <b>3</b>. <b>Space</b> or <b>Enter</b> starts a round, <b>Esc</b> pauses.</p>
-              </section>
-            </div>
+            <div class="scroll rules" id="rulesBox"></div>
           </div>
 
           <div class="glass" aria-hidden="true"></div>
@@ -2662,6 +2693,7 @@
       syncLevel();
       music.setActive(state === 'play' || state === 'count');
       if (mode === 'score') minis.forEach(drawMini);
+      if (mode === 'rules') ruleMinis.forEach(drawMini);
 
       // zatřesení obrazovky při zásahu
       if (now < shakeUntil) {
@@ -2689,6 +2721,7 @@
       }
 
       mode = m;
+      screenEl.dataset.mode = m;
       $('paneGame').classList.toggle('show', m === 'game');
       $('paneScore').classList.toggle('show', m === 'score');
       $('paneRules').classList.toggle('show', m === 'rules');
@@ -3149,6 +3182,278 @@
     } else {
       runIntro();
     }
+
+    /* ================= PRAVIDLA (RULES) V ANGLIČTINĚ A ČEŠTINĚ ================= */
+
+    // Všechny texty pravidel jsou tady. <b> je tučné písmo. Poznámky k úrovním jdou za sebou jako úrovně.
+    const RULES_I18N = {
+      en: {
+        how: 'HOW TO PLAY',
+        goal: 'Survive as long as you can. <b>One hit and you are out.</b>',
+        phone: 'Phone', phoneT: 'Drag your finger left and right.',
+        pc: 'Computer', pcT: 'Use the keys or drag with the mouse.',
+        start: 'Start', startT: 'Pull the lever, press START or hit Space.',
+        tip: 'Tip: stay near the middle. Small steps beat long runs.',
+        levels: 'LEVELS', levelsP: 'The longer you survive, the wilder it gets.',
+        notes: ['calm rain', 'wind pushes the drops', 'blobs wobble left and right', 'rows of drops with one gap', 'diagonal, with a warning',
+                'ice shatters in the air', 'tilted waves, stay in the gap', 'you see only what shines', 'wind, waves, ice and lightning', 'everything at once'],
+        edges: "DON'T HIDE IN THE CORNER",
+        edgesP: 'Stay by a wall for <b>5 seconds</b> and a glove punches you back to the middle. It does not hurt, but you lose your spot.',
+        week: 'WEEKLY BOARD',
+        weekP: 'Every week has its own level, <b>the same for everyone</b>. Only your best time of the week counts. A new week starts on Monday at 00:00 Prague time.',
+        gear: 'GEAR',
+        gearP: 'The top 3 of the week get glowing gear until Monday. The best player of all time wears diamond for good.',
+        caps: ['1st', '2nd', '3rd', 'ALL-TIME']
+      },
+      cz: {
+        how: 'JAK HRÁT',
+        goal: 'Přežij co nejdéle. <b>Jeden zásah a končíš.</b>',
+        phone: 'Telefon', phoneT: 'Táhni prstem doleva a doprava.',
+        pc: 'Počítač', pcT: 'Používej šipky nebo táhni myší.',
+        start: 'Start', startT: 'Zatáhni za páku, stiskni START nebo mezerník.',
+        tip: 'Tip: drž se spíš uprostřed. Malé kroky jsou lepší než dlouhé běhy.',
+        levels: 'ÚROVNĚ', levelsP: 'Čím déle přežiješ, tím je to divočejší.',
+        notes: ['klidný déšť', 'vítr tlačí kapky', 'kapky se vlní ze strany na stranu', 'řady kapek s jednou mezerou', 'šikmé, s varováním',
+                'led se ve vzduchu rozbije', 'šikmé vlny, drž se v mezeře', 'vidíš jen to, co svítí', 'vítr, vlny, led a blesky', 'všechno najednou'],
+        edges: 'NESCHOVÁVEJ SE V ROHU',
+        edgesP: 'Když zůstaneš u zdi <b>5 sekund</b>, rukavice tě odrazí zpátky do středu. Nebolí to, ale přijdeš o pozici.',
+        week: 'TÝDENNÍ ŽEBŘÍČEK',
+        weekP: 'Každý týden má vlastní úroveň, <b>stejnou pro všechny</b>. Počítá se jen tvůj nejlepší čas týdne. Nový týden začíná v pondělí v 00:00 pražského času.',
+        gear: 'VÝBAVA',
+        gearP: 'Top 3 hráči týdne dostanou svítící výbavu do pondělí. Nejlepší hráč všech dob nosí diamant napořád.',
+        caps: ['1.', '2.', '3.', 'VŠECH DOB']
+      }
+    };
+
+    const LANG_KEY = 'fonger-lang';
+    let lang = 'en';
+    try {
+      const saved = localStorage.getItem(LANG_KEY);
+      if (saved === 'en' || saved === 'cz') lang = saved;
+      else if (/^(cs|sk)/i.test(navigator.language || '')) lang = 'cz';   // Češi a Slováci dostanou češtinu sami
+    } catch (e) {}
+
+    let ruleMinis = [];           // animovaní panáčci v části GEAR
+
+    function clock(sec) {
+      return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+    }
+
+    // Malé plátno, na které se nakreslí obrázek stejnými funkcemi, jakými se kreslí hra
+    function iconCanvas(w, h, draw) {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      c.className = 'ico';
+      const st = { ctx: c.getContext('2d'), fx: [], ghost: [], bolts: [], boltFrame: -99 };
+      withStage(st, function () { draw(dctx); });
+      return c;
+    }
+
+    // Pozadí malého obrázku v barvách úrovně a čára země
+    function iconSky(g, w, h, L, ground) {
+      const gr = g.createLinearGradient(0, 0, 0, ground);
+      gr.addColorStop(0, L.sky[0]);
+      gr.addColorStop(1, L.sky[1]);
+      g.fillStyle = gr;
+      g.fillRect(0, 0, w, h);
+      g.fillStyle = L.line;
+      g.fillRect(0, ground, w, 1);
+      g.fillStyle = L.tile[0];
+      g.fillRect(0, ground + 1, w, h - ground - 1);
+    }
+
+    // Obrázek ke každé úrovni: to, co ji dělá jinou
+    function levelIcon(i) {
+      const L = LEVELS[i], w = 56, h = 40, G = 36;
+      const pal = L.pal || L.pals[0];
+      const pals = L.pals || [L.pal, L.pal, L.pal, L.pal];
+      return iconCanvas(w, h, function (g) {
+        iconSky(g, w, h, L, G);
+        const rain = (x, y, r, p) => drawRain({ x: x, y: y, r: r, pal: p || pal });
+        const gold = (x, top) => {
+          const gr = g.createLinearGradient(0, top, 0, G);
+          gr.addColorStop(0, 'rgba(255,212,90,0.45)');
+          gr.addColorStop(1, 'rgba(255,212,90,0.1)');
+          g.fillStyle = gr;
+          g.fillRect(x - 8, top, 16, G - top);
+        };
+        if (i === 0) { rain(16, 14, 3); rain(36, 26, 2); rain(46, 10, 2); }
+        else if (i === 1) {
+          rain(12, 12, 2); rain(30, 22, 3); rain(44, 12, 2);
+          [[6, 28], [14, 31], [24, 34]].forEach(function (c) { px(c[0], c[1], 12, 1, '#a8d8d0'); px(c[0] + 10, c[1] - 1, 1, 3, '#a8d8d0'); px(c[0] + 11, c[1], 1, 1, '#a8d8d0'); });
+        }
+        else if (i === 2) {
+          [[18, 0.5], [38, 2.2]].forEach(function (b, k) {
+            const x0 = b[0], ph = b[1], fq = 0.12;
+            for (let y = 2; y < 30; y += 3) px(x0 + Math.sin(ph + y * fq) * 8, y, 1, 1, '#2f6a45');
+            drawBlob({ x: x0 + Math.sin(ph + (14 + k * 8) * fq) * 8, y: 14 + k * 8, r: 4, pal: pal, ph: ph, fq: fq });
+          });
+        }
+        else if (i === 3) {
+          gold(28, 2);
+          for (let x = 4; x < w; x += 8) { if (Math.abs(x - 28) < 10) continue; drawRain({ x: x, y: 11, r: 2, pal: pal }); }
+        }
+        else if (i === 4) {
+          px(9, 3, 3, 7, '#ff5a1e'); px(9, 12, 3, 3, '#ff5a1e'); px(14, 6, 2, 2, '#ffb04a'); px(17, 6, 2, 2, '#ffb04a');
+          drawMeteor({ x: 36, y: 24, vx: 0.9, vy: 2, r: 3, big: false });
+        }
+        else if (i === 5) {
+          drawRain({ x: 16, y: 14, r: 4, pal: FLASH_PAL });
+          [30, 38, 46].forEach(function (x, k) { drawHail({ x: x, y: 24 + (k === 1 ? 4 : 0), pal: pal }); });
+        }
+        else if (i === 6) {
+          gold(30, 2);
+          for (let x = 4; x < w; x += 8) { if (Math.abs(x - 30) < 10) continue; drawRain({ x: x, y: 5 + x * 0.35, r: 2, pal: pal }); }
+        }
+        else if (i === 7) {
+          [[14, 12], [32, 22], [46, 10]].forEach(function (p) { drawHalo({ x: p[0], y: p[1], m: false }); drawRain({ x: p[0], y: p[1], r: 2, pal: pal }); });
+        }
+        else if (i === 8) {
+          g.save();
+          g.strokeStyle = '#ffd0f0'; g.lineWidth = 1; g.shadowColor = '#ff7ad9'; g.shadowBlur = 4;
+          g.beginPath(); g.moveTo(10, 2); g.lineTo(6, 14); g.lineTo(13, 14); g.lineTo(8, 28); g.stroke();
+          g.restore();
+          drawBlob({ x: 28, y: 14, r: 4, pal: pal, ph: 1, fq: 0.12 });
+          drawMeteor({ x: 44, y: 28, vx: 0.8, vy: 2, r: 3, big: false });
+        }
+        else {
+          drawRain({ x: 10, y: 14, r: 3, pal: pals[0] });
+          drawBlob({ x: 24, y: 24, r: 4, pal: pals[2], ph: 0, fq: 0.12 });
+          drawMeteor({ x: 40, y: 22, vx: 0.8, vy: 2, r: 3, big: false });
+          drawHail({ x: 50, y: 12, pal: { body: '#e6eef7', edge: '#8fa3bd', hi: '#ffffff' } });
+        }
+      });
+    }
+
+    // Obrázek k části HOW TO PLAY: panáček, padající kapky a šipky do stran
+    function playIcon() {
+      const w = 72, h = 56, G = 50, L = LEVELS[0];
+      return iconCanvas(w, h, function (g) {
+        iconSky(g, w, h, L, G);
+        drawRain({ x: 14, y: 12, r: 3, pal: L.pal }); drawRain({ x: 52, y: 20, r: 2, pal: L.pal }); drawRain({ x: 62, y: 8, r: 3, pal: L.pal });
+        drawPlayer(36, G, 1, 1, false, PAL_DEFAULT);
+        // šipky doleva a doprava: plné trojúhelníčky
+        for (let k = 0; k < 5; k++) {
+          px(8 + k, 37 - k, 1, 2 * k + 1, '#ffd0e8');
+          px(63 - k, 37 - k, 1, 2 * k + 1, '#ffd0e8');
+        }
+      });
+    }
+
+    // Obrázek k části EDGES: rukavice u zdi a panáček před ní
+    function edgeIcon() {
+      const w = 72, h = 40, G = 36, L = LEVELS[0];
+      return iconCanvas(w, h, function (g) {
+        iconSky(g, w, h, L, G);
+        for (let k = 0; k < 3; k++) { px(56 + k * 4, 18, 2, 1 + k, '#ffd0e8'); }
+        g.save();
+        g.translate(0, G - GROUND);
+        drawPlayer(34, GROUND, -1, 1, false, PAL_DEFAULT);
+        drawGlove(-1, 22, false);
+        g.restore();
+      });
+    }
+
+    function renderRules() {
+      const T = RULES_I18N[lang];
+      const box = $('rulesBox');
+      box.textContent = '';
+      ruleMinis = [];
+
+      const bar = el('div', 'lang');
+      ['en', 'cz'].forEach(function (l) {
+        const b = el('button', l === lang ? 'on' : '', l.toUpperCase());
+        b.type = 'button';
+        b.dataset.lang = l;
+        bar.appendChild(b);
+      });
+      box.appendChild(bar);
+
+      const section = function (title) {
+        const s = el('section');
+        s.appendChild(el('h2', null, title));
+        box.appendChild(s);
+        return s;
+      };
+      const para = function (html) { const p = el('p'); p.innerHTML = html; return p; };
+      const key = function (t) { return '<span class="key">' + t + '</span>'; };
+
+      // HOW TO PLAY
+      let s = section(T.how);
+      const how = el('div', 'how');
+      how.appendChild(playIcon());
+      const hw = el('div', 'how-t');
+      hw.appendChild(para(T.goal));
+      s.appendChild(how);
+      how.appendChild(hw);
+      const ctrl = el('ul', 'ctrl');
+      [[T.phone, T.phoneT], [T.pc, T.pcT + '<br>' + key('←') + key('→') + ' ' + key('A') + key('D')], [T.start, T.startT]].forEach(function (c) {
+        const li = el('li');
+        li.appendChild(el('span', 'ck', c[0]));
+        const sp = el('span', 'cv'); sp.innerHTML = c[1];
+        li.appendChild(sp);
+        ctrl.appendChild(li);
+      });
+      s.appendChild(ctrl);
+      const tip = para(T.tip); tip.className = 'tip'; s.appendChild(tip);
+
+      // LEVELS
+      s = section(T.levels);
+      s.appendChild(para(T.levelsP));
+      const list = el('ul', 'lvs');
+      LEVELS.forEach(function (L, i) {
+        const li = el('li');
+        li.appendChild(levelIcon(i));
+        const t = el('div', 'lt');
+        const nm = el('div', 'ln', L.name.toUpperCase());
+        nm.style.color = L.accent;
+        nm.appendChild(el('span', 'ltime', clock(L.from)));
+        t.appendChild(nm);
+        t.appendChild(el('div', 'lnote', T.notes[i]));
+        li.appendChild(t);
+        list.appendChild(li);
+      });
+      s.appendChild(list);
+
+      // THE EDGES
+      s = section(T.edges);
+      const ed = el('div', 'how');
+      ed.appendChild(edgeIcon());
+      const et = el('div', 'how-t'); et.appendChild(para(T.edgesP));
+      ed.appendChild(et);
+      s.appendChild(ed);
+
+      // WEEKLY BOARD
+      s = section(T.week);
+      s.appendChild(para(T.weekP));
+
+      // GEAR
+      s = section(T.gear);
+      const gears = el('div', 'gears');
+      ['red', 'purple', 'green', 'diamond'].forEach(function (g, i) {
+        const cell = el('div', 'gv g-' + g);
+        const c = document.createElement('canvas');
+        c.width = MINI; c.height = MINI; c.className = 'av';
+        ruleMinis.push({ ctx: c.getContext('2d'), gear: g, fx: [], ghost: [], bolts: [], boltFrame: -99, off: i * 37 });
+        cell.appendChild(c);
+        cell.appendChild(el('div', 'gcap', T.caps[i]));
+        gears.appendChild(cell);
+      });
+      s.appendChild(gears);
+      const gp = para(T.gearP); gp.className = 'tip'; s.appendChild(gp);
+    }
+
+    $('rulesBox').addEventListener('click', function (e) {
+      const b = e.target.closest('button[data-lang]');
+      if (!b) return;
+      lang = b.dataset.lang;
+      try { localStorage.setItem(LANG_KEY, lang); } catch (err) {}
+      renderRules();
+    });
+
+    renderRules();
+
     /* ================= HUDBA (lehká smyčka přímo z kódu, bez souborů) ================= */
 
     const music = (function () {
