@@ -192,9 +192,62 @@
       75%  { content: "..."; }
     }
 
-    /* Na dotykových zařízeních a malých obrazovkách: popisky jsou vidět pořád, detaily se zmenší */
+    /* Nápověda pod nápisem, ukáže se jen na dotykových zařízeních */
+    .hint {
+      display: none;
+      position: fixed;
+      z-index: 2;
+      left: 36px;
+      bottom: 32px;
+      margin: 0;
+      font-size: 0.78rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(228, 232, 244, 0.7);
+      text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+      pointer-events: none;
+      animation: fadeIn 1.2s ease 2.6s both, hintPulse 2.8s ease-in-out 3.8s infinite;
+    }
+
+    @keyframes hintPulse {
+      0%, 100% { opacity: 0.3; }
+      50%      { opacity: 0.9; }
+    }
+
+    /* Dotyková zařízení: žádné popisky pod písmeny. Popisek se ukáže nad písmenem,
+       dokud ho držíš prstem, a písmena G, E, R (která někam vedou) jemně svítí. */
     @media (hover: none) {
-      .tag { opacity: 1; font-size: 0.8rem; margin-top: 1rem; }
+      .hint { display: block; }
+
+      .tag {
+        top: auto;
+        bottom: 100%;
+        margin: 0 0 0.9rem;
+        font-size: 0.95rem;
+        letter-spacing: 0.14em;
+        opacity: 0;
+        transition: opacity 0.12s ease;
+      }
+
+      .letter:active .tag { opacity: 1; }
+
+      .letter:nth-child(n+4)::before {
+        content: "";
+        position: absolute;
+        inset: -22% -34%;
+        z-index: -1;
+        border-radius: 50%;
+        background: radial-gradient(closest-side, rgba(170, 205, 255, 0.6), rgba(170, 205, 255, 0));
+        pointer-events: none;
+        opacity: 0;
+        animation: breathe 3.2s ease-in-out infinite;
+        animation-delay: calc(var(--i) * 350ms + 1.6s);
+      }
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.15; transform: scale(0.9); }
+      50%      { opacity: 1;    transform: scale(1.08); }
     }
 
     @media (max-width: 700px) {
@@ -208,6 +261,26 @@
     @media (prefers-reduced-motion: reduce) {
       .dots::after { animation: none; content: "..."; }
       .orb { animation: none !important; }
+      .hint { animation: none !important; opacity: 0.6; }
+      .letter:nth-child(n+4)::before { animation: none !important; opacity: 0.6; }
+    }
+        /* Telefon na výšku: písmena jsou velká a jdou schodištěm zleva nahoře doprava dolů */
+    @media (max-width: 700px) and (orientation: portrait) {
+      :root {
+        --h: min(26vw, 12vh);
+        --dx: calc((82vw - var(--h) * 0.7) / 5);     /* o kolik je každé další písmeno víc vpravo */
+      }
+
+      .logo {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 82vw;
+        gap: calc(var(--h) * 0.1);
+      }
+
+      .letter { margin-left: calc(var(--i) * var(--dx)); }
+
+      .hint { left: 28px; bottom: 28px; }
     }
   </style>
 </head>
@@ -254,6 +327,8 @@
       <span class="tag">Reach me</span>
     </a>
   </nav>
+  
+  <p class="hint">Tap a letter</p>
 
   <script>
     const KEY = 'fonger-letter';
