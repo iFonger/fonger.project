@@ -12,6 +12,10 @@
     @property --ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
     @keyframes spin { to { --ang: 360deg; } }
 
+    /* Barvy pruhů nad a pod hřištěm v celoobrazovkovém režimu (mění se podle úrovně) */
+    @property --bar-top { syntax: '<color>'; inherits: true; initial-value: #060c1f; }
+    @property --bar-bot { syntax: '<color>'; inherits: true; initial-value: #101c3a; }
+
     html.intro-on, html.intro-on body { overflow: hidden; }
 
     body {
@@ -720,6 +724,16 @@
       text-shadow: 0 0 calc(var(--u) * 8) var(--lc, #8fd0ff);
     }
 
+    #windEl {
+      display: block;
+      min-height: 1.2em;
+      margin-top: 1px;
+      font-size: max(8px, calc(var(--u) * 9));
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: rgba(200, 235, 235, 0.8);
+    }
+
     .lvl-banner {
       position: absolute;
       left: 0;
@@ -737,6 +751,7 @@
 
     .lvl-banner small { font-size: max(9px, calc(var(--u) * 12)); font-weight: 700; letter-spacing: 0.3em; }
     .lvl-banner b { font-size: max(18px, calc(var(--u) * 36)); font-weight: 900; letter-spacing: 0.08em; }
+    .lvl-banner em { font-style: normal; font-size: max(9px, calc(var(--u) * 11)); letter-spacing: 0.14em; opacity: 0.85; }
     .lvl-banner.go { animation: lvlin 2.4s ease both; }
 
     @keyframes lvlin {
@@ -833,7 +848,7 @@
       position: relative;
       z-index: 3;
       margin-top: -34px;
-      width: min(92vw, 440px);
+      width: min(var(--cw), 440px);
       height: 46px;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -876,6 +891,91 @@
     .modebar button.on { color: #eaf6ff; text-shadow: 0 0 8px rgba(130, 198, 255, 0.9); }
     .modebar button:focus-visible { outline: 2px solid rgba(200, 235, 255, 0.7); outline-offset: -3px; border-radius: 999px; }
 
+    .mute-btn {
+      position: absolute;
+      top: calc(var(--u) * 8);
+      left: calc(var(--u) * 8);
+      z-index: 8;
+      width: max(32px, calc(var(--u) * 32));
+      height: max(32px, calc(var(--u) * 32));
+      border: 1px solid rgba(160, 215, 255, 0.4);
+      border-radius: 50%;
+      background: rgba(5, 10, 22, 0.5);
+      color: #e4f3ff;
+      font: 700 max(14px, calc(var(--u) * 16)) system-ui, sans-serif;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+    }
+    .mute-btn.off { opacity: 0.55; text-decoration: line-through; }
+
+    /* ---------- Telefon: menší okraje a celoobrazovkový režim hry ---------- */
+    .fs-exit {
+      display: none;
+      position: absolute;
+      top: calc(var(--u) * 8);
+      right: calc(var(--u) * 8);
+      z-index: 8;
+      width: max(40px, calc(var(--u) * 40));
+      height: max(40px, calc(var(--u) * 40));
+      border: 1px solid rgba(160, 215, 255, 0.5);
+      border-radius: 50%;
+      background: rgba(5, 10, 22, 0.55);
+      color: #e4f3ff;
+      font: 700 max(14px, calc(var(--u) * 16)) system-ui, sans-serif;
+      cursor: pointer;
+    }
+
+    .fs-only { display: none; }
+
+    body.fs { overflow: hidden; }
+    body.fs .fs-exit { display: block; }
+    body.fs .fs-only { display: inline-block; }
+    body.fs .nofs { display: none; }
+
+    /* Automat se schová a obrazovka hry se roztáhne na celý telefon */
+    body.fs .home, body.fs .cab-lines, body.fs .marquee,
+    body.fs .start-btn, body.fs .lever, body.fs .modebar { visibility: hidden; }
+
+    body.fs .screen {
+      --sw: min(100vw, 75vh);
+      --u: calc(var(--sw) / 400);
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      width: auto;
+      height: auto;
+      border-radius: 0;
+      box-shadow: none;
+      background: linear-gradient(to bottom, var(--bar-top) 50%, var(--bar-bot) 50%);
+      transition: --bar-top 1.5s linear, --bar-bot 1.5s linear;
+    }
+
+    /* Hřiště zůstává vždy 3:4 uprostřed, zbytek obrazovky vyplní barvy úrovně */
+    body.fs canvas {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: var(--sw);
+      height: calc(var(--sw) * 4 / 3);
+    }
+
+    @supports (height: 100svh) {
+      body.fs .screen { --sw: min(100vw, 75svh); }
+    }
+
+    /* Na dotykových zařízeních jsou postranní okraje menší, automat tedy vyjde větší */
+    @media (pointer: coarse) and (max-width: 900px) {
+      body { padding: 8px 10px; }
+      .machine { --ch: min(calc(100vh - 56px), calc((100vw - 20px) * 86 / 56), 1100px); }
+    }
+
+    @supports (height: 100svh) {
+      @media (pointer: coarse) and (max-width: 900px) {
+        .machine { --ch: min(calc(100svh - 56px), calc((100vw - 20px) * 86 / 56), 1100px); }
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .wdrop, .blink, .start-btn.ready, .cab-lines text,
       .pblock, .pblock::before, .pblock::after,
@@ -883,7 +983,7 @@
       .ml { opacity: 1; }
     }
   </style>
-</head>
+  </head>
 <body>
   <!-- Značka vlevo nahoře: zpočátku domeček, po příchodu z hlavní stránky kliknuté písmeno -->
   <a class="home" id="mark" href="index.html" aria-label="Zpět na hlavní stránku">
@@ -1065,18 +1165,21 @@
 
           <!-- GAME -->
           <div class="pane show" id="paneGame">
-            <canvas id="cvs" width="240" height="320"></canvas>
+            <canvas id="cvs" width="180" height="240"></canvas>
+            <button class="fs-exit" id="btnExit" type="button" aria-label="Exit game">✕</button>
 
             <div class="hud">
               <span class="weekline" id="weekLine"></span>
               <span id="timeEl">0.00</span>
               <span id="bestEl"></span>
               <span id="lvlEl"></span>
+              <span id="windEl"></span>
             </div>
 
             <div class="lvl-banner" id="lvlBanner" aria-hidden="true">
               <small id="lvlBannerNum"></small>
               <b id="lvlBannerName"></b>
+              <em id="lvlBannerHint"></em>
             </div>
 
             <div class="overlay show" id="ovStart">
@@ -1106,7 +1209,8 @@
                 <button class="btn" id="btnSubmit" type="submit">Submit</button>
               </form>
               <p class="ov-small" id="submitMsg"></p>
-              <p class="ov-small blink">PULL THE LEVER TO PLAY AGAIN</p>
+              <button class="btn fs-only" id="btnAgain" type="button">Play again</button>
+              <p class="ov-small blink nofs">PULL THE LEVER TO PLAY AGAIN</p>
             </div>
           </div>
 
@@ -1149,7 +1253,11 @@
               </section>
               <section>
                 <h2>LEVELS</h2>
-                <p>The longer you survive, the wilder it gets: <b>Drizzle</b> (0 s), <b>Storm</b> (30 s), <b>Acid rain</b> (90 s), <b>Meteors</b> (150 s) and finally the <b>Void</b> (240 s).</p>
+                <p>The longer you survive, the wilder it gets. There are <b>10 levels</b>, from the quiet <b>Drizzle</b> to the <b>Void</b> after ten minutes. Every level changes the weather: wind, wobbling acid, hail volleys, bouncing balls, meteors, curtains of rain, shattering ice and more..</p>
+              </section>
+              <section>
+                <h2>THE EDGES</h2>
+                <p>Don't hide by the wall. Stay near an edge for <b>5 seconds</b> and a boxing glove will punch you back toward the middle. It doesn't hurt, but it costs you your spot.</p>
               </section>
               <section>
                 <h2>GEAR</h2>
@@ -1202,34 +1310,54 @@
     // Zakázaná slova v přezdívkách (základní filtr, doplň si podle potřeby)
     const BLOCKED = ['fuck', 'shit', 'kurv', 'pica', 'pico', 'kokot', 'curak', 'hovno', 'debil'];
 
-    const GAIN = 1.6;            // citlivost tažení prstem
+    const GAIN = 1.25;           // citlivost tažení (1 = panáček ujede přesně tolik co prst)
 
     // Obtížnost: [sekunda, interval mezi kapkami (kroky), rychlost pádu]. Mezi body se plynule přechází.
     const CURVE = [
-      [0, 40, 1.1],
-      [30, 27, 1.5],
-      [90, 19, 1.9],
-      [150, 15, 2.2],
-      [240, 12, 2.5],
-      [400, 10, 2.8]
+      [0, 40, 1.1], [20, 32, 1.3], [40, 27, 1.45], [80, 25, 1.55], [130, 22, 1.7],
+      [180, 20, 1.85], [250, 18, 2.0], [350, 16, 2.15], [450, 15, 2.3], [600, 14, 2.4]
     ];
 
-    // Úrovně: od které sekundy, název, barva štítku a barvy prostředí
-    const LEVELS = [
-      { from: 0,   name: 'Drizzle',   accent: '#8fd0ff', sky: ['#060c1f', '#0e1c45'], stars: ['#2a3d78', '#6f8fe0'], line: '#7fa8e8', tile: ['#101c3a', '#16254a'] },
-      { from: 30,  name: 'Storm',     accent: '#9b8cff', sky: ['#0b0720', '#1d1448'], stars: ['#3a2f78', '#8f7bff'], line: '#8f7bff', tile: ['#150f33', '#1d1646'] },
-      { from: 90,  name: 'Acid rain', accent: '#b6ff3c', sky: ['#020d07', '#08281a'], stars: ['#1d5a36', '#3fb06a'], line: '#6dff9e', tile: ['#0a2416', '#0f3220'] },
-      { from: 150, name: 'Meteors',   accent: '#ff8a2a', sky: ['#1a0504', '#4d1608'], stars: ['#7a3014', '#d9602a'], line: '#ff7a3c', tile: ['#2a0e08', '#3a1509'] },
-      { from: 240, name: 'Void',      accent: '#ff3df0', sky: ['#000000', '#220520'], stars: ['#7a2a78', '#ffffff'], line: '#ff3df0', tile: ['#0a010a', '#160315'] }
-    ];
-
-    // Barvy kapek: světle modré, azurové, kyselé zelené a magenta (pro Void)
+    // Barvy kapek: světle modré, azurové, kyselé zelené a magenta
     const RAIN_PALS = [
       { body: '#c6e4ff', edge: '#6ea4d8', hi: '#ffffff' },
       { body: '#43c6ff', edge: '#1f86d0', hi: '#e2f7ff' },
       { body: '#b6ff3c', edge: '#5ea60a', hi: '#f4ffd0' },
       { body: '#ff4de0', edge: '#a8189a', hi: '#ffe0fa' }
     ];
+
+    // Úrovně: od které sekundy, název, barvy prostředí, druhy věcí co padají [druh, váha],
+    // síla větru (0 = žádný), řidší déšť (thin), záclony (curtain = pauza mezi nimi v krocích,
+    // slope = šikmá vlna), svítící kapky ve tmě (glow) a popisek, který se ukáže při přechodu
+    const LEVELS = [
+      { from: 0,   name: 'Drizzle',   accent: '#8fd0ff', sky: ['#060c1f', '#0e1c45'], stars: ['#2a3d78', '#6f8fe0'], line: '#7fa8e8', tile: ['#101c3a', '#16254a'],
+        pal: RAIN_PALS[0], kinds: [['rain', 1]], wind: 0, thin: 1, curtain: 0, slope: false, glow: false, hint: '' },
+      { from: 20,  name: 'Gale',      accent: '#7fe3d6', sky: ['#071418', '#10303a'], stars: ['#24505a', '#7cc8c0'], line: '#6cc0b8', tile: ['#0b222a', '#102f38'],
+        pal: { body: '#a8d8d0', edge: '#5f9a94', hi: '#effffc' }, kinds: [['rain', 1]], wind: 0.55, thin: 0.9, curtain: 0, slope: false, glow: false, hint: 'WIND PUSHES THE DROPS' },
+      { from: 40,  name: 'Acid rain', accent: '#b6ff3c', sky: ['#020d07', '#08281a'], stars: ['#1d5a36', '#3fb06a'], line: '#6dff9e', tile: ['#0a2416', '#0f3220'],
+        pal: RAIN_PALS[2], kinds: [['zig', 3], ['rain', 2]], wind: 0, thin: 1, curtain: 0, slope: false, glow: false, hint: 'BLOBS WOBBLE LEFT AND RIGHT' },
+      { from: 80,  name: 'Curtain',   accent: '#ffd45a', sky: ['#140e02', '#3a2a06'], stars: ['#6a5012', '#ffd45a'], line: '#ffcf4a', tile: ['#241a05', '#33250a'],
+        pal: { body: '#ffd45a', edge: '#b58400', hi: '#fff4c2' }, kinds: [['rain', 3], ['zig', 1]], wind: 0, thin: 1.6, curtain: 260, slope: false, glow: false, hint: 'RUN TO THE GOLDEN GAP' },
+      { from: 130, name: 'Meteors',   accent: '#ff8a2a', sky: ['#1a0504', '#4d1608'], stars: ['#7a3014', '#d9602a'], line: '#ff7a3c', tile: ['#2a0e08', '#3a1509'],
+        pal: RAIN_PALS[0], kinds: [['meteor', 3], ['rain', 2]], wind: 0, thin: 1.35, curtain: 0, slope: false, glow: false, hint: 'A WARNING SHOWS WHERE THEY COME FROM' },
+      { from: 180, name: 'Frost',     accent: '#9fe2ff', sky: ['#06141f', '#12425c'], stars: ['#2a6a8a', '#d8f4ff'], line: '#9fe2ff', tile: ['#0a2230', '#103244'],
+        pal: { body: '#bfeaff', edge: '#5fb4e6', hi: '#ffffff' }, kinds: [['rain', 3], ['ice', 2]], wind: 0.2, thin: 1.5, curtain: 0, slope: false, glow: false, hint: 'ICE SHATTERS MID-AIR' },
+      { from: 250, name: 'Cascade',   accent: '#6aa8ff', sky: ['#050b24', '#0b2a6a'], stars: ['#1f3a8a', '#8fb8ff'], line: '#6aa8ff', tile: ['#08143a', '#0d1f55'],
+        pal: { body: '#9fc4ff', edge: '#4a78d0', hi: '#ffffff' }, kinds: [['rain', 2], ['zig', 1]], wind: 0, thin: 1.7, curtain: 280, slope: true, glow: false, hint: 'THE WAVE TILTS. STAY IN THE GAP' },
+      { from: 350, name: 'Blackout',  accent: '#c8c8ff', sky: ['#000000', '#050508'], stars: ['#15151c', '#40405a'], line: '#6a6a8a', tile: ['#030305', '#07070b'],
+        pal: { body: '#f0f4ff', edge: '#7a86c0', hi: '#ffffff' }, kinds: [['rain', 3], ['zig', 2], ['meteor', 1]], wind: 0, thin: 1.25, curtain: 0, slope: false, glow: true, hint: 'YOU ONLY SEE WHAT SHINES' },
+      { from: 450, name: 'Tempest',   accent: '#ff7ad9', sky: ['#0b0720', '#1d1448'], stars: ['#3a2f78', '#8f7bff'], line: '#ff7ad9', tile: ['#150f33', '#1d1646'],
+        pal: RAIN_PALS[3], kinds: [['rain', 2], ['zig', 2], ['ice', 2], ['meteor', 1]], wind: 0.4, thin: 1.5, curtain: 340, slope: true, glow: false, hint: 'WIND, WAVES AND LIGHTNING' },
+      { from: 600, name: 'Void',      accent: '#ff3df0', sky: ['#000000', '#220520'], stars: ['#7a2a78', '#ffffff'], line: '#ff3df0', tile: ['#0a010a', '#160315'],
+        pals: RAIN_PALS, kinds: [['rain', 2], ['meteor', 2], ['ice', 1], ['zig', 2]], wind: 0.3, thin: 1.8, curtain: 300, slope: true, glow: false, hint: 'EVERYTHING AT ONCE' }
+    ];
+
+    // Boxerka u kraje: jak dlouho smíš stát u zdi (kroky) a jak daleko od zdi to je "u zdi"
+    const EDGE_ZONE = 22;        // pixelů od okraje hřiště
+    const EDGE_WARN = 180;       // po 3 s se pěst ukáže a třese se
+    const EDGE_PUNCH = 300;      // po 5 s udeří
+    const PUNCH_REACH = 38;      // jak daleko od zdi pěst dosáhne
+    const PUNCH_PUSH = 28;       // o kolik pixelů panáčka odsune ke středu
 
     // Úvod
     const INTRO_WORD_GAP = 370;  // jak rychle po sobě naskakují slova (ms)
@@ -1238,6 +1366,7 @@
     // Zkoušení v adrese:  ?gear=red|purple|green|diamond|none  (výbava panáčka)
     //                     ?demo=board  nebo  ?demo=champ        (ukázková tabule)
     //                     ?t=150                                (začátek hry od 150. sekundy, neukládá se)
+    //                     ?fs=1                                 (celoobrazovkový režim i na počítači)
     const query = new URLSearchParams(location.search);
     const gearParam = query.get('gear');
     const DEMO = query.get('demo');
@@ -1245,13 +1374,15 @@
 
     /* ================= ZÁKLAD ================= */
 
-    // Hrací pole je 240 x 320 (poměr 3:4). Šířka je oproti dřívější verzi (180) větší,
-    // proto se rychlost panáčka a hustota kapek přepočítává, aby hra byla stejně těžká.
-    const W = 240, H = 320, GROUND = 300;
+    // Hrací pole je 180 x 240 (poměr 3:4). Menší pole znamená, že panáček i kapky
+    // jsou na obrazovce větší (stejný obrázek se roztáhne na stejnou plochu).
+    const W = 180, H = 240, GROUND = 220;
     const WIDTH_SCALE = 180 / W;
-    const MAXSTEP = 2.4 * W / 180;             // nejvyšší rychlost panáčka (pixely za krok)
+    const TOUCH_MAX = 14;                      // nejvíc pixelů za jeden krok při tažení
+    const MAXSTEP = 2.7 * W / 180;             // rychlost panáčka při klávesách (pixely za krok)
     const STEP_MS = 1000 / 60;
-    const R = [2, 3, 4];                       // poloměry kapek podle velikosti
+    const FALL_SCALE = 0.85;                   // pole je nižší, tak kapky padají o něco pomaleji
+    const R = [2, 3, 4];                       // poloměry kapek podle velikosti                       // poloměry kapek podle velikosti
 
     const $ = id => document.getElementById(id);
     const screenEl = $('screen');
@@ -1396,9 +1527,12 @@
     let boltFrame = -99;
 
     function newSim() {
+      const lv0 = levelAt(START_T / 60);
       sim = {
         t: START_T, px: W / 2, dir: 1, runTick: 0, idle: 99,
-        drops: [], spawnIn: 30, dead: false, lv: levelAt(START_T / 60)
+        drops: [], spawnIn: 30, dead: false, lv: lv0, lastLv: lv0,
+        curtainIn: 200, marks: [], wait: [],
+        edgeT: 0, edgeSide: 0, punch: null, knockLeft: 0, knockDir: 0
       };
       rng = mulberry32(hashString('fonger-dodge-240-' + week));
       pend = 0;
@@ -1417,31 +1551,137 @@
       for (let i = 1; i < CURVE.length; i++) {
         if (sec < CURVE[i][0]) {
           const a = CURVE[i - 1], b = CURVE[i], k = (sec - a[0]) / (b[0] - a[0]);
-          return { interval: a[1] + (b[1] - a[1]) * k, speed: a[2] + (b[2] - a[2]) * k };
+          return { interval: a[1] + (b[1] - a[1]) * k, speed: (a[2] + (b[2] - a[2]) * k) * FALL_SCALE };
         }
       }
       const z = CURVE[CURVE.length - 1];
-      return { interval: z[1], speed: z[2] };
+      return { interval: z[1], speed: z[2] * FALL_SCALE };
     }
 
-    // Přidá jednu věc: kapku (v úrovních 1 až 3 a 5) nebo meteor (v úrovních 4 a 5)
+    // Vybere druh věci podle vah úrovně (náhoda ze semínka)
+    function pickKind(list) {
+      let total = 0;
+      for (let i = 0; i < list.length; i++) total += list[i][1];
+      let r = rng() * total;
+      for (let i = 0; i < list.length; i++) {
+        r -= list[i][1];
+        if (r < 0) return list[i][0];
+      }
+      return list[0][0];
+    }
+
+    // Vítr: plynule se mění z jedné strany na druhou (cyklus asi 25 s) a k tomu rychlejší nárazy
+    function windAt(t, amp) {
+      return amp ? (Math.sin(t / 240) + Math.sin(t / 77) * 0.35) * amp / 1.35 : 0;
+    }
+
+    // Přidá jednu věc: kapku, vlnící se kapku, kroupu, salvu, míč, ledovou kapku nebo meteor
     function spawnOne(s, cv) {
-      const lv = s.lv;
-      const meteor = lv === 3 || (lv === 4 && rng() < 0.4);
-      if (meteor) {
+      const L = LEVELS[s.lv];
+      const kind = pickKind(L.kinds);
+      const pal = L.pals ? L.pals[Math.floor(rng() * L.pals.length)] : L.pal;
+
+      if (kind === 'meteor') {
         const x = 12 + rng() * (W - 24);
         const big = rng() < 0.3;
-        const vy = cv.speed + 0.9 + rng() * 0.8 - (big ? 0.3 : 0);
+        const vy = cv.speed * 0.9 + 0.5 + rng() * 0.6 - (big ? 0.2 : 0);
         let dir = rng() < 0.5 ? -1 : 1;
         if (x < W * 0.3) dir = 1; else if (x > W * 0.7) dir = -1;     // u kraje letí dovnitř
         const vx = dir * (0.4 + rng() * 0.8);
-        s.drops.push({ x: x, y: -10, vx: vx, vy: vy, r: big ? 4.5 : 3, m: true, big: big });
+                // varování: meteor se objeví až o 0,75 s později, nahoře zatím bliká značka
+        s.wait.push({ at: s.t + 45, drop: { x: x, y: -10, vx: vx, vy: vy, r: big ? 4.5 : 3, m: true, big: big, pal: pal } });
+      } else if (kind === 'zig') {
+        // vlnící se kapka: padá po sinusovce, takže se nedá odhadnout podle prvního pohledu
+        const amp = 12 + rng() * 8;
+        const x0 = amp + 8 + rng() * (W - 2 * amp - 16);
+        s.drops.push({ x: x0, y: -10, vx: 0, vy: cv.speed * 0.8 + rng() * 0.3, r: 4, m: false, z: true, x0: x0, amp: amp, ph: rng() * 6.28, fq: 0.035 + rng() * 0.02, w: false, pal: pal });
+      } else if (kind === 'volley') {
+        // salva kroupy: tři kroupy šikmo za sebou po jedné čáře
+        const dir = rng() < 0.5 ? -1 : 1;
+        const x = clamp(W / 2 - dir * (30 + rng() * 40), 14, W - 14);
+        const vy = cv.speed * 1.35 + rng() * 0.4;
+        for (let i = 0; i < 3; i++) {
+          s.drops.push({ x: x + dir * i * 11, y: -8 - i * 11 * (vy / 0.55), vx: dir * 0.55, vy: vy, r: 2, m: false, h: true, w: false, pal: pal });
+        }
+      } else if (kind === 'bounce') {
+        // míč: po dopadu se odrazí zpátky nahoru a ještě jednou
+        const dir = rng() < 0.5 ? -1 : 1;
+        const x = clamp(W / 2 - dir * (20 + rng() * 55), 12, W - 12);
+        s.drops.push({ x: x, y: -10, vx: dir * (0.5 + rng() * 0.6), vy: cv.speed * 0.6, r: 4, m: false, b: true, bounces: 0, w: false, pal: pal });
+      } else if (kind === 'hail') {
+        const x = 6 + rng() * (W - 12);
+        s.drops.push({ x: x, y: -8, vx: 0, vy: cv.speed * 1.5 + rng() * 0.8, r: 2, m: false, h: true, w: true, pal: pal });
+      } else if (kind === 'ice') {
+        const x = 24 + rng() * (W - 48);
+        s.drops.push({ x: x, y: -10, vx: 0, vy: cv.speed * 0.8 + rng() * 0.4, r: 4, m: false, ice: true, splitY: 70 + rng() * 70, w: true, pal: pal });
       } else {
         const x = 6 + rng() * (W - 12);
-        const kind = rng() < 0.2 ? 2 : (rng() < 0.5 ? 1 : 0);
+        const size = rng() < 0.2 ? 2 : (rng() < 0.5 ? 1 : 0);
         const speed = cv.speed + rng() * 0.7;
-        const pal = lv === 4 ? RAIN_PALS[Math.floor(rng() * 4)] : RAIN_PALS[Math.min(lv, 2)];
-        s.drops.push({ x: x, y: -8, vx: 0, vy: speed, r: R[kind], m: false, pal: pal });
+        s.drops.push({ x: x, y: -8, vx: 0, vy: speed, r: R[size], m: false, w: true, pal: pal });
+      }
+    }
+
+    // Záclona: řada kapek přes celé hřiště s jednou mezerou
+    function spawnCurtain(s, cv) {
+      const L = LEVELS[s.lv];
+      const gx = 28 + rng() * (W - 56);
+      const pal = L.pals ? L.pals[Math.floor(rng() * L.pals.length)] : L.pal;
+      const vy = cv.speed * 0.85;
+      const tilt = rng() < 0.5 ? -1 : 1;                       // šikmá vlna: jedna strana dopadne dřív
+      for (let x = 6; x <= W - 6; x += 12) {
+        if (Math.abs(x - gx) < 17) continue;
+        const off = L.slope ? (tilt > 0 ? x : W - x) * 0.4 : 0;
+        s.drops.push({ x: x, y: -8 - off, vx: 0, vy: vy, r: 3, m: false, w: false, pal: pal });
+      }
+      s.marks.push({ x: gx, t: s.t });
+      s.spawnIn = Math.max(s.spawnIn, 100);        // během záclony chvíli žádný další déšť, ať je mezera opravdu volná
+    }
+
+    // Ledová kapka se v půlce pádu rozlomí na 3 střepy
+    function shatter(s, d) {
+      const vxs = [-0.9, 0, 0.9];
+      for (let i = 0; i < 3; i++) {
+        s.drops.push({ x: d.x, y: d.y, vx: vxs[i], vy: d.vy * 0.9, r: 2, m: false, h: true, w: true, pal: d.pal });
+      }
+      for (let i = 0; i < 10; i++) {
+        fx.push({ x: d.x, y: d.y, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3, life: 0.8, c: '#ffffff', g: 0 });
+      }
+    }
+
+    // Boxerka: kdo stojí u zdi, po 5 s dostane pěstí a odletí ke středu (bez zranění)
+    function stepGlove(s) {
+      const side = s.px < EDGE_ZONE ? -1 : (s.px > W - EDGE_ZONE ? 1 : 0);
+
+      if (side && !s.punch) {
+        if (s.edgeSide !== side) { s.edgeSide = side; s.edgeT = 0; }
+        s.edgeT++;
+      } else if (s.edgeT > 0) {
+        s.edgeT = Math.max(0, s.edgeT - 1.5);
+      }
+
+      if (s.edgeT >= EDGE_PUNCH && !s.punch) {
+        s.punch = { side: s.edgeSide, t: 0 };
+        s.edgeT = 0;
+      }
+
+      if (s.punch) {
+        s.punch.t++;
+        if (s.punch.t === 5) {
+          const dist = s.punch.side < 0 ? s.px : W - s.px;
+          if (dist < PUNCH_REACH) {
+            s.knockLeft = PUNCH_PUSH;
+            s.knockDir = -s.punch.side;
+            pend = 0;
+            if (!reduceMotion) shakeUntil = performance.now() + 220;
+            if (navigator.vibrate) navigator.vibrate(30);
+            const wx = s.punch.side < 0 ? 0 : W;
+            for (let i = 0; i < 12; i++) {
+              fx.push({ x: wx, y: GROUND - 12, vx: -s.punch.side * (1 + Math.random() * 2.2), vy: -1.5 + Math.random() * 1.2, life: 1, c: i % 2 ? '#ffd0d6' : '#ff5a6e', g: 0.1 });
+            }
+          }
+        }
+        if (s.punch.t > 17) s.punch = null;
       }
     }
 
@@ -1449,17 +1689,25 @@
       const s = sim;
       s.t++;
 
-      // pohyb panáčka
+      // pohyb panáčka: vlastní pohyb a případné odsunutí boxerkou
       let move = 0;
       if (keys.left) move -= MAXSTEP;
       if (keys.right) move += MAXSTEP;
-      if (!move && Math.abs(pend) > 0.05) {
-        move = clamp(pend, -MAXSTEP, MAXSTEP);
-        pend -= move;
+      if (!move && Math.abs(pend) > 0.01) {
+        // tažení prstem/myší: panáček ujede přesně to, co prst, a nic nedojíždí
+        move = clamp(pend, -TOUCH_MAX, TOUCH_MAX);
+        pend = 0;
       }
-      s.px = clamp(s.px + move, 7, W - 7);
-      if (move) {
-        s.dir = move > 0 ? 1 : -1;
+      let kb = 0;
+      if (s.knockLeft > 0) {
+        kb = Math.min(s.knockLeft, 4);
+        s.knockLeft -= kb;
+        kb *= s.knockDir;
+      }
+      s.px = clamp(s.px + move + kb, 7, W - 7);
+      const mv = move || kb;
+      if (mv) {
+        s.dir = mv > 0 ? 1 : -1;
         s.idle = 0;
         s.runTick++;
         if (s.runTick % 7 === 0) puff(s.px - s.dir * 4, GROUND);
@@ -1467,23 +1715,44 @@
         s.idle++;
       }
 
+      stepGlove(s);
+
       // úroveň a nové kapky: všechna náhoda závisí jen na semínku, ne na hráči
       const sec = s.t / 60;
       s.lv = levelAt(sec);
+      const L = LEVELS[s.lv];
+      if (s.lv !== s.lastLv) { s.lastLv = s.lv; s.curtainIn = 200; }
 
       s.spawnIn--;
       if (s.spawnIn <= 0) {
         const cv = curveAt(sec);
         const burstN = rng() < Math.min(0.30, sec / 300) ? 2 : 1;
         for (let b = 0; b < burstN; b++) spawnOne(s, cv);
-        s.spawnIn = cv.interval * WIDTH_SCALE * (0.6 + rng() * 0.8);
+        const calm = (s.lv > 0 && s.t - L.from * 60 < 180) ? 1.8 : 1;       // první 3 s nové úrovně jsou klidnější
+        s.spawnIn = cv.interval * WIDTH_SCALE * calm * L.thin * (0.6 + rng() * 0.8);
+      }
+
+      if (L.curtain) {
+        s.curtainIn--;
+        if (s.curtainIn <= 0) {
+          spawnCurtain(s, curveAt(sec));
+          s.curtainIn = L.curtain + rng() * 120;
+        }
+      }
+      while (s.marks.length && s.t - s.marks[0].t > 190) s.marks.shift();
+      for (let i = s.wait.length - 1; i >= 0; i--) {
+        if (s.t >= s.wait[i].at) { s.drops.push(s.wait[i].drop); s.wait.splice(i, 1); }
       }
 
       // pohyb kapek a zásahy (kolize se počítá vždy z malého panáčka, výbava ji nemění)
+      const wind = windAt(s.t, L.wind);
       for (let i = s.drops.length - 1; i >= 0; i--) {
         const d = s.drops[i];
+        if (d.b) d.vy += 0.05;                               // míč: gravitace
         d.y += d.vy;
-        d.x += d.vx;
+        if (d.z) d.x = d.x0 + Math.sin(d.ph + d.y * d.fq) * d.amp;
+        else d.x += d.vx + (d.w ? wind : 0);
+        if (d.b && (d.x < 6 || d.x > W - 6)) { d.vx = -d.vx; d.x = clamp(d.x, 6, W - 6); }
 
         const r = d.r * 0.85;
         const cx = clamp(d.x, s.px - 3.5, s.px + 3.5);
@@ -1492,6 +1761,20 @@
         if (dx * dx + dy * dy < r * r) {
           die();
           return;
+        }
+
+        if (d.ice && d.y >= d.splitY) {
+          s.drops.splice(i, 1);
+          shatter(s, d);
+          continue;
+        }
+
+        if (d.b && d.y + d.r >= GROUND && d.bounces < 2) {
+          d.bounces++;
+          d.y = GROUND - d.r;
+          d.vy = -Math.abs(d.vy) * 0.68;
+          splashGround(Object.assign({}, d, { r: 2 }));
+          continue;
         }
 
         if (d.y + d.r >= GROUND) {
@@ -1541,8 +1824,7 @@
         if (p.life <= 0 || p.y > H) fx.splice(i, 1);
       }
     }
-
-    /* ================= KRESLENÍ ================= */
+        /* ================= KRESLENÍ ================= */
 
     // Pozadí každé úrovně se nakreslí jednou
     function paintBackground(L, seed) {
@@ -1625,14 +1907,148 @@
       px(cx - c + 1, cy - c + 1, c, c, '#ffe9a8');
       dctx.restore();
     }
+        // Vlnící se kapka: kulatý slizký flek s bublinkami za sebou
+    function drawBlob(d) {
+      const p = d.pal, r = d.r, cx = Math.round(d.x), cy = Math.round(d.y);
+      for (let dy = -r - 1; dy <= r + 1; dy++) {
+        const hw = Math.floor(Math.sqrt((r + 1) * (r + 1) - dy * dy + 0.5));
+        px(cx - hw, cy + dy, hw * 2 + 1, 1, p.edge);
+      }
+      for (let dy = -r; dy <= r; dy++) {
+        const hw = Math.floor(Math.sqrt(r * r - dy * dy + 0.5));
+        px(cx - hw, cy + dy, hw * 2 + 1, 1, p.body);
+      }
+      px(cx - 2, cy - 2, 2, 2, p.hi);
+      px(cx + 1, cy + 1, 1, 1, p.edge);
+      const trail = Math.sin(d.ph + d.y * d.fq);
+      px(cx - Math.round(trail * 3), cy - r - 3, 2, 2, p.body);          // bublinky za ním
+      px(cx - Math.round(trail * 5), cy - r - 7, 1, 1, p.body);
+    }
+
+    // Míč: kulatý s pruhem, před dopadem se trochu zploští
+    function drawBall(d) {
+      const p = d.pal, r = d.r, cx = Math.round(d.x), cy = Math.round(d.y);
+      const squash = d.vy > 0 && d.y > GROUND - r - 6 ? 1 : 0;
+      for (let dy = -r + squash; dy <= r; dy++) {
+        const hw = Math.floor(Math.sqrt((r + 1) * (r + 1) - dy * dy + 0.5)) + (squash ? 1 : 0);
+        px(cx - hw, cy + dy, hw * 2 + 1, 1, p.edge);
+      }
+      for (let dy = -r + 1 + squash; dy <= r - 1; dy++) {
+        const hw = Math.floor(Math.sqrt(r * r - dy * dy + 0.5)) + (squash ? 1 : 0);
+        px(cx - hw, cy + dy, hw * 2 + 1, 1, p.body);
+      }
+      px(cx - 2, cy - 2, 2, 1, p.hi);
+      px(cx - r + 1, cy, r * 2 - 1, 1, p.edge);                          // pruh
+    }
+
+    // Kroupa: malá ledová kulička s krátkou stopou
+    function drawHail(d) {
+      const p = d.pal, cx = Math.round(d.x), cy = Math.round(d.y);
+      dctx.save();
+      dctx.globalAlpha = 0.35;
+      px(cx, cy - 7, 1, 5, p.hi);
+      dctx.restore();
+      px(cx - 1, cy - 1, 3, 3, p.body);
+      px(cx + 1, cy, 1, 2, p.edge);
+      px(cx, cy + 1, 2, 1, p.edge);
+      px(cx - 1, cy - 1, 1, 1, p.hi);
+    }
+
+    // Ledová kapka: před rozlomením bliká do bíla
+    const FLASH_PAL = { body: '#ffffff', edge: '#bfeaff', hi: '#ffffff' };
+    function drawIce(d) {
+      const flash = d.y > d.splitY - 26 && (sim.t % 6 < 3);
+      drawRain(flash ? Object.assign({}, d, { pal: FLASH_PAL }) : d);
+    }
+
+    // Záře kolem kapky (ve tmě v úrovni Blackout)
+    function drawHalo(d) {
+      const col = d.m ? '255,140,60' : '210,225,255';
+      const g = dctx.createRadialGradient(d.x, d.y, 1, d.x, d.y, 11);
+      g.addColorStop(0, 'rgba(' + col + ',0.38)');
+      g.addColorStop(1, 'rgba(' + col + ',0)');
+      dctx.fillStyle = g;
+      dctx.fillRect(d.x - 11, d.y - 11, 22, 22);
+    }
 
     function drawDrop(d) {
-      if (d.m) drawMeteor(d); else drawRain(d);
+      if (LEVELS[bgLv].glow) drawHalo(d);
+      if (d.m) drawMeteor(d);
+      else if (d.h) drawHail(d);
+      else if (d.ice) drawIce(d);
+      else if (d.z) drawBlob(d);
+      else if (d.b) drawBall(d);
+      else drawRain(d);
+    }
+
+    // Záclona: zlatý sloupec světla ukazuje, kde je mezera
+    // Meteor se ohlašuje: nahoře bliká vykřičník se šipkou ve směru letu
+    function drawWarns() {
+      if (!((frameCount >> 2) & 1)) return;
+      sim.wait.forEach(function (w) {
+        const x = Math.round(w.drop.x), dir = w.drop.vx > 0 ? 1 : -1;
+        px(x - 1, 3, 3, 7, '#ff5a1e');
+        px(x - 1, 12, 3, 3, '#ff5a1e');
+        px(x + dir * 5, 6, 2, 2, '#ffb04a');
+        px(x + dir * 8, 6, 2, 2, '#ffb04a');
+      });
+    }
+
+    // Záclona: zlatý sloupec světla svítí, dokud záclona nedopadne
+    function drawMarks() {
+      sim.marks.forEach(function (m) {
+        const a = Math.max(0, Math.min(1, (190 - (sim.t - m.t)) / 40)) * 0.4;
+        const g = dctx.createLinearGradient(0, 0, 0, GROUND);
+        g.addColorStop(0, 'rgba(255,212,90,' + a.toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(255,212,90,' + (a * 0.3).toFixed(3) + ')');
+        dctx.fillStyle = g;
+        dctx.fillRect(Math.round(m.x) - 17, 0, 34, GROUND);
+      });
+    }
+
+    // Blackout: světelná kaluž kolem panáčka
+    function drawLightPool(x) {
+      const g = ctx.createRadialGradient(x, GROUND - 6, 4, x, GROUND - 6, 80);
+      g.addColorStop(0, 'rgba(210,210,255,0.22)');
+      g.addColorStop(1, 'rgba(210,210,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x - 80, GROUND - 86, 160, 100);
+    }
+
+    // Boxerka u zdi: kreslí se v souřadnicích levé zdi, pravá je zrcadlově
+    function drawGlove(side, ext, shake) {
+      const y = GROUND - 17 + (shake ? (frameCount % 2 ? 1 : -1) : 0);
+      const X = (x, w) => side < 0 ? x : W - x - w;
+      px(X(0, Math.max(0, ext - 9)), y + 3, Math.max(0, ext - 9), 3, '#8892a8');     // paže
+      px(X(ext - 9, 7), y - 4, 7, 5, '#3a0610');                                      // obrys palce
+      px(X(ext - 11, 12), y - 1, 12, 11, '#3a0610');                                  // obrys pěsti
+      px(X(ext - 8, 5), y - 3, 5, 3, '#ff3b4d');                                      // palec
+      px(X(ext - 10, 10), y, 10, 9, '#ff3b4d');                                       // pěst
+      px(X(ext - 9, 6), y + 1, 6, 2, '#ff9aa6');                                      // odlesk
+      px(X(ext - 14, 4), y + 1, 4, 7, '#f2f4fa');                                     // manžeta
+    }
+
+    function drawGloveState() {
+      const s = sim;
+      if (s.punch) {
+        const t = s.punch.t;
+        const ext = t <= 5 ? 8 + (PUNCH_REACH + 6 - 8) * t / 5 : (PUNCH_REACH + 6) - (t - 5) * ((PUNCH_REACH - 2) / 12);
+        drawGlove(s.punch.side, Math.max(6, ext), false);
+      } else if (s.edgeT >= EDGE_WARN) {
+        const k = clamp((s.edgeT - EDGE_WARN) / (EDGE_PUNCH - EDGE_WARN), 0, 1);
+        const ext = 6 + 8 * k;
+        drawGlove(s.edgeSide, ext, true);
+        if (s.edgeT > 240 && ((frameCount >> 2) & 1)) {
+          px(s.edgeSide < 0 ? ext + 5 : W - ext - 7, GROUND - 32, 2, 6, '#ff3b4d');
+          px(s.edgeSide < 0 ? ext + 5 : W - ext - 7, GROUND - 24, 2, 2, '#ff3b4d');
+        }
+      }
     }
 
     // Co je vidět na pozadí: aktuální úroveň a plynulý přechod z předchozí
     let bgLv = 0, bgPrev = 0, bgFade = 1, flashUntil = 0;
-    const GROUND_GLOW = { 3: '255,90,20', 4: '255,61,240' };
+    let barLv = -1;
+    const GROUND_GLOW = { 5: '255,90,20', 9: '255,61,240' };
 
     function drawBackground() {
       const idle = state === 'menu' || state === 'count';
@@ -1640,6 +2056,12 @@
       if (idle) { bgLv = 0; bgPrev = 0; bgFade = 1; }
       else if (target !== bgLv) { bgPrev = bgLv; bgLv = target; bgFade = 0; }
       bgFade = Math.min(1, bgFade + 1 / 90);
+
+      if (barLv !== bgLv) {
+        barLv = bgLv;
+        screenEl.style.setProperty('--bar-top', LEVELS[bgLv].sky[0]);
+        screenEl.style.setProperty('--bar-bot', LEVELS[bgLv].tile[0]);
+      }
 
       if (bgFade < 1) {
         ctx.drawImage(BGS[bgPrev], 0, 0);
@@ -1651,7 +2073,7 @@
       }
 
       // Storm: občas zablesk
-      if (bgLv === 1 && !reduceMotion && state === 'play' && frameCount > flashUntil + 150 && Math.random() < 0.006) flashUntil = frameCount + 7;
+      if (bgLv === 4 && !reduceMotion && state === 'play' && frameCount > flashUntil + 150 && Math.random() < 0.006) flashUntil = frameCount + 7;
       if (frameCount < flashUntil) {
         ctx.fillStyle = ((flashUntil - frameCount) % 3 === 0) ? 'rgba(190,180,255,0.07)' : 'rgba(190,180,255,0.2)';
         ctx.fillRect(0, 0, W, GROUND);
@@ -1982,11 +2404,14 @@
         drawAvatar(W / 2, GROUND, -1, 1, blink, gear, false);
         if (gear) gearFx(W / 2, GROUND, gear, false, 1);
       } else if (sim) {
+        if (LEVELS[bgLv].glow && !sim.dead) drawLightPool(sim.px);
+        drawMarks();
+        drawMarks();
         sim.drops.forEach(drawDrop);
         if (sim.dead) {
           drawSplat(sim.px, pal);
         } else {
-          const moving = sim.idle < 6;
+          const moving = sim.idle < 3;
           const fr = moving ? Math.floor(sim.runTick / 5) % 4 : -1;
           if (gear === 'purple') {
             ghostHist.push({ x: sim.px, dir: sim.dir, fr: fr });
@@ -1994,6 +2419,7 @@
           }
           drawAvatar(sim.px, GROUND, fr, sim.dir, blink, gear, moving);
           if (gear && state !== 'paused') gearFx(sim.px, GROUND, gear, moving, sim.dir);
+          drawGloveState();
         }
       }
 
@@ -2041,8 +2467,7 @@
         drawFx();
       });
     }
-
-    /* ================= PRŮBĚH HRY ================= */
+        /* ================= PRŮBĚH HRY ================= */
 
     function show(id) {
       ['ovStart', 'ovCount', 'ovPause', 'ovOver'].forEach(k => $(k).classList.toggle('show', k === id));
@@ -2099,6 +2524,7 @@
       $('lvlBanner').classList.remove('go');
       burst(sim.px, GROUND);
       if (!reduceMotion) shakeUntil = performance.now() + 260;
+      if (navigator.vibrate) navigator.vibrate(60);
 
       let note = '';
       if (START_T) {
@@ -2145,25 +2571,54 @@
       last = performance.now();
     }
 
+    // Celoobrazovkový režim: na dotykových zařízeních (nebo zkušebně s ?fs=1)
+    const fsMq = window.matchMedia('(pointer: coarse) and (max-width: 900px)');
+    function enterFs() { if (fsMq.matches || query.get('fs')) document.body.classList.add('fs'); }
+    function exitFs() { document.body.classList.remove('fs'); }
+
+    // Křížek: zpátky na úvodní obrazovku automatu
+    function exitToMenu() {
+      countToken++;
+      state = 'menu';
+      exitFs();
+      show('ovStart');
+      $('timeEl').textContent = '0.00';
+    }
+
     // Společný vstup pro páku, tlačítko START a klávesnici
     function startRound() {
       if (mode !== 'game') setMode('game');
       if (state === 'paused') { resumeGame(); return; }
       if (state === 'count' || state === 'play') return;
       if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+      enterFs();
       startCountdown();
     }
 
     /* ================= ÚROVNĚ: štítek a nápis při změně ================= */
 
     let shownLv = -1;
+    let windTxt = '';
 
     function syncLevel() {
       if (state === 'menu' || state === 'count') {
         if (shownLv !== -1) { shownLv = -1; $('lvlEl').textContent = ''; }
+        if (windTxt) { windTxt = ''; $('windEl').textContent = ''; }
         return;
       }
-      if (state === 'over' || sim.lv === shownLv) return;
+      if (state === 'over') return;
+
+      // šipky větru pod štítkem úrovně
+      const L0 = LEVELS[sim.lv];
+      let wt = '';
+      if (L0.wind) {
+        const k = clamp(windAt(sim.t, L0.wind) / L0.wind, -1, 1);   // -1 až 1;           // -1 až 1
+        const n = 1 + Math.floor(Math.abs(k) * 2.99);
+        wt = Math.abs(k) < 0.15 ? 'WIND ·' : (k > 0 ? 'WIND ' + '›'.repeat(n) : '‹'.repeat(n) + ' WIND');
+      }
+      if (wt !== windTxt) { windTxt = wt; $('windEl').textContent = wt; }
+
+      if (sim.lv === shownLv) return;
 
       shownLv = sim.lv;
       const L = LEVELS[shownLv];
@@ -2175,6 +2630,7 @@
       const banner = $('lvlBanner');
       $('lvlBannerNum').textContent = 'LEVEL ' + (shownLv + 1);
       $('lvlBannerName').textContent = L.name.toUpperCase();
+      $('lvlBannerHint').textContent = L.hint || '';
       banner.style.setProperty('--lc', L.accent);
       banner.classList.remove('go');
       void banner.offsetWidth;                 // vynutí překreslení, aby se animace spustila znovu
@@ -2204,6 +2660,7 @@
       updateFx(frameDt);
       draw();
       syncLevel();
+      music.setActive(state === 'play' || state === 'count');
       if (mode === 'score') minis.forEach(drawMini);
 
       // zatřesení obrazovky při zásahu
@@ -2263,11 +2720,11 @@
       const dx = e.clientX - lastX;
       lastX = e.clientX;
       if (state === 'play') {
-        pend = clamp(pend + dx * (W / paneGame.clientWidth) * GAIN, -40, 40);
+        pend = clamp(pend + dx * (W / cvs.clientWidth) * GAIN, -40, 40);
       }
     });
 
-    const stopDrag = () => { dragging = false; };
+    const stopDrag = () => { dragging = false; pend = 0; };
     paneGame.addEventListener('pointerup', stopDrag);
     paneGame.addEventListener('pointercancel', stopDrag);
 
@@ -2301,6 +2758,8 @@
 
     $('btnResume').addEventListener('click', resumeGame);
     $('btnStart').addEventListener('click', startRound);
+    $('btnExit').addEventListener('click', exitToMenu);
+    $('btnAgain').addEventListener('click', startRound);
 
     /* ================= PÁKA ================= */
 
@@ -2690,6 +3149,127 @@
     } else {
       runIntro();
     }
+    /* ================= HUDBA (lehká smyčka přímo z kódu, bez souborů) ================= */
+
+    const music = (function () {
+      const BPM = 88;
+      const SIXT = 60 / BPM / 4;                 // délka šestnáctinové noty v sekundách
+      const VOLUME = 0.5;                        // celková hlasitost (0 až 1), hudba je jen do pozadí
+      const hz = n => 440 * Math.pow(2, (n - 69) / 12);
+
+      // Akordy: Am, F, C, G (každý jeden takt)
+      const CHORDS = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];
+      // Melodie po taktech (čísla not, null = ticho), 16 kroků na takt
+      const MELODY = [
+        [76, null, null, 72, null, null, 74, null, 72, null, null, null, 69, null, null, null],
+        [72, null, null, 69, null, null, 72, null, 74, null, null, null, 72, null, null, null],
+        [76, null, null, 79, null, null, 76, null, 74, null, null, null, 72, null, null, null],
+        [74, null, null, 71, null, null, 67, null, 71, null, null, null, 74, null, null, null]
+      ];
+      const ARP = [0, 1, 2, 1];
+
+      let ac = null, master = null, timer = null;
+      let muted = false, active = false, step = 0, nextT = 0;
+      try { muted = localStorage.getItem('fonger-muted') === '1'; } catch (e) {}
+
+      function ensure() {
+        if (ac) return true;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        ac = new AC();
+        const filter = ac.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 2600;
+        master = ac.createGain();
+        master.gain.value = 0;
+        master.connect(filter);
+        filter.connect(ac.destination);
+        return true;
+      }
+
+      function note(type, freq, t, dur, vol) {
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g);
+        g.connect(master);
+        o.start(t);
+        o.stop(t + dur + 0.05);
+      }
+
+      function schedule(i, t) {
+        const bar = Math.floor(i / 16) % 4;
+        const s = i % 16;
+        const ch = CHORDS[bar];
+        if (s % 8 === 0) note('triangle', hz(ch[0] - 12), t, SIXT * 7, 0.22);                    // basa
+        if (s % 2 === 0) note('square', hz(ch[ARP[(s / 2) % 4]] + 12), t, SIXT * 1.6, 0.035);    // jemné arpeggio
+        const m = MELODY[bar][s];
+        if (m) note('triangle', hz(m), t, SIXT * 3.5, 0.11);                                      // melodie
+      }
+
+      function tick() {
+        while (nextT < ac.currentTime + 0.25) {
+          schedule(step, nextT);
+          nextT += SIXT;
+          step = (step + 1) % 64;
+        }
+      }
+
+      function apply() {
+        if (!ac) return;
+        const on = active && !muted;
+        master.gain.cancelScheduledValues(ac.currentTime);
+        master.gain.setTargetAtTime(on ? VOLUME : 0, ac.currentTime, 0.25);
+        if (on && !timer) {
+          if (ac.state === 'suspended') ac.resume();
+          nextT = Math.max(nextT, ac.currentTime + 0.05);
+          timer = setInterval(tick, 60);
+        } else if (!on && timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+      }
+
+      // Prohlížeč pustí zvuk až po klepnutí nebo stisku klávesy, tak to hlídáme
+      function unlock() {
+        if (!ensure()) return;
+        if (ac.state === 'suspended') ac.resume();
+        apply();
+      }
+      ['pointerup', 'click', 'keydown', 'touchend'].forEach(ev => document.addEventListener(ev, unlock, { passive: true }));
+
+      // Tlačítko ztlumení v rohu obrazovky
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mute-btn';
+      btn.setAttribute('aria-label', 'Music on or off');
+      function paintBtn() {
+        btn.textContent = muted ? '♪̸' : '♪';
+        btn.classList.toggle('off', muted);
+      }
+      paintBtn();
+      btn.addEventListener('pointerdown', e => e.stopPropagation());
+      btn.addEventListener('click', () => {
+        muted = !muted;
+        try { localStorage.setItem('fonger-muted', muted ? '1' : '0'); } catch (e) {}
+        paintBtn();
+        unlock();
+        apply();
+      });
+      screenEl.appendChild(btn);
+
+      return {
+        setActive(v) {
+          if (v === active) return;
+          active = v;
+          apply();
+        }
+      };
+    })();
 
     /* ================= START ================= */
 
