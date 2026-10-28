@@ -16,8 +16,6 @@
     @property --bar-top { syntax: '<color>'; inherits: true; initial-value: #060c1f; }
     @property --bar-bot { syntax: '<color>'; inherits: true; initial-value: #101c3a; }
 
-    html.intro-on, html.intro-on body { overflow: hidden; }
-
     body {
       box-sizing: border-box;
       overflow-x: hidden;
@@ -40,63 +38,6 @@
       background:
         radial-gradient(ellipse 30% 16% at 50% 14%, rgba(255, 90, 170, 0.12), transparent 70%),
         radial-gradient(ellipse 40% 55% at 50% 50%, rgba(60, 120, 220, 0.14), transparent 70%);
-    }
-
-    /* ======================================================
-       ÚVOD: WELCOME TO THE GAME
-       ====================================================== */
-    .intro {
-      position: fixed;
-      inset: 0;
-      z-index: 25;                    /* před automatem */
-      display: grid;
-      place-items: center;
-      pointer-events: none;
-    }
-
-    .intro.hop2 { z-index: 5; }       /* za automatem */
-
-    .phrase {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.1em 0.4em;
-      max-width: 92vw;
-      font-size: clamp(2.2rem, 10vw, 5rem);
-      font-weight: 900;
-      letter-spacing: 0.04em;
-      text-align: center;
-    }
-
-    .w {
-      display: inline-block;
-      opacity: 0;
-      background-image: linear-gradient(180deg, #ffffff 0%, #c4c8d8 50%, #6f7590 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      filter: drop-shadow(0 0.06em 0 #2a2e44) drop-shadow(0 0.12em 0.2em rgba(0, 0, 0, 0.7));
-    }
-
-    .w.on { animation: pop 0.38s cubic-bezier(0.2, 1.4, 0.4, 1) forwards; }
-
-    @keyframes pop {
-      from { opacity: 0; transform: translateY(0.25em) scale(0.6); }
-      to   { opacity: 1; transform: none; }
-    }
-
-    /* Přeskočení přes automat: nahoru, a pak za něj */
-    .intro.hop1 .phrase { animation: hop1 0.65s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
-    .intro.hop2 .phrase { animation: hop2 0.75s ease-in forwards; }
-
-    @keyframes hop1 {
-      from { transform: translateY(0) scale(1); }
-      to   { transform: translateY(-30vh) scale(0.78); }
-    }
-
-    @keyframes hop2 {
-      from { transform: translateY(-30vh) scale(0.78); opacity: 1; }
-      to   { transform: translateY(-14vh) scale(0.5); opacity: 0; }
     }
 
     /* ======================================================
@@ -1041,10 +982,152 @@
       .pblock, .pblock::before, .pblock::after,
       .alltime::before, .alltime::after { animation: none !important; }
       .ml { opacity: 1; }
+      .arcade-bg::before, .machine.boot { animation: none !important; }
     }
+
+
+    /* ======================================================
+       NOVÝ STYL: automat jako vytlačené 3D těleso (stejný jazyk jako písmena FONGER),
+       sytější podlaha a hvězdy, nápis DRIPPY jako tvrdé 3D písmo
+       ====================================================== */
+
+    /* Pozadí: tmavá noc, hvězdy nahoře, rudofialová záře na obzoru a modrošedá podlaha s růžovými příčkami */
+    .arcade-bg::before {
+      background:
+        repeating-linear-gradient(90deg, rgba(150, 172, 220, 0.42) 0 1px, transparent 1px 70px),
+        repeating-linear-gradient(0deg, rgba(255, 110, 180, 0.38) 0 1px, transparent 1px 52px),
+        linear-gradient(to bottom, transparent, rgba(150, 30, 90, 0.22));
+    }
+
+    .arcade-bg::after {
+      background:
+        radial-gradient(ellipse 70% 20% at 50% 62%, rgba(230, 50, 110, 0.26), transparent 72%),
+        radial-gradient(1.2px 1.2px at 18% 14%, rgba(255, 255, 255, 0.7), transparent 60%),
+        radial-gradient(1px 1px at 72% 9%, rgba(255, 255, 255, 0.6), transparent 60%),
+        radial-gradient(1.4px 1.4px at 86% 28%, rgba(190, 210, 255, 0.6), transparent 60%),
+        radial-gradient(1px 1px at 8% 40%, rgba(255, 200, 230, 0.5), transparent 60%),
+        radial-gradient(1px 1px at 38% 24%, rgba(255, 255, 255, 0.45), transparent 60%),
+        radial-gradient(1.2px 1.2px at 60% 36%, rgba(190, 210, 255, 0.45), transparent 60%),
+        radial-gradient(ellipse 90% 70% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5));
+    }
+
+    /* Skříň: plná ocelová hmota s tlustou linkou a vytlačenou hloubkou dolů doprava (osm vrstev stínu) */
+    .cab-lines {
+      stroke: rgba(196, 212, 244, 0.95);
+      stroke-width: 2.6;
+      filter:
+        drop-shadow(2px 2px 0 #36426c) drop-shadow(4px 4px 0 #303b62) drop-shadow(6px 6px 0 #2a3457)
+        drop-shadow(8px 8px 0 #242d4c) drop-shadow(10px 10px 0 #1e2641) drop-shadow(12px 12px 0 #181f38)
+        drop-shadow(14px 14px 0 #121830) drop-shadow(16px 16px 0 #0c1126)
+        drop-shadow(0 0 22px rgba(80, 140, 255, 0.3));
+    }
+    .cab-lines .soft { stroke: rgba(170, 190, 228, 0.5); }
+    .cab-lines .pink { stroke: rgba(255, 125, 190, 0.95); stroke-width: 3; }
+    .cab-lines text { fill: rgba(190, 210, 245, 0.85); }
+
+    /* Obrazovka: tlustý rám jako sklo v kovové masce */
+    .screen {
+      box-shadow:
+        0 0 0 3px #0a0f20,
+        0 0 0 5px rgba(176, 196, 232, 0.8),
+        0 0 0 8px #151a33,
+        0 0 30px rgba(80, 150, 255, 0.3);
+    }
+
+    /* Nápis nahoře: tmavá deska s růžovým rámem a tvrdým stínem */
+    .marquee {
+      background: linear-gradient(180deg, #2a1030, #0d0616);
+      box-shadow:
+        inset 0 0 calc(var(--u) * 18) rgba(255, 110, 190, 0.28),
+        0 0 0 2px rgba(255, 125, 190, 0.7),
+        calc(var(--u) * 5) calc(var(--u) * 5) 0 #3a0a2a;
+    }
+
+    /* Písmena DRIPPY: ostré 3D písmo jako FONGER (růžový přechod, světlá hrana, tvrdý stín); kapky vody zůstávají */
+    .mg-body {
+      fill: url(#iceGrad) #ff7fbf;
+      filter: none;
+      stroke: #ffd6ec;
+      stroke-width: 1.1px;
+      vector-effect: non-scaling-stroke;
+    }
+    .mg {
+      filter:
+        drop-shadow(calc(var(--u) * 1.5) calc(var(--u) * 1.5) 0 #8a1a58)
+        drop-shadow(calc(var(--u) * 3) calc(var(--u) * 3) 0 #4a0b32)
+        drop-shadow(0 0 calc(var(--u) * 8) rgba(255, 90, 170, 0.45));
+    }
+
+        /* Skříň: grafitová 3D hmota (hloubku dělá šest vrstev v SVG) */
+    .cab-lines {
+      stroke: rgba(190, 197, 216, 0.9);
+      stroke-width: 2.2;
+      filter: drop-shadow(0 0 24px rgba(255, 60, 80, 0.16));
+    }
+    .cab-lines .dp { fill: #14161e; stroke: rgba(190, 197, 216, var(--o)); }
+    .cab-lines .body { fill: url(#cabFill); stroke: rgba(205, 212, 230, 0.95); stroke-width: 2.6; }
+    .cab-lines .stripe { fill: url(#stripeRed); stroke: rgba(255, 170, 160, 0.8); stroke-width: 1.2; }
+    .cab-lines .bezel { fill: #0b0d14; stroke: rgba(205, 212, 230, 0.9); stroke-width: 2.4; }
+    .cab-lines .glass-rim { fill: none; stroke: rgba(110, 170, 255, 0.8); stroke-width: 1.6; }
+    .cab-lines .panel { fill: url(#panelFill); stroke: rgba(205, 212, 230, 0.85); }
+    .cab-lines .soft { stroke: rgba(170, 178, 200, 0.45); fill: none; }
+    .cab-lines .dark { fill: #0b0d14; }
+    .cab-lines .pink { fill: none; stroke: rgba(255, 125, 190, 0.95); stroke-width: 3; }
+    .cab-lines .knob { fill: #e01d2d; stroke: #ffb0a8; }
+    .cab-lines .btn-r { fill: #d81f2f; stroke: #ffb0a8; }
+    .cab-lines .btn-p { fill: #ff4fa6; stroke: #ffd6ec; }
+    .cab-lines .btn-b { fill: #2f7bff; stroke: #b9d4ff; }
+    .cab-lines .shine { fill: rgba(255, 255, 255, 0.45); stroke: none; }
+    .cab-lines .slot { fill: #0b0d14; stroke: rgba(255, 70, 70, 0.85); }
+    .cab-lines text { fill: rgba(255, 140, 140, 0.9); }
+
+    .lever-knob {
+      border-color: rgba(255, 176, 168, 0.95);
+      background: radial-gradient(circle at 35% 30%, #ff9a9a 0%, #e01d2d 45%, #4a0610 100%);
+      box-shadow: 0 0 18px rgba(255, 60, 60, 0.5), 0 8px 16px rgba(0, 0, 0, 0.5);
+    }
+    .lever-base { border-color: rgba(190, 197, 216, 0.8); background: #1a1d27; box-shadow: none; }
+
+    .screen {
+      box-shadow: 0 0 0 1px rgba(110, 170, 255, 0.6), 0 0 28px rgba(80, 150, 255, 0.25);
+    }
+
+    .marquee {
+      background: linear-gradient(180deg, #2a1030, #0d0616);
+      box-shadow:
+        inset 0 0 calc(var(--u) * 18) rgba(255, 110, 190, 0.28),
+        0 0 0 2px rgba(255, 125, 190, 0.7),
+        calc(var(--u) * 5) calc(var(--u) * 5) 0 #3a0a2a;
+    }
+
+    /* DRIPPY: bez kapek, ostré 3D písmo jako FONGER */
+    .wdrop, .mg-body rect { display: none; }
+    .mg-body {
+      fill: url(#iceGrad) #ff7fbf;
+      filter: none;
+      stroke: #ffd6ec;
+      stroke-width: 1.1px;
+      vector-effect: non-scaling-stroke;
+    }
+    .mg {
+      filter:
+        drop-shadow(calc(var(--u) * 1.4) calc(var(--u) * 1.4) 0 #aab0c4)
+        drop-shadow(calc(var(--u) * 2.8) calc(var(--u) * 2.8) 0 #7f869c)
+        drop-shadow(calc(var(--u) * 4.2) calc(var(--u) * 4.2) 0 #565c72)
+        drop-shadow(calc(var(--u) * 5.6) calc(var(--u) * 5.6) 0 #2c3042)
+        drop-shadow(0 0 calc(var(--u) * 8) rgba(255, 90, 170, 0.35));
+    }
+
+    :root {
+      --mark-fill: url(#fx-pink);
+      --mark-glow: 255, 90, 170;
+      --mark-edge: #4a0b2e;
+    }
+
   </style>
   </head>
 <body>
+    <div class="arcade-bg" aria-hidden="true"></div>
   <!-- Značka vlevo nahoře: zpočátku domeček, po příchodu z hlavní stránky kliknuté písmeno -->
   <a class="home" id="mark" href="index.html" aria-label="Zpět na hlavní stránku">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1098,13 +1181,6 @@
     </defs>
   </svg>
 
-  <!-- Úvod -->
-  <div class="intro" id="intro" aria-hidden="true">
-    <div class="phrase" id="phrase">
-      <span class="w">WELCOME</span><span class="w">TO</span><span class="w">THE</span><span class="w">GAME</span>
-    </div>
-  </div>
-
   <main class="stage">
     <div class="machine" id="machine">
 
@@ -1113,42 +1189,58 @@
         <!-- Čáry automatu (souřadnice 560 x 860) -->
         <svg class="cab-lines" viewBox="0 0 560 860" aria-hidden="true">
           <defs>
+            <path id="cabShape" d="M80 12H480V124L520 132V700L548 756L522 766V860H38V766L12 756L40 700V132L80 124Z"/>
             <linearGradient id="cabFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#5aa0ff" stop-opacity="0.10"/>
-              <stop offset="1" stop-color="#2a5fc0" stop-opacity="0.03"/>
+              <stop offset="0" stop-color="#4b5062"/>
+              <stop offset="0.55" stop-color="#262a37"/>
+              <stop offset="1" stop-color="#14161e"/>
+            </linearGradient>
+            <linearGradient id="panelFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#363b4a"/>
+              <stop offset="1" stop-color="#1b1e28"/>
+            </linearGradient>
+            <linearGradient id="stripeRed" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ff4b4b"/>
+              <stop offset="0.55" stop-color="#b3081a"/>
+              <stop offset="1" stop-color="#2a0307"/>
             </linearGradient>
           </defs>
 
-          <!-- Obrys skříně: nápis, tělo, pult a spodní část (vytrácí se) -->
-          <path class="body" d="M80 12H480V124L520 132V700L548 756L522 766V860H38V766L12 756L40 700V132L80 124Z"/>
+          <use class="dp" href="#cabShape" transform="translate(24 24)" style="--o:0.20"/>
+          <use class="dp" href="#cabShape" transform="translate(20 20)" style="--o:0.27"/>
+          <use class="dp" href="#cabShape" transform="translate(16 16)" style="--o:0.34"/>
+          <use class="dp" href="#cabShape" transform="translate(12 12)" style="--o:0.41"/>
+          <use class="dp" href="#cabShape" transform="translate(8 8)" style="--o:0.48"/>
+          <use class="dp" href="#cabShape" transform="translate(4 4)" style="--o:0.55"/>
 
-          <!-- Nápis nahoře (růžový rámeček) -->
+          <use class="body" href="#cabShape"/>
+
+          <rect class="stripe" x="44" y="146" width="9" height="544" rx="3"/>
+          <rect class="stripe" x="507" y="146" width="9" height="544" rx="3"/>
+
           <rect class="pink" x="90" y="20" width="380" height="98" rx="14"/>
 
-          <!-- Rám obrazovky a boční panely -->
-          <rect x="66" y="136" width="428" height="559" rx="16"/>
-          <path class="soft" d="M52 140V696M508 140V696"/>
+          <rect class="bezel" x="60" y="130" width="440" height="571" rx="20"/>
+          <rect class="glass-rim" x="66" y="136" width="428" height="559" rx="16"/>
 
-          <!-- Ovládací pult -->
-          <path d="M40 704H520"/>
-          <path d="M40 704L12 756M520 704L548 756"/>
+          <path class="panel" d="M40 704H520L548 756H12Z"/>
           <rect class="soft" x="60" y="712" width="440" height="38" rx="10"/>
 
-          <!-- Ozdobný joystick a tlačítka -->
-          <circle class="soft" cx="130" cy="731" r="15"/>
+          <circle class="dark" cx="130" cy="731" r="15"/>
           <path class="soft" d="M130 731V722"/>
-          <circle cx="130" cy="719" r="7"/>
-          <circle class="soft" cx="392" cy="731" r="9"/>
-          <circle class="soft" cx="428" cy="731" r="9"/>
-          <circle class="soft" cx="464" cy="731" r="9"/>
+          <circle class="knob" cx="130" cy="719" r="8"/>
+          <circle class="btn-r" cx="392" cy="731" r="9"/>
+          <circle class="btn-p" cx="428" cy="731" r="9"/>
+          <circle class="btn-b" cx="464" cy="731" r="9"/>
+          <circle class="shine" cx="389" cy="728" r="2.6"/>
+          <circle class="shine" cx="425" cy="728" r="2.6"/>
+          <circle class="shine" cx="461" cy="728" r="2.6"/>
 
-          <!-- Dvířka na mince (vytrácejí se) -->
-          <rect x="224" y="782" width="112" height="70" rx="8"/>
+          <rect class="panel" x="224" y="782" width="112" height="70" rx="8"/>
           <text x="280" y="797">INSERT COIN</text>
-          <rect class="soft" x="238" y="806" width="28" height="36" rx="4"/>
-          <rect class="soft" x="294" y="806" width="28" height="36" rx="4"/>
+          <rect class="slot" x="238" y="806" width="28" height="36" rx="4"/>
+          <rect class="slot" x="294" y="806" width="28" height="36" rx="4"/>
 
-          <!-- Boční ozdoby -->
           <path class="soft" d="M54 780L100 850M70 780L116 850M86 780L132 850"/>
           <path class="soft" d="M506 780L460 850M490 780L444 850M474 780L428 850"/>
         </svg>
@@ -1389,10 +1481,6 @@
     const EDGE_PUNCH = 300;      // po 5 s udeří
     const PUNCH_REACH = 38;      // jak daleko od zdi pěst dosáhne
     const PUNCH_PUSH = 28;       // o kolik pixelů panáčka odsune ke středu
-
-    // Úvod
-    const INTRO_WORD_GAP = 370;  // jak rychle po sobě naskakují slova (ms)
-    const INTRO_HOLD = 450;      // pauza po posledním slově (ms)
 
     // Zkoušení v adrese:  ?gear=red|purple|green|diamond|none  (výbava panáčka)
     //                     ?demo=board  nebo  ?demo=champ        (ukázková tabule)
@@ -3133,56 +3221,11 @@
       }
     });
 
-    /* ================= ÚVOD: WELCOME TO THE GAME ================= */
+    /* ================= NÁBĚH AUTOMATU (bez úvodního nápisu) ================= */
 
-    const introEl = $('intro');
-    const phraseEl = $('phrase');
     const machineEl = $('machine');
-    const INTRO_KEY = 'fonger-intro-day';
-    const root = document.documentElement;
-
-    function finishIntro() {
-      if (introEl.parentNode) introEl.remove();
-      root.classList.remove('intro-on');
-      try { localStorage.setItem(INTRO_KEY, todayKey()); } catch (e) {}
-    }
-
-    function runIntro() {
-      root.classList.add('intro-on');
-      const timers = [];
-      const at = (fn, ms) => timers.push(setTimeout(fn, ms));
-      const words = Array.prototype.slice.call(phraseEl.children);
-
-      words.forEach((w, i) => at(() => w.classList.add('on'), 250 + i * INTRO_WORD_GAP));
-
-      const hopAt = 250 + words.length * INTRO_WORD_GAP + INTRO_HOLD;
-      at(() => { introEl.classList.add('hop1'); machineEl.classList.add('rise'); }, hopAt);
-      at(() => { introEl.classList.remove('hop1'); introEl.classList.add('hop2'); }, hopAt + 650);
-      at(finishIntro, hopAt + 650 + 750);
-
-      // klepnutím nebo klávesou jde úvod přeskočit
-      const skip = () => {
-        timers.forEach(clearTimeout);
-        machineEl.classList.remove('rise');
-        machineEl.classList.add('shown');
-        finishIntro();
-        document.removeEventListener('pointerdown', skip);
-        document.removeEventListener('keydown', skip);
-      };
-      document.addEventListener('pointerdown', skip);
-      document.addEventListener('keydown', skip);
-    }
-
-    let seenToday = false;
-    try { seenToday = localStorage.getItem(INTRO_KEY) === todayKey(); } catch (e) {}
-
-    if (reduceMotion || seenToday) {
-      machineEl.classList.add('shown');
-      introEl.remove();
-    } else {
-      runIntro();
-    }
-
+    machineEl.classList.add('shown');
+    if (!reduceMotion) machineEl.classList.add('boot');
     /* ================= PRAVIDLA (RULES) V ANGLIČTINĚ A ČEŠTINĚ ================= */
 
     // Všechny texty pravidel jsou tady. <b> je tučné písmo. Poznámky k úrovním jdou za sebou jako úrovně.

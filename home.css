@@ -1,0 +1,220 @@
+/* ==========================================================
+   home.css: černo-modrý futuristický vzhled stránky Experience
+   Načítá se po experience.css a přepisuje jeho barvy.
+   ========================================================== */
+
+:root {
+  /* ===== BARVA STRÁNKY: změníš tady a změní se všude ===== */
+  --c: #2f7bff;              /* hlavní barva */
+  --cr: 47, 123, 255;        /* stejná barva jako čísla R, G, B (pro průhlednost) */
+  --c-hi: #5b9bff;           /* světlejší odstín (najetí, konec přechodů) */
+  --c-soft: #9bbcff;         /* nejsvětlejší odstín (hrany, text) */
+  --c2: #0b3fb5;             /* tmavší odstín */
+  --mark-fill: url(#fx-blue); --mark-glow: 47, 123, 255; --mark-edge: #03102a;   /* písmeno E v rohu */
+  --e1: #4d94ff; --e2: #0b3fb5; --e3: #03102a;   /* přechod velkého písmene E */
+
+  --bg: #050505; --bg-2: #060a12; --ink: #ecf0f8; --accent: var(--c-hi);
+  --muted: #9aa3b4; --faint: #6f7a90; --line: rgba(var(--cr), .18);
+  --glass: rgba(8, 11, 18, .72);
+  --blue: var(--c-hi);       /* akcent v odemčeném obsahu */
+  --green: #3ddc84; --rose: #ff8a8a;
+  /* Barvy Z-Quizu: přepiš podle jejich loga a Instagramu */
+  --zq-a: #ff3b3b; --zq-b: #ff9a3d; --zq-ink: #1a0505;
+}
+html, body.exp { background: #050505; }
+.mist { display: none; }
+::selection { background: var(--c); color: #050505; }
+body.exp { background-image: none; }
+
+/* ---------- Pozadí a efekty ---------- */
+#bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; }
+.scan { position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: .5;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px); }
+.cursor { position: fixed; left: 0; top: 0; z-index: 70; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%;
+  border: 1px solid rgba(var(--cr), .7); pointer-events: none; opacity: 0; transition: width .25s, height .25s, margin .25s, background .25s, opacity .3s; mix-blend-mode: screen; }
+.cursor.on { opacity: 1; }
+.cursor.big { width: 64px; height: 64px; margin: -32px 0 0 -32px; background: rgba(var(--cr), .14); }
+@media (hover: none) { .cursor { display: none; } }
+
+.progress { background: linear-gradient(90deg, var(--c), var(--c-hi)); box-shadow: 0 0 12px var(--c); }
+.lang { background: rgba(8, 11, 18, .7); border-color: var(--line); }
+.lang button[aria-pressed="true"] { background: var(--c); color: #050505; }
+.snav { background: rgba(8, 11, 18, .7); border-color: var(--line); }
+.snav a.on { background: var(--c); color: #050505; }
+.btn.primary { background: var(--c); color: #050505; box-shadow: 0 8px 30px rgba(var(--cr), .3); }
+.btn.primary:hover { background: var(--c-hi); box-shadow: 0 12px 40px rgba(var(--cr), .5); }
+.btn { border-color: rgba(var(--cr), .35); }
+.btn:hover { border-color: var(--c); }
+:focus-visible { outline-color: var(--c); }
+
+/* ---------- Úvod ---------- */
+.hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden;
+  padding: 0 24px 11vh max(24px, calc((100vw - 1040px) / 2 + 24px)); box-sizing: border-box; }
+.hero-text { position: relative; z-index: 2; }
+.name { margin: 0; font-size: clamp(4rem, 12.5vw, 10.5rem); line-height: .88; font-weight: 800; letter-spacing: -.055em;
+  background: none; filter: none; animation: none; color: var(--ink); text-shadow: 0 0 60px rgba(var(--cr), .25); cursor: default;
+  display: block; width: min-content; }
+.say { margin: 28px 0 0; font-size: clamp(1.15rem, 2.6vw, 1.7rem); font-weight: 500; color: #d5dbe8; letter-spacing: -.01em; min-height: 1.3em; }
+.say::after { content: ""; display: inline-block; width: .55em; height: 1.05em; margin-left: 6px; vertical-align: -.15em; background: var(--c); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+
+.E { position: absolute; right: 3vw; top: 50%; z-index: 1; height: min(76vh, 640px); aspect-ratio: 100 / 130;
+  transform: translateY(calc(-50% - var(--sy, 0px))) perspective(1100px) rotateY(var(--ry, 0deg)) rotateX(var(--rx, 0deg));
+  transform-style: preserve-3d; pointer-events: none; }
+.E svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: translateZ(calc(var(--i, 0) * -46px)); }
+.E svg path { fill: none; stroke: rgba(var(--cr), calc(.8 - var(--i, 0) * .1)); vector-effect: non-scaling-stroke; stroke-width: 1.4px; }
+.E svg.f path { fill: url(#eg); stroke: var(--c-soft); }
+.E svg.f { filter: drop-shadow(0 0 38px rgba(var(--cr), .55)); }
+@media (max-width: 760px) { .E { right: -14vw; height: 58vh; opacity: .55; } .hero { padding-bottom: 9vh; } }
+
+.cn { position: absolute; width: 22px; height: 22px; border: 0 solid rgba(var(--cr), .55); z-index: 2; }
+.cn:nth-of-type(1) { left: 18px; top: 74px; border-width: 1px 0 0 1px; }
+.cn:nth-of-type(2) { right: 18px; top: 74px; border-width: 1px 1px 0 0; }
+.cn:nth-of-type(3) { left: 18px; bottom: 18px; border-width: 0 0 1px 1px; }
+.cn:nth-of-type(4) { right: 18px; bottom: 18px; border-width: 0 1px 1px 0; }
+.hud { position: absolute; z-index: 2; font-size: .7rem; letter-spacing: .16em; color: var(--faint); text-transform: uppercase; }
+.hud.t-l { left: 90px; top: 30px; } .hud.t-r { right: 34px; top: 82px; } .hud.b-l { left: 34px; bottom: 30px; } .hud.b-r { right: 34px; bottom: 30px; }
+.hud.t-r, .hud.b-l { color: rgba(var(--cr), .6); }
+@media (max-width: 900px) { .hud.t-l, .hud.t-r { display: none; } .hud.b-l { display: none; } .cn:nth-of-type(1), .cn:nth-of-type(2) { top: 120px; } }
+
+/* ---------- Sekce ---------- */
+.wrap { padding-top: 30px; }
+section { margin-top: 110px; }
+.sec-h { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+.sec-h .mono { color: var(--c); font-size: .78rem; }
+.sec-h h2 { margin: 0; font: 500 .85rem var(--mono); letter-spacing: .22em; text-transform: uppercase; color: var(--ink); }
+.sec-h::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(var(--cr), .5), transparent); }
+
+/* ---------- Dovednosti ---------- */
+.mods { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+.mod { padding: 26px 22px 30px 0; border-bottom: 1px solid var(--line); position: relative; transition: opacity .3s; }
+.mod + .mod { padding-left: 22px; border-left: 1px solid var(--line); }
+.mod::before { content: ""; position: absolute; left: 0; top: -1px; height: 2px; width: 0; background: var(--c); box-shadow: 0 0 12px var(--c); transition: width .5s cubic-bezier(.2, .8, .2, 1); }
+.mod:hover::before { width: 100%; }
+.mods:hover .mod:not(:hover) { opacity: .45; }
+.mod h3 { margin: 0 0 16px; font-size: 1.15rem; line-height: 1.25; letter-spacing: -.02em; }
+.mod ul { margin: 0; padding: 0; list-style: none; }
+.mod li { position: relative; padding: 4px 0 4px 18px; color: var(--muted); font-size: .94rem; transition: color .2s, transform .2s; }
+.mod li::before { content: "+"; position: absolute; left: 0; color: var(--c); font-family: var(--mono); }
+.mod li:hover { color: #fff; transform: translateX(4px); }
+@media (max-width: 980px) { .mods { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mod:nth-child(3) { border-left: 0; padding-left: 0; } .mod:nth-child(n+3) { border-top: 0; } }
+@media (max-width: 560px) { .mods { grid-template-columns: 1fr; } .mod, .mod + .mod { padding-left: 0; border-left: 0; } }
+
+/* ---------- Projekty ---------- */
+.tiles { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; }
+.tile.next { grid-column: 1 / -1; min-height: 170px; background: none; border: 1px dashed rgba(var(--cr), .45); box-shadow: none; flex-direction: row; align-items: center; gap: 26px; flex-wrap: wrap; }
+.tile.next h3 { margin: 0; font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--c-soft); min-width: 8ch; }
+.tile.next p { color: var(--muted); }
+.tile.next .tag { color: var(--c); }
+.tile { position: relative; min-height: 400px; padding: 30px; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box;
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .25s ease-out, box-shadow .3s; will-change: transform; }
+.tile::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background: radial-gradient(360px circle at var(--gx, 50%) var(--gy, 0%), rgba(255, 255, 255, .16), transparent 60%); }
+.tile:hover::after { opacity: 1; }
+.tile h3 { margin: auto 0 6px; font-size: clamp(2.6rem, 6vw, 4.4rem); line-height: 1; letter-spacing: -.05em; font-weight: 800; }
+.tile p { margin: 0; font-size: 1.05rem; }
+.tag { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; }
+
+/* Z-Quiz: barvy z loga (růžová #ED93E3, tmavě fialová #4A3D5B) */
+.tile.zq { --zp: #ed93e3; background: radial-gradient(120% 90% at 85% 15%, rgba(237, 147, 227, .22), transparent 60%), linear-gradient(155deg, #0b0a10 0%, #251e2e 55%, #4a3d5b 100%); color: #fff; box-shadow: 0 30px 80px rgba(237, 147, 227, .14); border: 1px solid rgba(237, 147, 227, .25); }
+.tile.zq h3 { color: #fff; }
+.tile.zq p { color: #e8d9ee; font-weight: 500; }
+.tile.zq .tag { color: var(--zp); }
+.zq-brain { position: absolute; right: 26px; top: 22px; width: min(52%, 300px); height: auto; pointer-events: none; filter: drop-shadow(0 0 34px rgba(237, 147, 227, .35));
+  transform: translate(calc(var(--px, 0) * -18px), calc(var(--py, 0) * -14px)) rotate(calc(var(--px, 0) * 4deg)); transition: transform .25s ease-out; }
+.mini { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 0; padding: 0; list-style: none; position: relative; max-width: 80%; }
+.mini li { font: 600 .74rem var(--mono); padding: 5px 11px; border-radius: 999px; background: rgba(237, 147, 227, .12); border: 1px solid rgba(237, 147, 227, .35); color: #f3c9ee; }
+.mini.lite li { background: rgba(var(--cr), .1); border-color: rgba(var(--cr), .35); color: var(--c-soft); }
+.ig { position: absolute; right: 24px; bottom: 24px; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 14px; background: #ed93e3; color: #1a1220; transition: transform .2s; }
+.ig svg { width: 22px; height: 22px; }
+.ig:hover { transform: translateY(-3px) rotate(-6deg); }
+
+.tile.fg { background: rgba(8, 11, 18, .8); border: 1px solid rgba(var(--cr), .35); box-shadow: 0 30px 80px rgba(var(--cr), .12); }
+.tile.fg .tag { color: var(--muted); }
+.tile.fg h3 { background: linear-gradient(180deg, #fff, var(--c-soft) 90%); -webkit-background-clip: text; background-clip: text; color: transparent; width: max-content; max-width: 100%; }
+.live { margin: 18px 0 0; padding: 14px 0 0; border-top: 1px solid var(--line); display: grid; gap: 4px; font-size: .78rem; }
+.live div { display: flex; justify-content: space-between; gap: 14px; }
+.live dt { color: var(--faint); text-transform: uppercase; letter-spacing: .1em; }
+.live dd { margin: 0; color: var(--c); }
+.links { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 18px; }
+.links a { font-weight: 600; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--c); padding-bottom: 2px; transition: color .2s, border-color .2s; }
+.links a:hover { color: var(--c); }
+@media (max-width: 860px) { .tiles { grid-template-columns: 1fr; } .tile { min-height: 340px; } .glyph { font-size: 320px; } }
+
+/* ---------- Zámek ---------- */
+.locked { position: relative; min-height: 440px; display: grid; place-items: center; padding: 30px 18px; overflow: hidden; border: 1px solid rgba(var(--cr), .3); border-radius: 4px; background: rgba(8, 11, 18, .6); }
+.locked::before, .locked::after { content: ""; position: absolute; width: 18px; height: 18px; border: 2px solid var(--c); }
+.locked::before { left: -1px; top: -1px; border-width: 2px 0 0 2px; } .locked::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; }
+.ghost { position: absolute; inset: 0; padding: 26px 26px 26px 54px; filter: blur(7px); opacity: .5; pointer-events: none; -webkit-mask: linear-gradient(#000 40%, transparent); mask: linear-gradient(#000 40%, transparent); }
+.ghost::before { background: linear-gradient(rgba(var(--cr), .35), transparent); }
+.g-row::before { background: var(--c); }
+.g-row b { background: linear-gradient(90deg, rgba(var(--cr), .55), rgba(var(--cr), .22)); }
+.gate { background: rgba(4, 6, 12, .86); border-color: rgba(var(--cr), .35); border-radius: 6px; width: min(480px, 100%); }
+.lock { color: var(--c); }
+.gate h3 { font-size: clamp(1.4rem, 4vw, 1.9rem); letter-spacing: -.03em; margin: 14px 0 6px; }
+.field input { padding-left: 34px; border-radius: 6px; border-color: rgba(var(--cr), .35); }
+.field input:focus { border-color: var(--c); box-shadow: 0 0 0 4px rgba(var(--cr), .15); }
+.prompt { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--c); z-index: 1; }
+.gate .btn { margin-top: 10px; }
+.stream { display: none; margin: 14px 0 0; text-align: left; font-size: .68rem; line-height: 1.5; color: var(--c-soft); white-space: pre; overflow: hidden; height: 7.5em; opacity: .85; }
+.gate.busy .stream { display: block; }
+.gate.busy .field, .gate.busy .btn, .gate.busy .err { opacity: .25; pointer-events: none; }
+
+/* Odemčený obsah přebírá barvy přes proměnné; karty bez záře */
+.card { border-radius: 6px; }
+.card::before { background: linear-gradient(140deg, rgba(var(--cr), .4), rgba(255, 255, 255, .04) 45%, rgba(var(--cr), .2)); }
+.card::after { background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgba(var(--cr), .12), transparent 70%); }
+.welcome { background: linear-gradient(120deg, rgba(61, 220, 132, .08), rgba(var(--cr), .06)); border-radius: 6px; }
+.tl-fill { background: linear-gradient(var(--c), var(--c-hi)); box-shadow: 0 0 14px rgba(var(--cr), .6); }
+.job.in .dot { box-shadow: 0 0 0 5px rgba(var(--cr), .14); }
+.job.now .dot { background: var(--green); border-color: var(--green); }
+.chip { border-color: rgba(var(--cr), .22); background: rgba(var(--cr), .07); }
+
+/* ---------- Patička a příkazová paleta ---------- */
+footer { color: var(--faint); align-items: center; }
+.kbd-hint { display: flex; gap: 4px; background: none; border: 0; cursor: pointer; padding: 6px; }
+kbd { font: 600 .72rem var(--mono); color: var(--muted); border: 1px solid rgba(var(--cr), .3); border-bottom-width: 2px; border-radius: 6px; padding: 3px 8px; background: rgba(var(--cr), .06); }
+.kbd-hint:hover kbd { color: #fff; border-color: var(--c); }
+.pal { position: fixed; inset: 0; z-index: 90; display: grid; align-items: start; justify-items: center; padding: 14vh 16px 0; background: rgba(0, 0, 0, .7); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.pal-box { width: min(560px, 100%); background: #080b12; border: 1px solid rgba(var(--cr), .45); border-radius: 8px; box-shadow: 0 30px 100px rgba(var(--cr), .25); overflow: hidden; animation: pop .25s cubic-bezier(.2, .9, .3, 1.2); }
+@keyframes pop { from { opacity: 0; transform: translateY(-12px) scale(.97); } }
+.pal-in { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.pal-in .mono { color: var(--c); }
+.pal-in input { flex: 1; background: none; border: 0; outline: 0; color: var(--ink); font: 500 1.05rem var(--mono); }
+.pal ul { list-style: none; margin: 0; padding: 8px; max-height: 50vh; overflow: auto; }
+.pal li { display: flex; justify-content: space-between; gap: 12px; padding: 11px 12px; border-radius: 6px; cursor: pointer; color: var(--muted); }
+.pal li small { font: .7rem var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .1em; }
+.pal li.sel { background: rgba(var(--cr), .16); color: #fff; box-shadow: inset 2px 0 var(--c); }
+.toast { position: fixed; left: 50%; bottom: 28px; z-index: 95; transform: translate(-50%, 30px); opacity: 0; padding: 12px 20px; border-radius: 6px; background: #080b12; border: 1px solid var(--c); color: #fff; font: 500 .85rem var(--mono); transition: opacity .3s, transform .3s; pointer-events: none; max-width: calc(100vw - 32px); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* Tajemství: Konami kód */
+body.glitch .name, body.glitch .E { animation: glitch .18s steps(2) infinite; }
+@keyframes glitch { 25% { transform: translate(3px, -2px); filter: hue-rotate(-20deg); } 50% { transform: translate(-3px, 2px); text-shadow: 3px 0 #0ff, -3px 0 #f0f; } 75% { transform: translate(2px, 1px); } }
+body.glitch .E { animation: none; }
+
+@media (prefers-reduced-motion: reduce) { .say::after, .tile, .glyph { animation: none; transition: none; } .scan { display: none; } }
+/* ---------- Filtr dovedností ---------- */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px; }
+.filters button { font: 600 .82rem var(--mono); letter-spacing: .04em; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 255, 255, .02); color: var(--muted); cursor: pointer; transition: color .2s, border-color .2s, background .2s; }
+.filters button:hover { color: #fff; border-color: rgba(var(--cr), .6); }
+.filters button.on { background: var(--c); border-color: var(--c); color: #fff; }
+.mod { transition: opacity .35s, filter .35s; }
+.mods.f-on .mod:not(.pick) { opacity: .16; filter: blur(1.5px); pointer-events: none; }
+.mods.f-on:hover .mod.pick { opacity: 1; }
+.mod li[role="button"] { cursor: pointer; }
+.mod li.hit { color: #fff; }
+.mod li.hit::before { content: "●"; font-size: .55rem; top: 11px; text-shadow: 0 0 10px var(--c); }
+.lit-bar { margin: 18px 0 0; font-size: .8rem; color: var(--c-soft); }
+.lit-bar button { margin-left: 10px; background: none; border: 0; border-bottom: 1px solid currentColor; color: inherit; font: inherit; cursor: pointer; }
+.lit-bar span { color: #fff; }
+.tile.lit { outline: 2px solid var(--c); outline-offset: 3px; box-shadow: 0 0 60px rgba(var(--cr), .35); }
+.job.lit { border-color: var(--c) !important; box-shadow: 0 0 0 1px var(--c), 0 0 40px rgba(var(--cr), .25); }
+body.dimming .tile:not(.lit):not(.next), body.dimming .job:not(.lit) { opacity: .4; }
+
+/* ---------- Věta pod jménem: objeví se až po najetí na jméno ---------- */
+.say { position: relative; width: max-content; max-width: 100%; opacity: 0; clip-path: inset(0 100% 0 0); transition: clip-path .9s cubic-bezier(.65, 0, .2, 1), opacity .5s .5s; }
+.say.show { opacity: 1; clip-path: inset(0 0 0 0); transition: clip-path .9s cubic-bezier(.65, 0, .2, 1), opacity .15s; }
+.say::before { content: ""; position: absolute; left: 0; right: 0; bottom: -10px; height: 1px; background: linear-gradient(90deg, var(--c), rgba(var(--cr), 0)); transform: scaleX(0); transform-origin: left; transition: transform .9s cubic-bezier(.65, 0, .2, 1); }
+.say.show::before { transform: scaleX(1); }
+.say::after { display: none; }

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en" data-title-en="Experience | Fonger" data-title-cs="Zkušenosti | Fonger">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Experience | Fonger</title>
+  <meta name="description" content="Adam Vávra: automation, websites and web apps.">
+  <meta name="theme-color" content="#050505">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="experience.css">
+  <link rel="stylesheet" href="home.css">
+  <link rel="expect" href="#mark" blocking="render">
+  <link rel="prefetch" href="project-fonger.html">
+  <script src="transition.js"></script>
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="exp">
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <div class="scan" aria-hidden="true"></div>
+  <div class="cursor" id="cur" aria-hidden="true"></div>
+
+  <!-- Značka vlevo nahoře: zpočátku domeček, po příchodu z hlavní stránky písmeno E -->
+  <a class="home" id="mark" href="index.html" aria-label="Zpět na hlavní stránku">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8"/>
+      <path d="M5 10v10h14V10"/>
+      <path d="M10 20v-6h4v6"/>
+    </svg>
+  </a>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="lang" role="group" aria-label="Language / Jazyk">
+    <button type="button" data-l="en" aria-pressed="true">EN</button>
+    <button type="button" data-l="cs" aria-pressed="false">CZ</button>
+  </div>
+
+  <nav class="snav" aria-label="Sections">
+    <a href="#about" class="on"><span lang="en">About</span><span lang="cs">O mně</span></a>
+    <a href="#skills"><span lang="en">Skills</span><span lang="cs">Dovednosti</span></a>
+    <a href="#projects"><span lang="en">Projects</span><span lang="cs">Projekty</span></a>
+    <a href="#vault"><span lang="en">Experience</span><span lang="cs">Praxe</span></a>
+  </nav>
+
+  <!-- ===== Úvod na celou šířku ===== -->
+  <header class="hero" id="about">
+    <div class="E" id="E" aria-hidden="true">
+      <svg class="f" viewBox="0 0 100 130"><defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--e1)"/><stop offset=".55" style="stop-color:var(--e2)"/><stop offset="1" style="stop-color:var(--e3)"/></linearGradient></defs><path d="M0 0H100V24H24V53H82V77H24V106H100V130H0Z"/></svg>
+    </div>
+    <i class="cn"></i><i class="cn"></i><i class="cn"></i><i class="cn"></i>
+    <span class="hud mono t-l">FONGER / E</span>
+    <span class="hud mono t-r" id="clock">PRAHA</span>
+    <span class="hud mono b-l" id="coords">X 0000 · Y 0000</span>
+    <span class="hud mono b-r"><span lang="en">scroll</span><span lang="cs">scroll</span> ↓</span>
+
+    <div class="hero-text">
+      <h1 class="name" id="name" aria-label="Adam Vávra">Adam Vávra</h1>
+<p class="say" id="say"><span lang="en">My path to building websites and web apps.</span><span lang="cs">Moje cesta k tvorbě webů a webových aplikací.</span></p>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- ===== Dovednosti ===== -->
+    <section id="skills">
+      <div class="sec-h rv"><span class="mono">01</span><h2 data-decode><span lang="en">Skills</span><span lang="cs">Dovednosti</span></h2></div>
+      <div class="mods" id="mods">
+        <article class="mod rv" data-g="it">
+          <h3><span lang="en">IT administration and tools</span><span lang="cs">Správa IT a nástroje</span></h3>
+          <ul><li data-s="m365" tabindex="0" role="button">Microsoft 365 Admin Center</li><li data-s="entra" tabindex="0" role="button">Entra ID</li><li data-s="l1" tabindex="0" role="button"><span lang="en">L1 support</span><span lang="cs">Podpora L1</span></li><li data-s="incidents" tabindex="0" role="button"><span lang="en">Incident resolution</span><span lang="cs">Řešení incidentů</span></li><li data-s="veeam" tabindex="0" role="button">Veeam Backup &amp; Replication</li><li data-s="excel" tabindex="0" role="button">Excel</li><li data-s="autocad" tabindex="0" role="button">AutoCAD</li></ul>
+        </article>
+        <article class="mod rv" style="--d:.06s" data-g="auto">
+          <h3><span lang="en">Automation and AI</span><span lang="cs">Automatizace a AI</span></h3>
+          <ul><li data-s="copilot" tabindex="0" role="button">Microsoft Copilot</li><li data-s="studio" tabindex="0" role="button">Copilot Studio</li><li data-s="vibe" tabindex="0" role="button">Vibecoding</li><li data-s="gas" tabindex="0" role="button">Google Apps Script</li></ul>
+        </article>
+        <article class="mod rv" style="--d:.12s" data-g="web">
+          <h3><span lang="en">Websites</span><span lang="cs">Weby</span></h3>
+          <ul><li data-s="web" tabindex="0" role="button">HTML · CSS · JavaScript</li><li data-s="github" tabindex="0" role="button">GitHub</li><li data-s="vercel" tabindex="0" role="button">Vercel</li></ul>
+        </article>
+        <article class="mod rv" style="--d:.18s" data-g="people">
+          <h3><span lang="en">People and organising</span><span lang="cs">Lidé a organizace</span></h3>
+          <ul><li data-s="team" tabindex="0" role="button"><span lang="en">Teamwork</span><span lang="cs">Týmová spolupráce</span></li><li data-s="nego" tabindex="0" role="button"><span lang="en">Negotiation</span><span lang="cs">Vyjednávání</span></li><li data-s="partners" tabindex="0" role="button"><span lang="en">Partner relations</span><span lang="cs">Jednání s partnery</span></li><li data-s="events" tabindex="0" role="button"><span lang="en">Organising events</span><span lang="cs">Organizace akcí</span></li><li data-s="video" tabindex="0" role="button"><span lang="en">Video and photo</span><span lang="cs">Video a foto</span></li></ul>
+        </article>
+      </div>
+      <p class="lit-bar mono" id="litBar" hidden><span id="litName"></span> <button type="button" id="litOff"><span lang="en">clear</span><span lang="cs">zrušit</span></button></p>
+    </section>
+
+    <!-- ===== Projekty ===== -->
+    <section id="projects">
+      <div class="sec-h rv"><span class="mono">02</span><h2 data-decode><span lang="en">Projects</span><span lang="cs">Projekty</span></h2></div>
+      <div class="tiles">
+
+        <article class="tile zq rv" data-tilt data-s="team people events video">
+          <img class="zq-brain" src="zq-brain.png" width="329" height="232" alt="" aria-hidden="true">
+          <span class="tag mono">2024 – 2026</span>
+          <h3>Z-Quiz</h3>
+          <p><span lang="en">A pub quiz for young people.</span><span lang="cs">Pub kvíz pro mladé.</span></p>
+          <ul class="mini"><li><span lang="en">Organising events</span><span lang="cs">Pořádání akcí</span></li><li>Marketing</li><li><span lang="en">Community</span><span lang="cs">Komunita</span></li><li><span lang="en">Video and photo</span><span lang="cs">Video a foto</span></li></ul>
+          <a class="ig" href="https://www.instagram.com/z__quiz" target="_blank" rel="noopener" aria-label="Instagram @z__quiz">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".8" fill="currentColor"/></svg>
+          </a>
+        </article>
+
+        <article class="tile fg rv" style="--d:.08s" data-tilt data-s="vibe web github vercel gas">
+          <span class="tag mono">2026 · <span lang="en">This site</span><span lang="cs">Tenhle web</span></span>
+          <h3>Fonger</h3>
+          <p><span lang="en">Here I learn, here I experiment.</span><span lang="cs">Tady se učím, tady zkouším.</span></p>
+          <ul class="mini lite"><li>HTML · CSS · JS</li><li>GitHub</li><li>Vercel</li><li>Apps Script</li></ul>
+          <dl class="live mono" aria-label="Live">
+            <div><dt>viewport</dt><dd id="lv-vp">–</dd></div>
+            <div><dt><span lang="en">language</span><span lang="cs">jazyk</span></dt><dd id="lv-lang">–</dd></div>
+            <div><dt>scroll</dt><dd id="lv-sc">–</dd></div>
+            <div><dt>fps</dt><dd id="lv-fps">–</dd></div>
+            <div><dt>input</dt><dd id="lv-in">–</dd></div>
+          </dl>
+          <div class="links">
+            <a href="project-fonger.html"><span lang="en">How it was made</span><span lang="cs">Jak vznikl</span> →</a>
+          </div>
+        </article>
+
+        <article class="tile next rv" style="--d:.14s" id="next">
+          <span class="tag mono"><span lang="en">Next up</span><span lang="cs">Další na řadě</span></span>
+          <h3 class="roll" id="roll" aria-live="off">…</h3>
+          <p><span lang="en">The next project goes here.</span><span lang="cs">Tady bude další projekt.</span></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Praxe a vzdělání (zamčeno) ===== -->
+    <section id="vault">
+      <div class="sec-h rv"><span class="mono">03</span><h2 data-decode><span lang="en">Experience</span><span lang="cs">Praxe</span></h2></div>
+      <div class="vault-wrap">
+        <div class="locked rv" id="locked">
+          <div class="ghost" aria-hidden="true">
+            <div class="g-row"><b style="width:38%"></b><b style="width:62%"></b><b style="width:48%"></b></div>
+            <div class="g-row"><b style="width:30%"></b><b style="width:70%"></b><b style="width:55%"></b></div>
+            <div class="g-row"><b style="width:42%"></b><b style="width:58%"></b><b style="width:36%"></b></div>
+            <div class="g-row"><b style="width:34%"></b><b style="width:66%"></b><b style="width:50%"></b></div>
+          </div>
+
+          <form class="gate" id="gate" autocomplete="off">
+            <svg class="lock" id="lock" viewBox="0 0 48 56" aria-hidden="true">
+              <path class="shackle" d="M14 26V17a10 10 0 0 1 20 0v9" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+              <rect x="6" y="26" width="36" height="26" rx="7" fill="rgba(255,255,255,.06)" stroke="currentColor" stroke-width="2"/>
+              <circle cx="24" cy="38" r="3.5" fill="currentColor"/>
+              <path d="M24 40v6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <h3><span lang="en">Unlock for full potential</span><span lang="cs">Odemknout pro plný potenciál</span></h3>
+            <div class="field">
+              <span class="prompt mono" aria-hidden="true">&gt;</span>
+              <label for="pw" style="position:absolute;left:-9999px"><span lang="en">Password</span><span lang="cs">Heslo</span></label>
+              <input id="pw" name="pw" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Password" data-ph-en="Password" data-ph-cs="Heslo" required>
+              <button class="eye" id="eye" type="button" aria-label="Show password">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <p class="err" id="err" role="alert" aria-live="assertive"></p>
+            <button class="btn primary" id="go" type="submit"><span><span lang="en">Unlock</span><span lang="cs">Odemknout</span></span></button>
+            <pre class="stream mono" id="stream" aria-hidden="true"></pre>
+          </form>
+        </div>
+        <div id="open" hidden></div>
+      </div>
+    </section>
+
+    <footer>
+      <span><span lang="en">Designed and coded by hand in Prague.</span><span lang="cs">Navrženo a napsáno ručně v Praze.</span></span>
+      <button class="kbd-hint mono" id="palOpen" type="button" aria-label="Command menu"><kbd>Ctrl</kbd><kbd>K</kbd></button>
+    </footer>
+  </main>
+
+  <!-- Příkazová paleta (Ctrl+K nebo /) -->
+  <div class="pal" id="pal" hidden role="dialog" aria-modal="true" aria-label="Command menu">
+    <div class="pal-box">
+      <div class="pal-in"><span class="mono">&gt;</span><input id="palIn" type="text" autocomplete="off" spellcheck="false" placeholder="Type a command…" data-ph-en="Type a command…" data-ph-cs="Napiš příkaz…"><kbd>esc</kbd></div>
+      <ul id="palList" role="listbox"></ul>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="experience.js"></script>
+  <script src="vault.js"></script>
+  <script src="home.js"></script>
+</body>
+</html>

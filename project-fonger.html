@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en" data-title-en="Fonger | Experience" data-title-cs="Fonger | Experience">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Fonger | Experience</title>
+  <meta name="description" content="Fonger: the personal website of Adam Vávra.">
+  <meta name="theme-color" content="#07090f">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="experience.css">
+  <link rel="stylesheet" href="home.css">
+  <script src="transition.js"></script>
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="exp">
+  <a class="home" id="mark" href="experience.html" aria-label="Zpět na Experience">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8"/>
+      <path d="M5 10v10h14V10"/>
+      <path d="M10 20v-6h4v6"/>
+    </svg>
+  </a>
+
+  <div class="progress" id="progress"></div>
+  <div class="lang" role="group" aria-label="Language / Jazyk">
+    <button type="button" data-l="en" aria-pressed="true">EN</button>
+    <button type="button" data-l="cs" aria-pressed="false">CZ</button>
+  </div>
+
+  <main class="wrap narrow cs">
+    <a class="crumb rv" href="experience.html#projects">← <span lang="en">Back to projects</span><span lang="cs">Zpět na projekty</span></a>
+
+    <header class="cs-hero">
+      <p class="eyebrow rv"><span lang="en">Project · This site</span><span lang="cs">Projekt · Tenhle web</span></p>
+      <h1 class="rv" style="--d:.06s">Fonger</h1>
+      <p class="lead rv" style="--d:.12s"><span lang="en">My personal website. It is a portfolio and also a place where I experiment and learn.</span><span lang="cs">Můj osobní web. Je to portfolio a zároveň místo, kde zkouším a učím se.</span></p>
+      <dl class="cs-facts card rv" style="--d:.18s">
+        <div><dt><span lang="en">Built with</span><span lang="cs">Postaveno na</span></dt><dd>HTML, CSS, JavaScript</dd></div>
+        <div><dt><span lang="en">Hosting</span><span lang="cs">Nasazení</span></dt><dd>GitHub, Vercel</dd></div>
+        <div><dt><span lang="en">Started</span><span lang="cs">Začátek</span></dt><dd>2026</dd></div>
+        <div><dt><span lang="en">Status</span><span lang="cs">Stav</span></dt><dd><span lang="en">Live, still growing</span><span lang="cs">Běží a pořád roste</span></dd></div>
+      </dl>
+    </header>
+
+    <section>
+      <h2 class="rv"><span lang="en">What is on it</span><span lang="cs">Co na něm je</span></h2>
+      <div class="built">
+        <article class="card rv"><h3>Drippy</h3><p><span lang="en">My first experiment: a small game with a leaderboard. My first work with a database.</span><span lang="cs">Můj první pokus: malá hra s žebříčkem. První práce s databází.</span></p></article>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="rv"><span lang="en">What I learned</span><span lang="cs">Co jsem se naučil</span></h2>
+      <ol class="why">
+        <li class="rv"><i>01</i><div><b><span lang="en">From idea to a working page</span><span lang="cs">Od nápadu k fungující stránce</span></b><span><span lang="en">How to turn an idea into a page that really works.</span><span lang="cs">Jak z nápadu udělat stránku, která opravdu funguje.</span></span></div></li>
+        <li class="rv"><i>02</i><div><b>GitHub + Vercel</b><span><span lang="en">How a change goes from my computer to a live site.</span><span lang="cs">Jak se změna z mého počítače dostane na živý web.</span></span></div></li>
+        <li class="rv"><i>03</i><div><b><span lang="en">Storing data</span><span lang="cs">Ukládání dat</span></b><span><span lang="en">How a page sends data to a spreadsheet and reads it back.</span><span lang="cs">Jak stránka pošle data do tabulky a zase je přečte.</span></span></div></li>
+        <li class="rv"><i>04</i><div><b><span lang="en">Working with AI</span><span lang="cs">Práce s AI</span></b><span><span lang="en">I say what I want, check the result and fix it until it works.</span><span lang="cs">Řeknu, co chci, zkontroluji výsledek a opravuji, dokud to nefunguje.</span></span></div></li>
+      </ol>
+      <div class="cta rv">
+        <a class="btn primary" href="experience.html"><span><span lang="en">Back to experience</span><span lang="cs">Zpět na Experience</span></span></a>
+      </div>
+    </section>
+
+    <footer>
+      <span><span lang="en">Designed and coded by hand in Prague.</span><span lang="cs">Navrženo a napsáno ručně v Praze.</span></span>
+      <span class="mono">© 2026 Adam Vávra</span>
+    </footer>
+  </main>
+
+  <script src="experience.js"></script>
+</body>
+</html>

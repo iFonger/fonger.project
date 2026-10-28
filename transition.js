@@ -121,6 +121,18 @@
     '<stop offset="1" stop-color="#cfd9ee"/>' +
     '</linearGradient>' +
 
+    /* Barevné přechody písmen: červená (hlavní stránka), růžová (hra), modrá (Experience).
+       Stejné barvy jako velké E na stránce Experience. */
+    '<linearGradient id="fx-red" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#ff4b4b"/><stop offset="0.55" stop-color="#b3081a"/><stop offset="1" stop-color="#2a0307"/>' +
+    '</linearGradient>' +
+    '<linearGradient id="fx-pink" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#ffb3dc"/><stop offset="0.55" stop-color="#ff4fa6"/><stop offset="1" stop-color="#4a0b2e"/>' +
+    '</linearGradient>' +
+    '<linearGradient id="fx-blue" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#4d94ff"/><stop offset="0.55" stop-color="#0b3fb5"/><stop offset="1" stop-color="#03102a"/>' +
+    '</linearGradient>' +
+
     /* Filtr: zakulatí tvar, ztmaví ho a světlé vrstvy nechá jen na okrajích */
     '<filter id="bubble" filterUnits="userSpaceOnUse" x="-20" y="-20" width="110" height="140" color-interpolation-filters="sRGB">' +
 
@@ -235,6 +247,7 @@
     if (!e.viewTransition) return;
 
     document.documentElement.classList.add('vt');   // vypne úvodní animaci písmen
+    document.documentElement.dataset.vt = pageName().replace(/\.html$/, '') || 'index';   // podle cíle se vybere glitch (viz style.css)
     applyMark();
 
     // Návrat na hlavní stránku: pojmenujeme písmeno, ze kterého jsme přišli
@@ -242,7 +255,7 @@
     var logo = document.querySelector('.logo');
     if (logo && rec) {
       var letter = logo.querySelectorAll('.letter')[rec.i];
-      var svg = letter && letter.querySelector('svg');
+      var svg = letter && (letter.querySelector('svg.f') || letter.querySelector('svg'));
       if (svg) {
         svg.style.setProperty('view-transition-name', NAME);
         e.viewTransition.finished.then(function () {
