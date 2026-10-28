@@ -3387,13 +3387,20 @@
     const machineEl = $('machine');
     machineEl.classList.add('shown');
     if (!reduceMotion) machineEl.classList.add('boot');
-    setTimeout(() => document.body.classList.add('cabready'), 1200);
     (function () {
-      const reveal = () => document.body.classList.add('cabvis');
+      const cab = document.querySelector('.cab');
+      const reveal = () => {
+        cab.style.willChange = 'transform, opacity';
+        void cab.offsetWidth;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          document.body.classList.add('cabvis');
+          setTimeout(() => document.body.classList.add('cabready'), 900);
+        }));
+      };
       let done = false;
       const go = () => { if (!done) { done = true; reveal(); } };
       window.addEventListener('pagereveal', e => {
-        if (e.viewTransition) e.viewTransition.finished.then(() => setTimeout(go, 80), go);
+        if (e.viewTransition) e.viewTransition.finished.then(() => setTimeout(go, 250), go);
         else go();
       });
       setTimeout(go, 1800);
