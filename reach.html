@@ -323,6 +323,42 @@
     @media (prefers-reduced-motion: reduce) {
       .disc, .disc::after, .disc svg, .sat { animation: none !important; }
     }
+
+    /* ---------- Radar: tmavě zelená, zametající paprsek, ikony jako signály ---------- */
+    :root { --mark-fill: url(#fx-green); --mark-glow: 60, 255, 130; --mark-edge: #021a0a; }
+    body { background: #010a05 !important; }
+    .home { color: #fff; filter: drop-shadow(0 0 8px rgba(60, 255, 130, 0.8)); }
+    #radar { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; }
+    .word { flex-wrap: wrap; justify-content: center; --hh: clamp(2.2rem, 5.6vw, 4rem); }
+    .glyph path { fill: none; stroke: #5dff9a; stroke-width: 1.4px; vector-effect: non-scaling-stroke; filter: none; }
+    .glyph svg { filter: drop-shadow(0 0 0.5rem rgba(60, 255, 130, 0.8)); }
+    .disc { animation: none; background: radial-gradient(circle, rgba(30, 255, 120, 0.22), rgba(1, 20, 9, 0.85) 70%); box-shadow: 0 0 22px rgba(60, 255, 130, 0.5), 0 0 0 1.5px #5dff9a; border-radius: 50%; }
+    .disc::after, .disc::before { display: none; }
+    .disc svg { stroke: #b9ffd0; filter: drop-shadow(0 0 6px rgba(60, 255, 130, 0.8)); }
+    .sat { display: none; }
+    /* Signál "pingne": od aktivní ikony se rozběhne kruh */
+    .item::before {
+      content: ""; position: absolute; inset: 0; border-radius: 50%;
+      border: 1.5px solid rgba(93, 255, 154, 0.8); opacity: 0; pointer-events: none;
+    }
+    .item.show::before { animation: ping 2.4s ease-out infinite; }
+    @keyframes ping { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.9); opacity: 0; } }
+    .pop {
+      font-family: ui-monospace, Menlo, Consolas, monospace; text-transform: uppercase; letter-spacing: 0.18em;
+      border: 1px solid #5dff9a; background: rgba(1, 10, 5, 0.88); border-radius: 3px;
+      box-shadow: 0 0 14px rgba(60, 255, 130, 0.35);
+    }
+    .pop-label { color: #2fd070; }
+    .pop-label::after { content: " \00B7  signal locked"; color: #5dff9a; }
+    .pop-value { color: #d8ffe6; font-size: clamp(0.9rem, 1.5vw, 1.1rem); }
+    .copy { border-radius: 3px; border-color: #5dff9a; color: #5dff9a; text-transform: uppercase; letter-spacing: 0.16em; font-size: 0.7rem; }
+    .copy:hover, .copy:focus-visible { background: rgba(93, 255, 154, 0.16); }
+    .hint { color: #5dff9a; letter-spacing: 0.2em; text-transform: uppercase; font-family: ui-monospace, Menlo, Consolas, monospace; }
+    @media (max-width: 700px) {
+      .word { --hh: clamp(3.4rem, 19vw, 5.6rem); }
+      .gap { flex-basis: 100%; height: 0; width: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { .item.show::before { animation: none; } }
   </style>
 </head>
 <body>
@@ -580,9 +616,9 @@
         const a = (s.a * env).toFixed(3);
 
         const g = wctx.createLinearGradient(tx, s.y, s.x, s.y);
-        g.addColorStop(0, 'rgba(235, 242, 255, 0)');
-        g.addColorStop(0.7, 'rgba(235, 242, 255, ' + a + ')');
-        g.addColorStop(1, 'rgba(235, 242, 255, 0)');
+        g.addColorStop(0, 'rgba(120, 255, 170, 0)');
+        g.addColorStop(0.7, 'rgba(120, 255, 170, ' + a + ')');
+        g.addColorStop(1, 'rgba(120, 255, 170, 0)');
 
         wctx.strokeStyle = g;
         wctx.lineWidth = s.w;
@@ -819,6 +855,49 @@
 
     // Při prvním otevření se po chvilce ukáže kontakt u ikony uprostřed
     setTimeout(() => { if (settled && !dragging && shown === -1) showItem(frontIndex()); }, 1400);
+  </script>
+
+  <canvas id="radar" aria-hidden="true"></canvas>
+  <script>
+  /* Radar v pozadí: kruhy, kříž, zametající paprsek a signály, které se rozsvítí, když přes ně paprsek přejede */
+  (function () {
+    var cv = document.getElementById('radar'), g = cv.getContext('2d'), W, H, dpr, cx, cy, maxR, blips = [];
+    var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var seed = 4; function R() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    function size() {
+      dpr = Math.min(window.devicePixelRatio || 1, 1.5); W = innerWidth; H = innerHeight;
+      cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var r = document.getElementById('carousel').getBoundingClientRect();
+      cx = W / 2; cy = r.top + r.height * 0.38; maxR = Math.hypot(W, H);
+      seed = 4; blips = [];
+      for (var i = 0; i < 12; i++) { var a = R() * 6.2832, d = 110 + R() * Math.min(W, H) * 0.55; blips.push({ a: a, x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d, lit: 0 }); }
+    }
+    function draw(t) {
+      var ang = still ? -0.9 : (t / 9000) * 6.2832 - 0.9;
+      g.clearRect(0, 0, W, H);
+      g.strokeStyle = 'rgba(60,255,130,.2)'; g.lineWidth = 1;
+      for (var r = 70; r < maxR * 0.6; r += 70) { g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.stroke(); }
+      g.beginPath(); g.moveTo(0, cy); g.lineTo(W, cy); g.moveTo(cx, 0); g.lineTo(cx, H); g.stroke();
+      if (g.createConicGradient) {
+        var sw = g.createConicGradient(ang, cx, cy);
+        sw.addColorStop(0, 'rgba(60,255,130,0)'); sw.addColorStop(0.12, 'rgba(60,255,130,.3)'); sw.addColorStop(0.125, 'rgba(60,255,130,0)');
+        g.fillStyle = sw; g.beginPath(); g.arc(cx, cy, maxR, 0, 6.2832); g.fill();
+      }
+      var head = ((ang + 0.785) % 6.2832 + 6.2832) % 6.2832;   // přední hrana paprsku
+      blips.forEach(function (b) {
+        var ba = ((b.a % 6.2832) + 6.2832) % 6.2832, diff = ((head - ba) % 6.2832 + 6.2832) % 6.2832;
+        if (diff < 0.08 && !still) b.lit = 1; b.lit = Math.max(b.lit - 0.006, still ? 0.5 : 0);
+        var a = 0.12 + b.lit * 0.88, gr = g.createRadialGradient(b.x, b.y, 0, b.x, b.y, 14);
+        gr.addColorStop(0, 'rgba(190,255,215,' + a + ')'); gr.addColorStop(1, 'rgba(60,255,130,0)');
+        g.fillStyle = gr; g.beginPath(); g.arc(b.x, b.y, 14, 0, 6.2832); g.fill();
+      });
+      var vg = g.createRadialGradient(cx, cy, H * 0.3, cx, cy, H); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.7)');
+      g.fillStyle = vg; g.fillRect(0, 0, W, H);
+      if (!still) requestAnimationFrame(draw);
+    }
+    size(); addEventListener('resize', size); requestAnimationFrame(draw);
+    setTimeout(size, 600);
+  })();
   </script>
 </body>
 </html>

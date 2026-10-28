@@ -126,6 +126,9 @@
     '<linearGradient id="fx-red" x1="0" y1="0" x2="0" y2="1">' +
     '<stop offset="0" stop-color="#8d0b18"/><stop offset="0.55" stop-color="#47050c"/><stop offset="1" stop-color="#0e0105"/>' +
     '</linearGradient>' +
+    '<linearGradient id="fx-green" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#7dffb0"/><stop offset="0.55" stop-color="#0f8a43"/><stop offset="1" stop-color="#021a0a"/>' +
+    '</linearGradient>' +
     '<linearGradient id="fx-pink" x1="0" y1="0" x2="0" y2="1">' +
     '<stop offset="0" stop-color="#ffb3dc"/><stop offset="0.55" stop-color="#ff4fa6"/><stop offset="1" stop-color="#4a0b2e"/>' +
     '</linearGradient>' +
