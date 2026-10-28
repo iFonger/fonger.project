@@ -1037,7 +1037,7 @@
     }
 
     /* Automat naskočí jako zapnutá obrazovka: pár cuknutí, žádné bílé záblesky */
-    .machine.boot { animation: powerOn 0.7s step-end both; }
+    .machine.boot { animation: none; }
 
     @keyframes powerOn {
       0%   { opacity: 0; }
@@ -1116,22 +1116,22 @@
        NOVÝ AUTOMAT: neonové trubice, 3D, Síň slávy vpravo
        ====================================================== */
     body { padding: 8px 20px; }
-    .stage { display: grid; grid-template-columns: minmax(200px, 1fr) auto minmax(300px, 1fr); align-items: center; gap: clamp(16px, 3vw, 56px); width: 100%; max-width: 1500px; }
+    .stage { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: clamp(16px, 3vw, 56px); width: 100%; max-width: 1500px; }
 
     .machine {
-      --ch: min(calc(100vh - 40px), 800px);
+      --ch: min(calc(100vh - 120px), 760px);
       --cw: calc(var(--ch) * 300 / 568);
       --k: calc(var(--cw) / 300);
       --u: calc(var(--cw) / 560);
-      perspective: 1900px; perspective-origin: 50% 40%;
+      perspective: 1900px; perspective-origin: 50% 40%; touch-action: pan-y; -webkit-user-select: none; user-select: none;
     }
-    @supports (height: 100svh) { .machine { --ch: min(calc(100svh - 40px), 800px); } }
+    @supports (height: 100svh) { .machine { --ch: min(calc(100svh - 120px), 760px); } }
 
+    .machine.grabbing { cursor: grabbing; }
     .cab { transform-style: preserve-3d; transform: rotateY(-30deg) rotateX(3deg); transform-origin: 50% 60%; }
     .cab { opacity: 0; }
     body.cabvis .cab { opacity: 1; transition: opacity .6s ease-out; }
-    body.cabvis.cabready .cab { transition: opacity .6s ease-out, transform 1.1s cubic-bezier(.2,.9,.25,1); }
-    body.straight .cab { transform: rotateY(0) rotateX(0) !important; }
+    
     .cab > * { position: absolute; }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
@@ -1182,11 +1182,20 @@
     .coin { left: calc(var(--k) * 96); width: calc(var(--k) * 108); top: calc(var(--k) * 66); height: calc(var(--k) * 40); border: 2px solid #ffd6ec; background: #06010a; display: flex; align-items: center; justify-content: space-around; padding: 0 calc(var(--k) * 12); }
     .coin i { width: calc(var(--k) * 8); height: calc(var(--k) * 24); border-radius: 3px; background: #ff4fa6; box-shadow: 0 0 12px #ff4fa6; }
 
-    .cside { left: calc(var(--k) * 300); top: 0; width: calc(var(--k) * 118); height: calc(var(--k) * 568); transform-origin: left; transform: rotateY(90deg);
-      clip-path: polygon(0 0, 62% 0, 62% 72%, 89% 78%, 89% 100%, 0 100%);
-      background: linear-gradient(90deg, rgba(255,79,166,.1), rgba(60,140,255,.14)); border: 3px solid #ff4fa6; box-shadow: inset 0 0 30px rgba(255,79,166,.3); }
+    .cside { left: calc(var(--k) * 300); top: 0; width: calc(var(--k) * 206); height: calc(var(--k) * 568); transform-origin: left; transform: translateZ(calc(var(--k) * 98)) rotateY(90deg); }
+    .cside.l { left: 0; }
+    .cside svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .cside polygon { fill: rgba(22, 6, 36, .94); stroke: #ff4fa6; stroke-width: 3; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 8px #ff4fa6); }
+    .cside path { fill: none; stroke: rgba(60, 140, 255, .8); stroke-width: 2; vector-effect: non-scaling-stroke; }
+    .cback { left: 0; top: 0; width: calc(var(--k) * 300); height: calc(var(--k) * 568); transform: translateZ(calc(var(--k) * -100)); border: 3px solid #b266ff; box-sizing: border-box;
+      background: repeating-linear-gradient(to bottom, rgba(178,102,255,.35) 0 2px, transparent 2px calc(var(--k) * 14)), rgba(16,4,28,.96); box-shadow: 0 0 22px rgba(178,102,255,.7), inset 0 0 30px rgba(178,102,255,.3); }
+    .ctop { left: 0; top: 0; width: calc(var(--k) * 300); height: calc(var(--k) * 100); transform-origin: top; transform: rotateX(-90deg); border: 3px solid #ff8ec6; box-sizing: border-box; background: rgba(22,6,36,.94); box-shadow: 0 0 22px rgba(255,79,166,.6); }
 
     .machine::after { content: ""; position: absolute; left: 50%; bottom: 12px; width: 120%; height: 70px; transform: translateX(-50%); background: radial-gradient(ellipse, rgba(255,79,166,.45), transparent 70%); pointer-events: none; z-index: -1; }
+
+    body.straight .cside, body.straight .cback, body.straight .ctop { visibility: hidden; }
+    .left, .hof { transition: opacity .5s ease; }
+    body.straight .left, body.straight .hof { opacity: 0; pointer-events: none; }
 
     /* ---------- Levý sloupec ---------- */
     .left { justify-self: start; color: #ffd6ec; font-family: ui-monospace, Menlo, monospace; }
@@ -1358,7 +1367,10 @@
   <div class="machine" id="machine">
     <div class="cab">
       <div class="gshadow"></div>
-      <div class="cside"></div>
+      <div class="cside"><svg viewBox="0 0 206 568" preserveAspectRatio="none" aria-hidden="true"><polygon points="106,0 206,0 206,568 0,568 0,446 106,410"/><path d="M106 0V410M60 470V568M206 410H106" /></svg></div>
+      <div class="cside l"><svg viewBox="0 0 206 568" preserveAspectRatio="none" aria-hidden="true"><polygon points="106,0 206,0 206,568 0,568 0,446 106,410"/><path d="M106 0V410M60 470V568M206 410H106" /></svg></div>
+      <div class="cback"></div>
+      <div class="ctop"></div>
       <div class="cfront"></div>
       <div class="marquee"><h1 class="sr">Drippy</h1><span class="mqt" aria-hidden="true">DRIPPY</span></div>
       <div class="bezel"></div>
@@ -2635,7 +2647,7 @@
 
     function show(id) {
       ['ovStart', 'ovCount', 'ovPause', 'ovOver'].forEach(k => $(k).classList.toggle('show', k === id));
-      document.body.classList.toggle('straight', id !== 'ovStart');
+      document.body.classList.toggle('straight', id === 'ovCount' || id === null || id === 'ovPause');
     }
 
     function bestKey() { return 'fonger-best-' + week; }
@@ -3387,11 +3399,79 @@
     const machineEl = $('machine');
     machineEl.classList.add('shown');
     if (!reduceMotion) machineEl.classList.add('boot');
+
+    /* ---------- Automat jde otáčet prstem nebo myší ---------- */
+    (function () {
+      const machine = $('machine');
+      const cab = machine.querySelector('.cab');
+      const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const narrow = window.matchMedia('(max-width: 700px)');
+      let y = 0, x = 0, vy = 0, vx = 0, hy = 0, hx = 0, t = 0, ty = 0;   // aktuální natočení, rychlost, najetí myší
+      let drag = null, released = 0, moved = false;
+
+      const rest = () => {
+        if (document.body.classList.contains('straight') || document.body.classList.contains('fs')) return { y: 0, x: 0 };
+        return narrow.matches ? { y: -14, x: 2 } : { y: -30, x: 3 };
+      };
+      let r0 = rest(); y = r0.y; x = r0.x;
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+      function apply() { cab.style.transform = 'rotateY(' + (y + hy).toFixed(2) + 'deg) rotateX(' + (x + hx).toFixed(2) + 'deg)'; }
+      apply();
+
+      function loop(now) {
+        if (document.body.classList.contains('straight') || document.body.classList.contains('fs')) {
+          if (y || x || hy || hx || vy || vx) { y = x = hy = hx = vy = vx = 0; drag = null; apply(); }
+        } else if (!document.hidden) {
+          const r = rest();
+          if (!drag) {
+            y += vy; x += vx; vy *= 0.93; vx *= 0.93;
+            if (Math.abs(vy) < 0.06 && Math.abs(vx) < 0.06 && now - released > 1400) {
+              y += (r.y - y) * 0.06; x += (r.x - x) * 0.06;
+            }
+            y = clamp(y, -200, 200); x = clamp(x, -25, 25);
+          }
+          apply();
+        }
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+
+      machine.addEventListener('pointerdown', e => {
+        if (e.target.closest('button, a') || document.body.classList.contains('fs')) return;
+        if (state === 'play' || state === 'count') return;
+        drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, y0: y, x0: x, lx: e.clientX, ly: e.clientY };
+        moved = false; vy = 0; vx = 0;
+      });
+      window.addEventListener('pointermove', e => {
+        if (drag && e.pointerId === drag.id) {
+          const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+          if (!moved && Math.hypot(dx, dy) > 6) { moved = true; machine.classList.add('grabbing'); try { machine.setPointerCapture(e.pointerId); } catch (err) {} }
+          if (moved) {
+            y = clamp(drag.y0 + dx * 0.5, -200, 200);
+            if (e.pointerType === 'mouse') x = clamp(drag.x0 - dy * 0.15, -25, 25);
+            vy = (e.clientX - drag.lx) * 0.4; vx = e.pointerType === 'mouse' ? -(e.clientY - drag.ly) * 0.15 : 0;
+            drag.lx = e.clientX; drag.ly = e.clientY;
+          }
+        } else if (!rm && e.pointerType === 'mouse' && !drag && !document.body.classList.contains('straight')) {
+          hy = ((e.clientX / innerWidth) - 0.5) * 16;
+          hx = -((e.clientY / innerHeight) - 0.5) * 7;
+        }
+      });
+      const end = e => {
+        if (!drag || e.pointerId !== drag.id) return;
+        drag = null; released = performance.now();
+        machine.classList.remove('grabbing');
+        if (rm) { vy = 0; vx = 0; }
+      };
+      window.addEventListener('pointerup', end);
+      window.addEventListener('pointercancel', end);
+      // po tažení nesmí vyskočit klik (např. start hry přes obrazovku)
+      machine.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+    })();
     (function () {
       const cab = document.querySelector('.cab');
       const reveal = () => {
-        cab.style.willChange = 'transform, opacity';
-        void cab.offsetWidth;
         requestAnimationFrame(() => requestAnimationFrame(() => {
           document.body.classList.add('cabvis');
           setTimeout(() => document.body.classList.add('cabready'), 900);
