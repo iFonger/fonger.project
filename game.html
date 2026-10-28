@@ -1127,8 +1127,9 @@
     }
     @supports (height: 100svh) { .machine { --ch: min(calc(100svh - 40px), 800px); } }
 
-    .cab { transform-style: preserve-3d; transform: rotateY(-30deg) rotateX(3deg); transform-origin: 50% 60%; transition: transform 1.1s cubic-bezier(.2,.9,.25,1); }
-    .machine:has(#ovStart:not(.show)) .cab { transform: rotateY(0) rotateX(0); }
+    .cab { transform-style: preserve-3d; transform: rotateY(-30deg) rotateX(3deg); transform-origin: 50% 60%; }
+    body.cabready .cab { transition: transform 1.1s cubic-bezier(.2,.9,.25,1); }
+    body.straight .cab { transform: rotateY(0) rotateX(0) !important; }
     .cab > * { position: absolute; }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
@@ -2632,6 +2633,7 @@
 
     function show(id) {
       ['ovStart', 'ovCount', 'ovPause', 'ovOver'].forEach(k => $(k).classList.toggle('show', k === id));
+      document.body.classList.toggle('straight', id !== 'ovStart');
     }
 
     function bestKey() { return 'fonger-best-' + week; }
@@ -3383,6 +3385,7 @@
     const machineEl = $('machine');
     machineEl.classList.add('shown');
     if (!reduceMotion) machineEl.classList.add('boot');
+    setTimeout(() => document.body.classList.add('cabready'), 1200);
 
     /* ================= PRAVIDLA (RULES) V ANGLIČTINĚ A ČEŠTINĚ ================= */
 
