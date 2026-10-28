@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Outings | Fonger</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="outings.css">
+  <link rel="expect" href="#mark" blocking="render">
+  <script src="transition.js"></script>
+</head>
+<body>
+  <!-- barva písmene O (zlatá) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <linearGradient id="fx-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe9b8"/><stop offset="0.55" stop-color="#d9a441"/><stop offset="1" stop-color="#3a2506"/>
+    </linearGradient>
+  </defs></svg>
+
+  <a class="home" id="mark" href="index.html" aria-label="Zpět na hlavní stránku">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>
+    </svg>
+  </a>
+
+  <canvas id="map" aria-label="World map of visited places"></canvas>
+
+  <div class="hud">
+    <div class="ttl">OUTINGS · CITY LIGHTS</div>
+    <div class="flap">
+      <div><div class="d" id="n-cities"></div><span>CITIES</span></div>
+      <div><div class="d" id="n-countries"></div><span>COUNTRIES</span></div>
+      <div><div class="d" id="n-conts"></div><span>CONTINENTS</span></div>
+    </div>
+  </div>
+
+  <div class="tools">
+    <div class="tag">THE WORLD STAYS DARK UNTIL I VISIT IT</div>
+    <button id="btn-wish" class="tb on" type="button" aria-pressed="true">WISHLIST <b id="n-wish">0</b></button>
+    <button id="btn-list" class="tb" type="button">PLACES</button>
+  </div>
+
+  <!-- seznam míst -->
+  <aside id="list" class="list" hidden>
+    <div class="lh"><span>ALL PLACES</span><button id="list-x" type="button" aria-label="Close">×</button></div>
+    <div id="list-body"></div>
+  </aside>
+
+  <!-- karta města -->
+  <section id="card" class="cw" aria-live="polite">
+    <div class="o"></div>
+    <div class="i cd" id="card-in"></div>
+    <span class="dk" id="dk"></span>
+  </section>
+
+  <!-- fotky na celou obrazovku -->
+  <div id="lb" class="lb" hidden>
+    <button class="lb-x" id="lb-x" type="button" aria-label="Close">×</button>
+    <button class="lb-a l" id="lb-p" type="button" aria-label="Previous">‹</button>
+    <div class="lb-st" id="lb-st"></div>
+    <button class="lb-a r" id="lb-n" type="button" aria-label="Next">›</button>
+    <div class="lb-c" id="lb-c"></div>
+  </div>
+
+  <script src="outings-data.js"></script>
+  <script src="outings-dots.js"></script>
+  <script src="outings.js"></script>
+</body>
+</html>

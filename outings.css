@@ -1,0 +1,134 @@
+/* OUTINGS: zlatá noční mapa */
+:root { --mark-fill: url(#fx-gold); --mark-glow: 255, 200, 90; --mark-edge: #3a2506;
+        --g: #ffcf6a; --g2: #ffe9b8; --g3: #b89850; }
+html, body { height: 100%; }
+body { display: block !important; background: #020204 !important; overflow: hidden; color: var(--g2);
+       font-family: ui-monospace, Menlo, Consolas, monospace; text-align: left; overscroll-behavior: none; }
+.home { color: #fff; filter: drop-shadow(0 0 8px rgba(255, 200, 90, .8)); }
+#map { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; touch-action: none; cursor: grab; }
+#map.drag { cursor: grabbing; }
+
+/* ---------- Čítače ---------- */
+.hud { position: fixed; left: 20px; top: 76px; z-index: 5; pointer-events: none; }
+.ttl { font-size: 10px; letter-spacing: .3em; color: var(--g); }
+.flap { display: flex; gap: 18px; margin-top: 12px; }
+.flap span { display: block; margin-top: 6px; font-size: 9px; letter-spacing: .25em; color: var(--g3); }
+.d { display: flex; gap: 3px; }
+.d i { font: 700 28px/1 Georgia, serif; font-style: normal; width: 24px; height: 36px; display: grid; place-items: center;
+       background: linear-gradient(#17120a, #0a0702); border: 1px solid rgba(255, 207, 106, .25); border-radius: 3px;
+       color: var(--g2); position: relative; }
+.d i::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(0, 0, 0, .7); }
+
+/* ---------- Tlačítka vpravo nahoře ---------- */
+.tools { position: fixed; right: 28px; top: 22px; z-index: 5; display: flex; gap: 10px; align-items: center; }
+.tools .tag { font-size: 9px; letter-spacing: .3em; color: var(--g3); margin-right: 10px; text-align: right; max-width: 220px; line-height: 1.6; }
+.tb { font: 10px ui-monospace, monospace; letter-spacing: .22em; color: var(--g); background: rgba(20, 14, 4, .8);
+      border: 1px solid rgba(255, 207, 106, .45); padding: 9px 12px; cursor: pointer;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)); }
+.tb:hover, .tb:focus-visible { background: rgba(255, 207, 106, .16); color: #fff3d6; outline: none; }
+.tb:not(.on) { opacity: .6; }
+.tb b { color: #fff3d6; margin-left: 4px; }
+
+/* ---------- Seznam míst ---------- */
+.list { position: fixed; left: 20px; bottom: 20px; z-index: 6; width: 260px; max-height: 60vh; overflow: auto;
+        background: rgba(10, 7, 2, .96); border: 1px solid rgba(255, 207, 106, .5); padding: 12px 14px; }
+.list[hidden] { display: none; }
+.lh { display: flex; justify-content: space-between; font-size: 9px; letter-spacing: .3em; color: var(--g); margin-bottom: 8px; }
+.lh button { background: none; border: 0; color: var(--g); font-size: 18px; cursor: pointer; line-height: 1; }
+.list .it { display: flex; justify-content: space-between; gap: 10px; width: 100%; background: none; border: 0;
+            border-bottom: 1px dotted rgba(255, 207, 106, .2); color: var(--g2); font: 12px ui-monospace, monospace;
+            padding: 8px 0; cursor: pointer; text-align: left; }
+.list .it:hover { color: #fff; }
+.list .it small { color: var(--g3); font-size: 9px; letter-spacing: .15em; }
+.list .it.w { opacity: .55; }
+.list .gh { font-size: 9px; letter-spacing: .3em; color: var(--g3); margin: 12px 0 2px; }
+
+/* ---------- Karta (styl H1) ---------- */
+.cw { position: fixed; right: 28px; top: 84px; bottom: 40px; width: 340px; z-index: 6;
+      filter: drop-shadow(0 0 24px rgba(255, 190, 80, .4));
+      transform: translateX(calc(100% + 60px)); transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
+.cw.open { transform: none; }
+.cw .o, .cw .i { position: absolute;
+  clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px)); }
+.cw .o { inset: 0; background: var(--g); }
+.cw .i { inset: 1.5px; background: linear-gradient(rgba(22, 15, 4, .97), rgba(8, 5, 1, .98));
+         display: flex; flex-direction: column; }
+.cw .i::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255, 207, 106, .045) 0 1px, transparent 1px 4px); }
+.cw .i::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 90px; pointer-events: none;
+  background: linear-gradient(90deg, rgba(255, 214, 120, .18), transparent); }
+.dk { position: absolute; left: -6px; top: 52px; width: 12px; height: 36px; background: #fff3d6;
+      box-shadow: 0 0 18px 4px var(--g); }
+.cb { position: relative; z-index: 1; flex: 1; overflow-y: auto; padding: 24px 24px 8px; scrollbar-width: thin;
+      scrollbar-color: rgba(255, 207, 106, .4) transparent; }
+.cd .hd { display: flex; justify-content: space-between; font-size: 9px; letter-spacing: .3em; color: var(--g); }
+.cd .hd i { font-style: normal; color: #6dffae; }
+.cd .hd i.w { color: #ffb86a; }
+.cd .nm { font: 900 62px/1 Inter, system-ui, sans-serif; color: transparent; -webkit-text-stroke: 1.7px var(--g2);
+          text-shadow: 0 0 30px rgba(255, 190, 80, .75); margin: 16px 0 6px; overflow-wrap: anywhere; }
+.cd .nm.long { font-size: 46px; }
+.cd .co { font-size: 10px; letter-spacing: .3em; color: var(--g); }
+.cd .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+.cd .tags span { display: inline-flex; align-items: center; gap: 6px; font-size: 9px; letter-spacing: .2em;
+                 border: 1px solid rgba(255, 207, 106, .6); color: var(--g2); padding: 4px 8px; }
+.cd .tags svg { width: 13px; height: 13px; fill: currentColor; }
+.cd .ph { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 50px 50px; gap: 6px; margin: 16px 0 8px; height: 106px; }
+.cd .ph .im { display: block; padding: 0; border: 1px solid rgba(255, 207, 106, .4); background-size: cover;
+              background-position: center; cursor: pointer; position: relative; }
+.cd .ph .im:first-child { grid-row: 1 / 3; }
+.cd .ph .im:hover { border-color: #fff3d6; }
+.cd .ph .im.n { cursor: default; }
+.cd .ph .more { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, .55); color: #fff3d6; font-size: 11px; letter-spacing: .15em; }
+.cd .ph.one { grid-template-columns: 1fr; grid-template-rows: 106px; }
+.cd .h { font-size: 9px; letter-spacing: .3em; color: var(--g); margin: 14px 0 4px; }
+.cd .t { font: 12.5px/1.5 Inter, system-ui, sans-serif; color: #f3e3bd; display: flex; gap: 10px; margin: 3px 0; }
+.cd .t b { width: 12px; flex: none; color: #6dffae; }
+.cd .t.m b { color: #ff7a6a; }
+.cd .food { margin-top: 14px; border: 1px solid rgba(255, 207, 106, .35); padding: 10px 12px; display: flex; gap: 12px; align-items: center;
+            background: rgba(255, 207, 106, .05); }
+.cd .food svg { width: 22px; height: 22px; fill: none; stroke: var(--g); stroke-width: 1.6; flex: none; }
+.cd .food small { display: block; font-size: 8px; letter-spacing: .28em; color: var(--g3); }
+.cd .food b { font: 600 13px Inter, system-ui, sans-serif; color: #fff3d6; }
+.cd .food em { display: block; font: 12px Inter, system-ui, sans-serif; color: #d8c79c; font-style: normal; }
+.cd .note { font: 13px/1.5 Inter, system-ui, sans-serif; color: #f3e3bd; margin-top: 16px; }
+.cd .wl { margin-top: 14px; font-size: 9px; letter-spacing: .2em; color: var(--g3); line-height: 1.7; }
+.cn { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 22px 16px; border-top: 1px solid rgba(255, 207, 106, .18); font-size: 10px; letter-spacing: .2em; }
+.cn button { background: none; border: 1px solid rgba(255, 207, 106, .5); color: var(--g); width: 38px; height: 30px;
+             font-size: 16px; cursor: pointer; }
+.cn button:hover, .cn button:focus-visible { background: rgba(255, 207, 106, .18); color: #fff; outline: none; }
+.cn .x { margin-left: 8px; }
+.cn span { color: var(--g3); }
+
+/* ---------- Fotky na celou obrazovku ---------- */
+.lb { position: fixed; inset: 0; z-index: 50; background: rgba(2, 2, 4, .97); display: grid; place-items: center; }
+.lb[hidden] { display: none; }
+.lb-st { width: min(92vw, 1200px); height: 80vh; background-size: contain; background-repeat: no-repeat; background-position: center; }
+.lb-x, .lb-a { position: absolute; background: rgba(20, 14, 4, .7); border: 1px solid rgba(255, 207, 106, .5); color: var(--g);
+               cursor: pointer; font-size: 26px; width: 46px; height: 46px; line-height: 1; }
+.lb-x { right: 20px; top: 20px; }
+.lb-a { top: 50%; margin-top: -23px; }
+.lb-a.l { left: 20px; } .lb-a.r { right: 20px; }
+.lb-x:hover, .lb-a:hover { background: rgba(255, 207, 106, .2); color: #fff; }
+.lb-c { position: absolute; bottom: 22px; left: 0; right: 0; text-align: center; font-size: 11px; letter-spacing: .3em; color: var(--g); }
+
+/* ---------- Mobil: karta jako spodní panel ---------- */
+@media (max-width: 720px) {
+  .hud { left: 16px; top: 72px; }
+  .flap { gap: 12px; }
+  .flap span { font-size: 8px; letter-spacing: .1em; }
+  .d i { width: 20px; height: 30px; font-size: 22px; }
+  .tools { right: 14px; top: 18px; gap: 6px; }
+  .tools .tag { display: none; }
+  .tb { padding: 8px 10px; font-size: 9px; }
+  .cw { left: 12px; right: 12px; top: auto; bottom: calc(12px + env(safe-area-inset-bottom)); width: auto; height: 60vh;
+        transform: translateY(calc(100% + 40px)); }
+  .cw.open { transform: none; }
+  .dk { left: 50%; top: -6px; width: 36px; height: 12px; margin-left: -18px; }
+  .cd .nm { font-size: 48px; }
+  .cd .nm.long { font-size: 36px; }
+  .cb { padding: 20px 18px 8px; }
+  .cn { padding: 8px 16px 12px; }
+  .list { left: 12px; right: 12px; width: auto; bottom: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .cw { transition: none; } }
