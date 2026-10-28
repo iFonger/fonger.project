@@ -144,18 +144,57 @@
     });
   }
 
-  /* Živé údaje v kartě Fonger: jsou skutečné, ne vymyšlené */
-  var lv = { vp: $('#lv-vp'), lang: $('#lv-lang'), sc: $('#lv-sc'), fps: $('#lv-fps'), inp: $('#lv-in') };
+  /* Živé počty v kartě Fonger. Stránky a hry se upravují tady, dovednosti se počítají přímo ze stránky. */
+  var SITE = { pages: 6, games: 1 };
   var frames = 0, fpsT = performance.now(), fps = 60;
-  function live() {
-    lv.vp.textContent = innerWidth + '×' + innerHeight;
-    lv.lang.textContent = FX.lang();
-    var h = document.documentElement.scrollHeight - innerHeight;
-    lv.sc.textContent = Math.round(h > 0 ? scrollY / h * 100 : 0) + ' %';
-    lv.fps.textContent = fps;
-    lv.inp.textContent = touch ? 'touch' : 'mouse';
+  var stats = $('#stats');
+  if (stats) {
+    var nums = stats.querySelectorAll('b');
+    nums[0].dataset.n = SITE.pages;
+    nums[1].dataset.n = SITE.games;
+    nums[2].dataset.n = document.querySelectorAll('#skills li[data-s]').length;
+    var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var countUp = function () {
+      nums.forEach(function (el) {
+        var n = +el.dataset.n, t0 = performance.now();
+        if (reduced || n < 2) { el.textContent = n; return; }
+        (function step(t) {
+          var p = Math.min(1, (t - t0) / 900);
+          el.textContent = Math.round(n * (1 - Math.pow(1 - p, 3)));
+          if (p < 1) requestAnimationFrame(step);
+        })(t0);
+      });
+    };
+    nums.forEach(function (el) { el.textContent = '0'; });
+    new IntersectionObserver(function (en, ob) { if (en[0].isIntersecting) { countUp(); ob.disconnect(); } }, { threshold: 0.4 }).observe(stats);
   }
-  setInterval(live, 250); live();
+
+  /* Rudé žilky v kartě Fonger */
+  var fgTile = document.querySelector('.tile.fg');
+  if (fgTile) {
+    var vc = document.createElement('canvas'); vc.className = 'veins'; vc.setAttribute('aria-hidden', 'true'); fgTile.prepend(vc);
+    var vg = vc.getContext('2d');
+    var paintVeins = function () {
+      var w = fgTile.clientWidth, h = fgTile.clientHeight, d = Math.min(devicePixelRatio || 1, 2);
+      vc.width = w * d; vc.height = h * d; vg.setTransform(d, 0, 0, d, 0, 0);
+      var s = 21, R = function () { s = (s * 16807) % 2147483647; return s / 2147483647; };
+      var vein = function (x, y, a, len, wd) {
+        if (len < 8 || wd < 0.3) return;
+        vg.beginPath(); vg.moveTo(x, y); var px = x, py = y, k = Math.floor(len / 8);
+        for (var i = 0; i < k; i++) {
+          a += (R() - 0.5) * 0.6; px += Math.cos(a) * 8; py += Math.sin(a) * 8; vg.lineTo(px, py);
+          if (R() < 0.1) vein(px, py, a + (R() < 0.5 ? -1 : 1) * (0.5 + R() * 0.5), len * 0.55, wd * 0.7);
+        }
+        vg.strokeStyle = 'rgba(230,30,48,' + (0.22 + wd * 0.2) + ')'; vg.lineWidth = wd; vg.shadowColor = 'rgba(255,20,40,.9)'; vg.shadowBlur = 8; vg.stroke(); vg.shadowBlur = 0;
+      };
+      for (var i = 0; i < 4; i++) { vein(R() * w, 0, 1.57 + (R() - 0.5) * 0.8, 170, 1.6); vein(R() * w, h, -1.57 + (R() - 0.5) * 0.8, 170, 1.6); }
+      for (i = 0; i < 3; i++) { vein(w, R() * h, 3.14 + (R() - 0.5) * 0.8, 150, 1.4); vein(0, R() * h, (R() - 0.5) * 0.8, 150, 1.4); }
+      var gg = vg.createRadialGradient(w * 0.5, h * 0.5, 20, w * 0.5, h * 0.5, w * 0.55);
+      gg.addColorStop(0, 'rgba(8,1,3,.8)'); gg.addColorStop(1, 'rgba(8,1,3,0)'); vg.fillStyle = gg; vg.fillRect(0, 0, w, h);
+    };
+    paintVeins();
+    if (window.ResizeObserver) new ResizeObserver(paintVeins).observe(fgTile); else addEventListener('resize', paintVeins);
+  }
 
   /* Hodiny v Praze */
   var clock = $('#clock');
