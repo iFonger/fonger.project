@@ -1265,6 +1265,10 @@
     body.fs .machine::after { display: none; }
     body.fs .home, body.fs .cfront, body.fs .marquee, body.fs .bezel, body.fs .deck, body.fs .apron, body.fs .cside, body.fs .gshadow { visibility: hidden; }
 
+    /* Náběh automatu: jen plynulé zjasnění (posuny a filtry v 3D na iPhonu cukaly) */
+    @keyframes powerOn { 0% { opacity: 0; } 100% { opacity: 1; } }
+    .machine.boot { animation-duration: .6s !important; animation-timing-function: ease-out !important; }
+
     /* ---------- Menší obrazovky: sloupce pod sebou ---------- */
     @media (max-width: 1100px), (pointer: coarse) {
       body { place-items: start center; }
