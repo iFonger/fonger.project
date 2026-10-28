@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="expect" href="#mark" blocking="render">
   <script src="transition.js"></script>
+  <script src="stats.js"></script>
   <style>
     /* Úhel pro točící se rámečky v tabuli */
     @property --ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
@@ -985,21 +986,45 @@
       .arcade-bg::before, .machine.boot { animation: none !important; }
     }
 
-
     /* ======================================================
-       NOVÝ STYL: automat jako vytlačené 3D těleso (stejný jazyk jako písmena FONGER),
-       sytější podlaha a hvězdy, nápis DRIPPY jako tvrdé 3D písmo
+       ARKÁDOVÉ POZADÍ, NÁBĚH A NOVÝ STYL AUTOMATU
        ====================================================== */
+    :root {
+      --bg: #070a1c;                 /* tmavě modrofialová noc */
+      --bg-2: #1a0b30;
+      --mark-fill: url(#fx-pink);    /* písmeno G v rohu je růžové jako nápis DRIPPY */
+      --mark-glow: 255, 90, 170;
+      --mark-edge: #4a0b2e;
+    }
 
-    /* Pozadí: tmavá noc, hvězdy nahoře, rudofialová záře na obzoru a modrošedá podlaha s růžovými příčkami */
+    /* Retro podlaha: modrošedé a růžové čáry mizí do dálky a pomalu ujíždějí */
+    .arcade-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+
     .arcade-bg::before {
+      content: "";
+      position: absolute;
+      left: -60%;
+      right: -60%;
+      bottom: 0;
+      height: 52%;
       background:
         repeating-linear-gradient(90deg, rgba(150, 172, 220, 0.42) 0 1px, transparent 1px 70px),
         repeating-linear-gradient(0deg, rgba(255, 110, 180, 0.38) 0 1px, transparent 1px 52px),
         linear-gradient(to bottom, transparent, rgba(150, 30, 90, 0.22));
+      transform: perspective(360px) rotateX(64deg);
+      transform-origin: 50% 100%;
+      -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 90%);
+      mask-image: linear-gradient(to top, #000 10%, transparent 90%);
+      animation: floatFloor 2.6s linear infinite;
     }
 
+    @keyframes floatFloor { to { background-position: 0 0, 0 52px, 0 0; } }
+
+    /* Hvězdy, záře na obzoru a ztmavení okrajů */
     .arcade-bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
       background:
         radial-gradient(ellipse 70% 20% at 50% 62%, rgba(230, 50, 110, 0.26), transparent 72%),
         radial-gradient(1.2px 1.2px at 18% 14%, rgba(255, 255, 255, 0.7), transparent 60%),
@@ -1011,54 +1036,20 @@
         radial-gradient(ellipse 90% 70% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5));
     }
 
-    /* Skříň: plná ocelová hmota s tlustou linkou a vytlačenou hloubkou dolů doprava (osm vrstev stínu) */
-    .cab-lines {
-      stroke: rgba(196, 212, 244, 0.95);
-      stroke-width: 2.6;
-      filter:
-        drop-shadow(2px 2px 0 #36426c) drop-shadow(4px 4px 0 #303b62) drop-shadow(6px 6px 0 #2a3457)
-        drop-shadow(8px 8px 0 #242d4c) drop-shadow(10px 10px 0 #1e2641) drop-shadow(12px 12px 0 #181f38)
-        drop-shadow(14px 14px 0 #121830) drop-shadow(16px 16px 0 #0c1126)
-        drop-shadow(0 0 22px rgba(80, 140, 255, 0.3));
-    }
-    .cab-lines .soft { stroke: rgba(170, 190, 228, 0.5); }
-    .cab-lines .pink { stroke: rgba(255, 125, 190, 0.95); stroke-width: 3; }
-    .cab-lines text { fill: rgba(190, 210, 245, 0.85); }
+    /* Automat naskočí jako zapnutá obrazovka: pár cuknutí, žádné bílé záblesky */
+    .machine.boot { animation: powerOn 0.7s step-end both; }
 
-    /* Obrazovka: tlustý rám jako sklo v kovové masce */
-    .screen {
-      box-shadow:
-        0 0 0 3px #0a0f20,
-        0 0 0 5px rgba(176, 196, 232, 0.8),
-        0 0 0 8px #151a33,
-        0 0 30px rgba(80, 150, 255, 0.3);
+    @keyframes powerOn {
+      0%   { opacity: 0; }
+      12%  { opacity: 0.6; transform: translateX(-8px); filter: hue-rotate(-30deg); }
+      24%  { opacity: 0.25; transform: translateX(6px); }
+      38%  { opacity: 0.85; transform: translateX(-4px) skewX(-3deg); filter: hue-rotate(-15deg); }
+      55%  { opacity: 0.6; transform: translateX(3px); }
+      75%  { opacity: 1; transform: none; filter: none; }
+      100% { opacity: 1; transform: none; filter: none; }
     }
 
-    /* Nápis nahoře: tmavá deska s růžovým rámem a tvrdým stínem */
-    .marquee {
-      background: linear-gradient(180deg, #2a1030, #0d0616);
-      box-shadow:
-        inset 0 0 calc(var(--u) * 18) rgba(255, 110, 190, 0.28),
-        0 0 0 2px rgba(255, 125, 190, 0.7),
-        calc(var(--u) * 5) calc(var(--u) * 5) 0 #3a0a2a;
-    }
-
-    /* Písmena DRIPPY: ostré 3D písmo jako FONGER (růžový přechod, světlá hrana, tvrdý stín); kapky vody zůstávají */
-    .mg-body {
-      fill: url(#iceGrad) #ff7fbf;
-      filter: none;
-      stroke: #ffd6ec;
-      stroke-width: 1.1px;
-      vector-effect: non-scaling-stroke;
-    }
-    .mg {
-      filter:
-        drop-shadow(calc(var(--u) * 1.5) calc(var(--u) * 1.5) 0 #8a1a58)
-        drop-shadow(calc(var(--u) * 3) calc(var(--u) * 3) 0 #4a0b32)
-        drop-shadow(0 0 calc(var(--u) * 8) rgba(255, 90, 170, 0.45));
-    }
-
-        /* Skříň: grafitová 3D hmota (hloubku dělá šest vrstev v SVG) */
+    /* Skříň: grafitová 3D hmota. Hloubku dělá šest vrstev v SVG, tady je jen styl čar a barev. */
     .cab-lines {
       stroke: rgba(190, 197, 216, 0.9);
       stroke-width: 2.2;
@@ -1081,6 +1072,7 @@
     .cab-lines .slot { fill: #0b0d14; stroke: rgba(255, 70, 70, 0.85); }
     .cab-lines text { fill: rgba(255, 140, 140, 0.9); }
 
+    /* Páka: červená 3D koule */
     .lever-knob {
       border-color: rgba(255, 176, 168, 0.95);
       background: radial-gradient(circle at 35% 30%, #ff9a9a 0%, #e01d2d 45%, #4a0610 100%);
@@ -1088,10 +1080,12 @@
     }
     .lever-base { border-color: rgba(190, 197, 216, 0.8); background: #1a1d27; box-shadow: none; }
 
+    /* Obrazovka: skleněný panel uvnitř kovové masky z SVG */
     .screen {
       box-shadow: 0 0 0 1px rgba(110, 170, 255, 0.6), 0 0 28px rgba(80, 150, 255, 0.25);
     }
 
+    /* Nápis nahoře: tmavá deska s růžovým rámem a tvrdým stínem */
     .marquee {
       background: linear-gradient(180deg, #2a1030, #0d0616);
       box-shadow:
@@ -1100,7 +1094,7 @@
         calc(var(--u) * 5) calc(var(--u) * 5) 0 #3a0a2a;
     }
 
-    /* DRIPPY: bez kapek, ostré 3D písmo jako FONGER */
+    /* Písmena DRIPPY: bez kapek, ostré 3D písmo jako FONGER (růžový přechod, světlá hrana, ocelová hloubka) */
     .wdrop, .mg-body rect { display: none; }
     .mg-body {
       fill: url(#iceGrad) #ff7fbf;
@@ -1117,17 +1111,11 @@
         drop-shadow(calc(var(--u) * 5.6) calc(var(--u) * 5.6) 0 #2c3042)
         drop-shadow(0 0 calc(var(--u) * 8) rgba(255, 90, 170, 0.35));
     }
-
-    :root {
-      --mark-fill: url(#fx-pink);
-      --mark-glow: 255, 90, 170;
-      --mark-edge: #4a0b2e;
-    }
-
   </style>
   </head>
 <body>
-    <div class="arcade-bg" aria-hidden="true"></div>
+  <div class="arcade-bg" aria-hidden="true"></div>
+
   <!-- Značka vlevo nahoře: zpočátku domeček, po příchodu z hlavní stránky kliknuté písmeno -->
   <a class="home" id="mark" href="index.html" aria-label="Zpět na hlavní stránku">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1186,7 +1174,7 @@
 
       <div class="cab">
 
-        <!-- Čáry automatu (souřadnice 560 x 860) -->
+        <!-- Automat: plná grafitová skříň s vytlačenou hloubkou (souřadnice 560 x 860) -->
         <svg class="cab-lines" viewBox="0 0 560 860" aria-hidden="true">
           <defs>
             <path id="cabShape" d="M80 12H480V124L520 132V700L548 756L522 766V860H38V766L12 756L40 700V132L80 124Z"/>
@@ -1206,6 +1194,7 @@
             </linearGradient>
           </defs>
 
+          <!-- Hloubka: šest vrstev skříně za sebou, každá o kus dál dolů doprava -->
           <use class="dp" href="#cabShape" transform="translate(24 24)" style="--o:0.20"/>
           <use class="dp" href="#cabShape" transform="translate(20 20)" style="--o:0.27"/>
           <use class="dp" href="#cabShape" transform="translate(16 16)" style="--o:0.34"/>
@@ -1213,19 +1202,25 @@
           <use class="dp" href="#cabShape" transform="translate(8 8)" style="--o:0.48"/>
           <use class="dp" href="#cabShape" transform="translate(4 4)" style="--o:0.55"/>
 
+          <!-- Čelní plocha skříně -->
           <use class="body" href="#cabShape"/>
 
+          <!-- Červené pruhy po stranách (jako červená písmena FONGER) -->
           <rect class="stripe" x="44" y="146" width="9" height="544" rx="3"/>
           <rect class="stripe" x="507" y="146" width="9" height="544" rx="3"/>
 
+          <!-- Nápis nahoře (růžový rámeček) -->
           <rect class="pink" x="90" y="20" width="380" height="98" rx="14"/>
 
+          <!-- Kovová maska kolem obrazovky a modrý vnitřní okraj skla -->
           <rect class="bezel" x="60" y="130" width="440" height="571" rx="20"/>
           <rect class="glass-rim" x="66" y="136" width="428" height="559" rx="16"/>
 
+          <!-- Ovládací pult -->
           <path class="panel" d="M40 704H520L548 756H12Z"/>
           <rect class="soft" x="60" y="712" width="440" height="38" rx="10"/>
 
+          <!-- Joystick a tři tlačítka v barvách webu: červená, růžová, modrá -->
           <circle class="dark" cx="130" cy="731" r="15"/>
           <path class="soft" d="M130 731V722"/>
           <circle class="knob" cx="130" cy="719" r="8"/>
@@ -1236,11 +1231,13 @@
           <circle class="shine" cx="425" cy="728" r="2.6"/>
           <circle class="shine" cx="461" cy="728" r="2.6"/>
 
+          <!-- Dvířka na mince (vytrácejí se) -->
           <rect class="panel" x="224" y="782" width="112" height="70" rx="8"/>
           <text x="280" y="797">INSERT COIN</text>
           <rect class="slot" x="238" y="806" width="28" height="36" rx="4"/>
           <rect class="slot" x="294" y="806" width="28" height="36" rx="4"/>
 
+          <!-- Boční ozdoby -->
           <path class="soft" d="M54 780L100 850M70 780L116 850M86 780L132 850"/>
           <path class="soft" d="M506 780L460 850M490 780L444 850M474 780L428 850"/>
         </svg>
@@ -1481,6 +1478,8 @@
     const EDGE_PUNCH = 300;      // po 5 s udeří
     const PUNCH_REACH = 38;      // jak daleko od zdi pěst dosáhne
     const PUNCH_PUSH = 28;       // o kolik pixelů panáčka odsune ke středu
+
+    // Úvod
 
     // Zkoušení v adrese:  ?gear=red|purple|green|diamond|none  (výbava panáčka)
     //                     ?demo=board  nebo  ?demo=champ        (ukázková tabule)
@@ -2711,6 +2710,7 @@
       if (state === 'count' || state === 'play') return;
       if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
       enterFs();
+      if (window.FongerStats) FongerStats.hit('plays');
       startCountdown();
     }
 
@@ -3226,6 +3226,7 @@
     const machineEl = $('machine');
     machineEl.classList.add('shown');
     if (!reduceMotion) machineEl.classList.add('boot');
+
     /* ================= PRAVIDLA (RULES) V ANGLIČTINĚ A ČEŠTINĚ ================= */
 
     // Všechny texty pravidel jsou tady. <b> je tučné písmo. Poznámky k úrovním jdou za sebou jako úrovně.

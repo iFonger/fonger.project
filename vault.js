@@ -59,6 +59,7 @@
       return;
     }
     try { sessionStorage.setItem(PW_KEY, pw); } catch (x) {}
+    if (!silent && window.FongerStats) FongerStats.hit('cv');
     $('#lock').classList.add('open');
     if (!silent) document.dispatchEvent(new CustomEvent('vault:unlocking'));
     await new Promise(function (r) { setTimeout(r, FX.calm || silent ? 0 : 1400); });

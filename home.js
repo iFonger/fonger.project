@@ -149,24 +149,34 @@
   var frames = 0, fpsT = performance.now(), fps = 60;
   var stats = $('#stats');
   if (stats) {
-    var nums = stats.querySelectorAll('b');
-    nums[0].dataset.n = SITE.pages;
-    nums[1].dataset.n = SITE.games;
-    nums[2].dataset.n = document.querySelectorAll('#skills li[data-s]').length;
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var countUp = function () {
-      nums.forEach(function (el) {
-        var n = +el.dataset.n, t0 = performance.now();
-        if (reduced || n < 2) { el.textContent = n; return; }
-        (function step(t) {
-          var p = Math.min(1, (t - t0) / 900);
-          el.textContent = Math.round(n * (1 - Math.pow(1 - p, 3)));
-          if (p < 1) requestAnimationFrame(step);
-        })(t0);
+    var animate = function (el, n) {
+      var t0 = performance.now();
+      if (reduced || n < 2) { el.textContent = n; return; }
+      (function step(t) {
+        var p = Math.min(1, (t - t0) / 900);
+        el.textContent = Math.round(n * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(step);
+      })(t0);
+    };
+    var local = [SITE.pages, SITE.games, document.querySelectorAll('#skills li[data-s]').length];
+    var nums = stats.querySelectorAll('b:not([data-remote])');
+    nums.forEach(function (el) { el.textContent = '0'; });
+    var seen = false, remote = null;
+    var showRemote = function () {
+      if (!seen || !remote) return;
+      stats.querySelectorAll('b[data-remote]').forEach(function (el) {
+        var v = remote[el.dataset.remote];
+        if (typeof v === 'number') animate(el, v);
       });
     };
-    nums.forEach(function (el) { el.textContent = '0'; });
-    new IntersectionObserver(function (en, ob) { if (en[0].isIntersecting) { countUp(); ob.disconnect(); } }, { threshold: 0.4 }).observe(stats);
+    new IntersectionObserver(function (en, ob) {
+      if (!en[0].isIntersecting) return;
+      seen = true; ob.disconnect();
+      nums.forEach(function (el, i) { animate(el, local[i]); });
+      showRemote();
+    }, { threshold: 0.4 }).observe(stats);
+    if (window.FongerStats) FongerStats.get().then(function (d) { remote = d; showRemote(); }).catch(function () {});
   }
 
   /* Rudé žilky v kartě Fonger */
