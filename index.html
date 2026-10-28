@@ -104,13 +104,14 @@
 
     /* 3D písmeno ve stylu velkého E na stránce Experience:
        červená čelní plocha a za ní šedé drátěné vrstvy do hloubky.
-       .tilt se naklání za kurzorem, .stack se pruží (želé). */
-           /* Myš reaguje na pevný čtverec písmene (a), ne na natočený tvar: jinak se písmeno "třese" pod kurzorem */
+       .tilt se naklání, když přes písmeno přejedeš (každé písmeno samo). */
+    /* Myš reaguje na pevný čtverec písmene (a), ne na natočený tvar: jinak se písmeno "třese" pod kurzorem */
     .tilt, .tilt * { pointer-events: none; }
+
     .tilt {
       display: block;
       transform-style: preserve-3d;
-      transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+      transform: perspective(900px) rotateX(var(--rx, 4deg)) rotateY(var(--ry, -14deg));
     }
 
     .stack {
@@ -307,8 +308,7 @@
       .hint { animation: none !important; opacity: 0.6; }
       .letter:nth-child(n+4)::before { animation: none !important; opacity: 0.6; }
     }
-
-    /* Telefon na výšku: písmena jsou velká a jdou schodištěm zleva nahoře doprava dolů */
+        /* Telefon na výšku: písmena jsou velká a jdou schodištěm zleva nahoře doprava dolů */
     @media (max-width: 700px) and (orientation: portrait) {
       :root {
         --h: min(26vw, 12vh);
@@ -325,10 +325,61 @@
       .letter { margin-left: calc(var(--i) * var(--dx)); }
 
       .hint { left: 28px; bottom: 28px; }
+
+      /* Text "Level" přesouváme vlevo dolů, vpravo dole je písmeno R */
+      .meta.br { right: auto; left: 28px; bottom: 62px; text-align: left; }
     }
+
+    /* Telefon na výšku: popisek se ukáže vedle písmene, ne nad ním (nahoře by překrýval jiné písmeno).
+       F, O, N mají popisek vpravo, G, E, R vlevo, protože tam je místo. */
+    @media (hover: none) and (max-width: 700px) and (orientation: portrait) {
+      .tag {
+        top: 50%;
+        bottom: auto;
+        left: auto;
+        right: 100%;
+        margin: 0;
+        padding-right: 1rem;
+        transform: translateY(-50%);
+      }
+      .letter:nth-child(-n+3) .tag {
+        right: auto;
+        left: 100%;
+        padding: 0 0 0 1rem;
+      }
+    }
+
+    /* ---------- Krvavě rudý vzhled ---------- */
+    body {
+      background-color: #030001 !important;
+      background-image: radial-gradient(circle at 50% 42%, #0e0309, #030001 72%) !important;
+    }
+    .letter svg.f path { stroke: #ffc2b8; stroke-width: 2.2px; }
+    .letter[data-face="red"] svg.f { filter: drop-shadow(0 0 1.4rem rgba(255, 30, 44, 0.8)); }
+    .letter[data-face="red"]:hover svg.f,
+    .letter[data-face="red"]:focus-visible svg.f { filter: brightness(1.15) drop-shadow(0 0 1.8rem rgba(255, 30, 50, 0.95)); }
+    .frame { border-color: rgba(255, 40, 50, 0.12); }
+    #bolts { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+    #bgfx, #embers { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+    /* Nápisy v rozích: bílé, v tmavém rámečku se seříznutým rohem a červenou září */
+    .meta {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-size: 0.7rem;
+      color: #aaa0a0;
+      padding: 9px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(10, 0, 3, 0.6);
+      box-shadow: 0 0 16px rgba(255, 20, 40, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.04);
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    }
+    .meta b { color: #fff; }
+    .meta span { color: #aaa0a0; }
+    @media (max-width: 700px) and (orientation: portrait) { .meta { font-size: 0.6rem; letter-spacing: 0.14em; padding: 7px 10px; } }
   </style>
 </head>
-
 <body>
   <!-- Světelné orby: vytvoří je skript dole -->
   <div class="orbs" id="orbs" aria-hidden="true"></div>
@@ -340,8 +391,7 @@
   <div class="meta tr"><b>Local time</b><span id="clock">--:--</span></div>
   <div class="meta br"><b>Level <span id="level">26</span></b>loading the rest<span class="dots"></span></div>
 
-  <!-- Tvar každého písmene je v atributu d. Drátěné vrstvy za ním přidá skript dole.
-       data-t = barva cílové stránky (red / pink / blue) -->
+  <!-- Tvar každého písmene je v atributu d. Můžeš si ho zkusit upravit. -->
   <nav class="logo" id="logo" aria-label="Hlavní menu">
     <a class="letter" style="--i: 0" href="soon.html" data-t="red" data-face="red" aria-label="F, Soon">
       <span class="tilt"><span class="stack"><svg class="f" viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H70V20H20V40H58V60H20V100H0Z"/></svg></span></span>
@@ -566,7 +616,171 @@
     }
     tick();
     setInterval(tick, 10000);
+  </script>
 
+  <!-- Elektrické záblesky: drobné jiskry na písmenech, jiskry po kliknutí do pozadí a občas velký rudý záblesk daleko od nápisu -->
+  <canvas id="bolts" aria-hidden="true"></canvas>
+  <script>
+  (function () {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var cv = document.getElementById('bolts'), g = cv.getContext('2d'), W, H, dpr, fx = [], running = false;
+    function size() { dpr = Math.min(window.devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    size(); addEventListener('resize', size);
+    var rnd = function (a, b) { return a + Math.random() * (b - a); };
+    var letters = function () { return Array.prototype.map.call(document.querySelectorAll('.letter'), function (e) { return e.getBoundingClientRect(); }); };
+
+    /* Klikatá čára z bodu x,y; občas se z ní odštěpí menší větev */
+    function bolt(x, y, ang, len, branch) {
+      var pts = [[x, y]], n = Math.max(5, Math.round(len / 9)), step = len / n;
+      for (var i = 0; i < n; i++) {
+        ang += rnd(-0.9, 0.9); x += Math.cos(ang) * step; y += Math.sin(ang) * step; pts.push([x, y]);
+      }
+      var out = { pts: pts, kids: [] };
+      if (branch && len > 50) for (var k = 2; k < pts.length - 1; k++) if (Math.random() < 0.18) out.kids.push(bolt(pts[k][0], pts[k][1], ang + rnd(-1.2, 1.2), len * rnd(0.25, 0.45), false));
+      return out;
+    }
+    function drawBolt(b, a, w) {
+      g.beginPath(); g.moveTo(b.pts[0][0], b.pts[0][1]);
+      for (var i = 1; i < b.pts.length; i++) g.lineTo(b.pts[i][0], b.pts[i][1]);
+      g.strokeStyle = 'rgba(255,70,80,' + a + ')'; g.lineWidth = w; g.shadowColor = 'rgba(255,20,40,' + a + ')'; g.shadowBlur = 12; g.stroke();
+      g.strokeStyle = 'rgba(255,215,215,' + a * 0.85 + ')'; g.lineWidth = w * 0.4; g.shadowBlur = 0; g.stroke();
+      b.kids.forEach(function (k) { drawBolt(k, a * 0.8, w * 0.7); });
+    }
+    function add(e) { e.t0 = performance.now(); fx.push(e); if (!running) { running = true; requestAnimationFrame(frame); } }
+
+    /* Drobná jiskra na okraji náhodného písmene */
+    function spark() {
+      var L = letters(), r = L[Math.floor(Math.random() * L.length)]; if (!r) return;
+      var x = r.left + rnd(0, r.width), y = r.top + rnd(0, r.height);
+      if (Math.random() < 0.7) { if (Math.random() < 0.5) x = r.left + (Math.random() < 0.5 ? 0 : r.width); else y = r.top + (Math.random() < 0.5 ? 0 : r.height); }
+      add({ type: 'bolt', life: rnd(110, 190), w: rnd(1, 1.5), b: bolt(x, y, rnd(0, 6.28), rnd(30, 80), true) });
+    }
+    /* Jiskry po kliknutí do pozadí */
+    function burst(x, y) {
+      var n = 3 + Math.floor(Math.random() * 3);
+      for (var i = 0; i < n; i++) add({ type: 'bolt', life: rnd(150, 260), w: rnd(1.1, 1.7), b: bolt(x, y, (i / n) * 6.28 + rnd(-0.4, 0.4), rnd(40, 110), true) });
+      add({ type: 'glow', x: x, y: y, r: 70, life: 220, a: 0.35 });
+    }
+    /* Velký rudý záblesk daleko od nápisu: na okraji obrazovky, nikdy za písmeny */
+    function flash() {
+      var L = letters(), pad = 60;
+      for (var tries = 0; tries < 30; tries++) {
+        var x = rnd(0, W), y = rnd(0, H), r = rnd(180, 340), ok = true;
+        for (var i = 0; i < L.length; i++) {
+          var q = L[i];
+          if (x > q.left - pad - r * 0.5 && x < q.right + pad + r * 0.5 && y > q.top - pad - r * 0.5 && y < q.bottom + pad + r * 0.5) { ok = false; break; }
+        }
+        if (ok) { add({ type: 'glow', x: x, y: y, r: r, life: rnd(520, 800), a: 0.42, flick: true }); return; }
+      }
+    }
+
+    function frame(now) {
+      g.clearRect(0, 0, W, H);
+      fx = fx.filter(function (e) {
+        var p = (now - e.t0) / e.life; if (p >= 1) return false;
+        g.save();
+        if (e.type === 'glow') {
+          var a = e.a * (1 - p) * (e.flick ? (0.55 + 0.45 * Math.abs(Math.sin(p * 17))) : 1);
+          var gr = g.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.r);
+          gr.addColorStop(0, 'rgba(255,30,50,' + a + ')'); gr.addColorStop(0.45, 'rgba(190,10,30,' + a * 0.4 + ')'); gr.addColorStop(1, 'rgba(120,0,15,0)');
+          g.fillStyle = gr; g.fillRect(e.x - e.r, e.y - e.r, e.r * 2, e.r * 2);
+        } else {
+          var on = Math.floor(p * 6) % 2 === 0 || p < 0.25;      // bliká, ne plynule
+          if (on) drawBolt(e.b, 1 - p * 0.5, e.w);
+        }
+        g.restore();
+        return true;
+      });
+      if (fx.length) requestAnimationFrame(frame); else { running = false; g.clearRect(0, 0, W, H); }
+    }
+
+    (function loopFlash() { setTimeout(function () { if (!document.hidden) flash(); loopFlash(); }, rnd(4500, 9500)); })();
+    addEventListener('pointerdown', function (e) { if (!e.target.closest('.letter')) burst(e.clientX, e.clientY); });
+    window.__bolts = { spark: spark, flash: flash, burst: burst };
+  })();
+  </script>
+
+  <!-- Pozadí: žilky, jiskry a skenovací linky. Nikdy nejdou přes nápis. -->
+  <canvas id="bgfx" aria-hidden="true"></canvas>
+  <canvas id="embers" aria-hidden="true"></canvas>
+  <script>
+  (function () {
+    var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var bg = document.getElementById('bgfx'), em = document.getElementById('embers');
+    var g = bg.getContext('2d'), e = em.getContext('2d'), W, H, dpr, veins = [], parts = [], clear;
+    var seed = 7; function R() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    var Q = function (a, b) { return a + Math.random() * (b - a); };
+
+    function titleBox() {
+      var L = document.querySelectorAll('.letter'), x0 = 1e9, y0 = 1e9, x1 = 0, y1 = 0;
+      Array.prototype.forEach.call(L, function (el) { var r = el.getBoundingClientRect(); x0 = Math.min(x0, r.left); y0 = Math.min(y0, r.top); x1 = Math.max(x1, r.right); y1 = Math.max(y1, r.bottom); });
+      if (x0 > x1) { x0 = W * .1; x1 = W * .9; y0 = H * .35; y1 = H * .65; }
+      return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    }
+    function vein(x, y, a, len, w) {
+      if (len < 8 || w < 0.3) return;
+      var pts = [[x, y]], k = Math.floor(len / 9), px = x, py = y;
+      for (var i = 0; i < k; i++) {
+        a += (R() - .5) * .6; px += Math.cos(a) * 9; py += Math.sin(a) * 9; pts.push([px, py]);
+        if (R() < .1) { veins.push({ node: [px, py] }); vein(px, py, a + (R() < .5 ? -1 : 1) * (.5 + R() * .5), len * .55, w * .7); }
+      }
+      veins.push({ pts: pts, w: w });
+    }
+    function paint() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+      [bg, em].forEach(function (c) { c.width = W * dpr; c.height = H * dpr; });
+      g.setTransform(dpr, 0, 0, dpr, 0, 0); e.setTransform(dpr, 0, 0, dpr, 0, 0);
+      seed = 7; veins = []; clear = titleBox();
+      var sc = Math.max(.6, Math.min(1, W / 1280)), cnt = W < 700 ? 5 : 8;
+      for (var i = 0; i < cnt; i++) { vein(R() * W, 0, 1.57 + (R() - .5) * .8, 300 * sc, 2); vein(R() * W, H, -1.57 + (R() - .5) * .8, 300 * sc, 2); }
+      for (i = 0; i < 6; i++) { vein(0, R() * H, (R() - .5) * .8, 260 * sc, 1.8); vein(W, R() * H, 3.14 + (R() - .5) * .8, 260 * sc, 1.8); }
+      g.clearRect(0, 0, W, H);
+      veins.forEach(function (v) {
+        if (v.node) { if (R() < .5) { var gr = g.createRadialGradient(v.node[0], v.node[1], 0, v.node[0], v.node[1], 9); gr.addColorStop(0, 'rgba(255,120,120,.9)'); gr.addColorStop(1, 'rgba(255,30,40,0)'); g.fillStyle = gr; g.beginPath(); g.arc(v.node[0], v.node[1], 9, 0, 6.28); g.fill(); } return; }
+        g.beginPath(); v.pts.forEach(function (p, i) { i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); });
+        g.strokeStyle = 'rgba(230,30,48,' + (.25 + v.w * .22) + ')'; g.lineWidth = v.w; g.shadowColor = 'rgba(255,20,40,.9)'; g.shadowBlur = 10; g.stroke(); g.shadowBlur = 0;
+      });
+      /* tmavý pás za nápisem, ať žilky nejdou přes písmena */
+      var cx = clear.x + clear.w / 2, cy = clear.y + clear.h / 2, rx = clear.w * .62 + 40, ry = clear.h * .95 + 30;
+      var gg = g.createRadialGradient(0, 0, 10, 0, 0, rx);
+      gg.addColorStop(0, 'rgba(2,0,1,.96)'); gg.addColorStop(.6, 'rgba(2,0,1,.78)'); gg.addColorStop(1, 'rgba(2,0,1,0)');
+      g.save(); g.translate(cx, cy); g.scale(1, ry / rx); g.fillStyle = gg; g.fillRect(-rx, -rx, rx * 2, rx * 2); g.restore();
+      var vg = g.createRadialGradient(W / 2, H / 2, H * .4, W / 2, H / 2, H * 1.05); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.6)');
+      g.fillStyle = vg; g.fillRect(0, 0, W, H);
+      g.fillStyle = 'rgba(0,0,0,.14)'; for (var y = 0; y < H; y += 4) g.fillRect(0, y, W, 1);
+      e.clearRect(0, 0, W, H);
+      if (still) return;
+    }
+    function inClear(x, y) { return x > clear.x - 20 && x < clear.x + clear.w + 20 && y > clear.y - 30 && y < clear.y + clear.h + 30; }
+    function spawn(init) {
+      var x, y, t = 0; do { x = Q(0, W); y = init ? Q(0, H) : H + 10; t++; } while (inClear(x, y) && t < 8);
+      parts.push({ x: x, y: y, r: Q(.6, 1.8), vy: Q(.12, .4), ph: Q(0, 6.28), a: Q(.3, .8), g: Q(0, 90) | 0 });
+    }
+    var pulse = null;
+    function run() {
+      e.clearRect(0, 0, W, H);
+      parts.forEach(function (p) {
+        p.y -= p.vy; p.x += Math.sin(p.ph += .02) * .3;
+        var f = .55 + .45 * Math.sin(p.ph * 2.3);
+        e.fillStyle = 'rgba(255,' + (90 + p.g) + ',70,' + (p.a * f) + ')'; e.shadowColor = 'rgba(255,40,40,1)'; e.shadowBlur = 8;
+        e.beginPath(); e.arc(p.x, p.y, p.r, 0, 6.28); e.fill();
+      });
+      e.shadowBlur = 0;
+      parts = parts.filter(function (p) { return p.y > -10; }); while (parts.length < 70) spawn(false);
+      /* světelný puls putující po žilce */
+      if (!pulse && Math.random() < .01) { var c = veins.filter(function (v) { return v.pts && v.pts.length > 14; }); if (c.length) pulse = { v: c[Math.floor(Math.random() * c.length)], i: 0 }; }
+      if (pulse) {
+        var P = pulse.v.pts, hi = Math.min(P.length - 1, Math.floor(pulse.i)), lo = Math.max(0, hi - 6); e.beginPath(); for (var k = lo; k <= hi; k++) k === lo ? e.moveTo(P[k][0], P[k][1]) : e.lineTo(P[k][0], P[k][1]);
+        e.strokeStyle = 'rgba(255,170,170,.9)'; e.lineWidth = 2; e.shadowColor = 'rgba(255,40,50,1)'; e.shadowBlur = 14; e.stroke(); e.shadowBlur = 0;
+        pulse.i += .7; if (pulse.i > P.length + 6) pulse = null;
+      }
+      if (!document.hidden) requestAnimationFrame(run); else document.addEventListener('visibilitychange', function f() { if (!document.hidden) { document.removeEventListener('visibilitychange', f); requestAnimationFrame(run); } });
+    }
+    paint(); addEventListener('resize', function () { paint(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(paint);
+    setTimeout(paint, 1500);
+    if (!still) { for (var i = 0; i < 70; i++) spawn(true); requestAnimationFrame(run); }
+  })();
   </script>
 </body>
 </html>

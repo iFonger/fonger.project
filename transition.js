@@ -124,7 +124,7 @@
     /* Barevné přechody písmen: červená (hlavní stránka), růžová (hra), modrá (Experience).
        Stejné barvy jako velké E na stránce Experience. */
     '<linearGradient id="fx-red" x1="0" y1="0" x2="0" y2="1">' +
-    '<stop offset="0" stop-color="#ff4b4b"/><stop offset="0.55" stop-color="#b3081a"/><stop offset="1" stop-color="#2a0307"/>' +
+    '<stop offset="0" stop-color="#8d0b18"/><stop offset="0.55" stop-color="#47050c"/><stop offset="1" stop-color="#0e0105"/>' +
     '</linearGradient>' +
     '<linearGradient id="fx-pink" x1="0" y1="0" x2="0" y2="1">' +
     '<stop offset="0" stop-color="#ffb3dc"/><stop offset="0.55" stop-color="#ff4fa6"/><stop offset="1" stop-color="#4a0b2e"/>' +
