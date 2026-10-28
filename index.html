@@ -311,7 +311,7 @@
         /* Telefon na výšku: písmena jsou velká a jdou schodištěm zleva nahoře doprava dolů */
     @media (max-width: 700px) and (orientation: portrait) {
       :root {
-        --h: min(26vw, 12vh);
+        --h: min(24vw, 10.6vh);
         --dx: calc((82vw - var(--h) * 0.7) / 5);     /* o kolik je každé další písmeno víc vpravo */
       }
 
@@ -323,6 +323,7 @@
       }
 
       .letter { margin-left: calc(var(--i) * var(--dx)); }
+      .logo { transform: translateY(26px); }
 
       .hint { left: 28px; bottom: 28px; }
 
@@ -357,7 +358,7 @@
     .letter svg.f path { stroke: #ffc2b8; stroke-width: 2.2px; }
     .letter[data-face="red"] svg.f { filter: drop-shadow(0 0 1.4rem rgba(255, 30, 44, 0.8)); }
     .letter[data-face="red"]:hover svg.f,
-    .letter[data-face="red"]:focus-visible svg.f { filter: brightness(1.15) drop-shadow(0 0 1.8rem rgba(255, 30, 50, 0.95)); }
+    .letter[data-face="red"]:focus-visible svg.f { filter: brightness(1.18) drop-shadow(0 0 1.8rem rgba(var(--hov), 0.9)) drop-shadow(0 0 4rem rgba(var(--hov), 0.45)); }
     .frame { border-color: rgba(255, 40, 50, 0.12); }
     #bolts { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
     #bgfx, #embers { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
@@ -378,6 +379,40 @@
     .meta b { color: #fff; }
     .meta span { color: #aaa0a0; }
     @media (max-width: 700px) and (orientation: portrait) { .meta { font-size: 0.6rem; letter-spacing: 0.14em; padding: 7px 10px; } }
+
+    /* ---------- Popisky: obrys se září, zalévaná výplň, červená čára odkryje slovo ---------- */
+    .letter:hover svg.f,
+    .letter:focus-visible svg.f { filter: brightness(1.18) drop-shadow(0 0 1.8rem rgba(var(--hov), 0.85)); }
+    .tag {
+      font-size: 1.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.16em;
+      color: transparent !important;
+      -webkit-text-stroke: 1.3px rgb(var(--hov));
+      text-shadow: 0 0 18px rgba(var(--hov), 0.8), 0 0 40px rgba(var(--hov), 0.4);
+      transition: none;
+    }
+    .letter[data-t="red"] .tag { -webkit-text-stroke: 1.3px #ffc2b8; }
+    .tag::before {
+      content: attr(data-x); position: absolute; left: 0; top: 0;
+      -webkit-text-stroke: 0; text-shadow: 0 0 14px rgba(var(--hov), 0.9);
+      color: rgba(var(--hov), 0.9);
+      clip-path: inset(58% 0 0 0);
+    }
+    .letter[data-t="red"] .tag::before { color: rgba(255, 70, 80, 0.9); text-shadow: 0 0 14px rgba(255, 30, 50, 0.9); }
+    .tag::after {
+      content: ""; position: absolute; top: -4px; bottom: -4px; left: 0; width: 3px;
+      background: #ff2a38; box-shadow: 0 0 14px 3px rgba(255, 30, 50, 0.9); opacity: 0;
+    }
+    @media (hover: hover) {
+      .tag { clip-path: inset(-30px 100% -30px 0); }
+      .letter:hover .tag, .letter:focus-visible .tag { opacity: 1; animation: tagWipe 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+      .letter:hover .tag::before, .letter:focus-visible .tag::before { animation: tagFill 0.7s 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+      .letter:hover .tag::after, .letter:focus-visible .tag::after { animation: tagLine 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+    }
+    @keyframes tagWipe { from { clip-path: inset(-30px 100% -30px 0); } to { clip-path: inset(-30px -20px -30px -20px); } }
+    @keyframes tagFill { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(58% 0 0 0); } }
+    @keyframes tagLine { 0% { left: 0; opacity: 1; } 85% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+    @media (hover: none) { .tag { font-size: 1.15rem; letter-spacing: 0.12em; } }
+    @media (prefers-reduced-motion: reduce) { .tag, .tag::before, .tag::after { animation: none !important; clip-path: none; } .tag::before { clip-path: inset(58% 0 0 0); } .tag::after { display: none; } }
   </style>
 </head>
 <body>
@@ -395,32 +430,32 @@
   <nav class="logo" id="logo" aria-label="Hlavní menu">
     <a class="letter" style="--i: 0" href="soon.html" data-t="red" data-face="red" aria-label="F, Soon">
       <span class="tilt"><span class="stack"><svg class="f" viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H70V20H20V40H58V60H20V100H0Z"/></svg></span></span>
-      <span class="tag">Soon</span>
+      <span class="tag" data-x="Soon">Soon</span>
     </a>
 
     <a class="letter" style="--i: 1" href="soon.html" data-t="red" data-face="red" aria-label="O, Soon">
       <span class="tilt"><span class="stack"><svg class="f" viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 50A35 50 0 1 1 70 50A35 50 0 1 1 0 50ZM20 50A15 30 0 1 0 50 50A15 30 0 1 0 20 50Z"/></svg></span></span>
-      <span class="tag">Soon</span>
+      <span class="tag" data-x="Soon">Soon</span>
     </a>
 
     <a class="letter" style="--i: 2" href="soon.html" data-t="red" data-face="red" aria-label="N, Soon">
       <span class="tilt"><span class="stack"><svg class="f" viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H20L50 60V0H70V100H50L20 40V100H0Z"/></svg></span></span>
-      <span class="tag">Soon</span>
+      <span class="tag" data-x="Soon">Soon</span>
     </a>
 
     <a class="letter" style="--i: 3" href="game.html" data-t="pink" data-face="red" aria-label="G, Game">
       <span class="tilt"><span class="stack"><svg class="f" viewBox="0 0 70 100"><path fill-rule="evenodd" d="M61.8 17.9A35 50 0 1 0 70 50H38V70H46.2A15 30 0 1 1 46.5 30.7Z"/></svg></span></span>
-      <span class="tag">Game</span>
+      <span class="tag" data-x="Game">Game</span>
     </a>
 
     <a class="letter" style="--i: 4" href="experience.html" data-t="blue" data-face="red" aria-label="E, Experience">
       <span class="tilt"><span class="stack"><svg class="f" viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H70V20H20V40H60V60H20V80H70V100H0Z"/></svg></span></span>
-      <span class="tag">Experience</span>
+      <span class="tag" data-x="Experience">Experience</span>
     </a>
 
     <a class="letter" style="--i: 5" href="reach.html" data-t="red" data-face="red" aria-label="R, Reach me">
       <span class="tilt"><span class="stack"><svg class="f" viewBox="0 0 70 100"><path fill-rule="evenodd" d="M0 0H40A30 30 0 0 1 40 60L70 100H50L20 60V100H0ZM20 20H40A10 10 0 0 1 40 40H20Z"/></svg></span></span>
-      <span class="tag">Reach me</span>
+      <span class="tag" data-x="Reach me">Reach me</span>
     </a>
   </nav>
 
