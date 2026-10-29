@@ -211,6 +211,9 @@
     return location.pathname.split('/').pop() || 'index.html';
   }
 
+  /* Tvar písmene každé stránky: záloha, kdyby se kliknuté písmeno nepamatovalo (přímý odkaz, zpět v prohlížeči, obnovení) */
+  var OWN = {"outings.html": "M0 50A35 50 0 1 1 70 50A35 50 0 1 1 0 50ZM20 50A15 30 0 1 0 50 50A15 30 0 1 0 20 50Z", "game.html": "M61.8 17.9A35 50 0 1 0 70 50H38V70H46.2A15 30 0 1 1 46.5 30.7Z", "experience.html": "M0 0H70V20H20V40H60V60H20V80H70V100H0Z", "reach.html": "M0 0H40A30 30 0 0 1 40 60L70 100H50L20 60V100H0ZM20 20H40A10 10 0 0 1 40 40H20Z"};
+
   /* PODSTRÁNKA: z domečku se stane kliknuté písmeno */
   function applyMark() {
     ensureDefs();
@@ -218,7 +221,11 @@
     if (!mark || mark.dataset.done) return;
 
     var rec = read();
-    if (!rec || !rec.d || rec.href !== pageName()) return;   // jiná stránka: zůstane domeček
+    if (!rec || !rec.d || rec.href !== pageName()) {
+      // nepamatujeme si klik: zkusíme znát písmeno této stránky, jinak zůstane domeček
+      if (!OWN[pageName()]) return;
+      rec = { d: OWN[pageName()], href: pageName() };
+    }
 
     var NS = 'http://www.w3.org/2000/svg';
     var svg = mark.querySelector('svg');

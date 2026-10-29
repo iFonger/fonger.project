@@ -11,7 +11,6 @@
   --mark-fill: url(#fx-red);
   --mark-glow: 255, 60, 60;
   --mark-edge: #3a0509;
-  --gl-hue: 0deg;       /* o kolik se při glitch přechodu posune odstín */
 }
 
 /* Zapne plynulé přechody mezi stránkami (kdo má vypnuté animace, nic neuvidí) */
@@ -156,12 +155,10 @@ body::before {
   overflow: visible;
 }
 
-/* Z domečku se stane stejné 3D písmeno jako na hlavní stránce, v barvě té stránky */
+/* Z domečku se stane stejné červené 3D písmeno jako na hlavní stránce */
 .home.is-letter svg {
   fill: none;
   stroke: none;
-  /* tvrdé stíny dolů doprava = tloušťka písmene */
-  filter: drop-shadow(1px 1px 0 var(--mark-edge)) drop-shadow(2px 2px 0 var(--mark-edge)) drop-shadow(3px 3px 0 #000);
 }
 
 .home.is-letter path {
@@ -169,6 +166,12 @@ body::before {
   stroke: rgba(255, 255, 255, 0.55);
   stroke-width: 1px;
   vector-effect: non-scaling-stroke;
+  /* tvrdý stín dolů doprava = tloušťka písmene */
+  transform: none;
+}
+
+.home.is-letter svg {
+  filter: drop-shadow(1px 1px 0 var(--mark-edge)) drop-shadow(2px 2px 0 var(--mark-edge)) drop-shadow(3px 3px 0 #000);
 }
 
 /* Jak se přechody animují */
@@ -187,30 +190,42 @@ body::before {
    Písmeno nejdřív chvíli "glitchuje" na místě (červená přeblikává do barvy cíle,
    kolem jsou posunuté barevné okraje a pruhy), pak odletí do rohu. Zbytek stránky se nehýbe. */
 @media (prefers-reduced-motion: no-preference) {
-    /* Stránka se prolne až po glitchi písmene, ať se glitch neodehrává přes obsah nové stránky */
+  /* Stránka se prolne až po glitchi písmene, ať se glitch neodehrává přes obsah nové stránky (třeba přes automat) */
   html[data-vt="game"]::view-transition-old(root),
   html[data-vt="game"]::view-transition-new(root),
   html[data-vt="experience"]::view-transition-old(root),
-  html[data-vt="experience"]::view-transition-new(root) {
+  html[data-vt="reach"]::view-transition-old(root),
+  html[data-vt="outings"]::view-transition-old(root),
+  html[data-vt="experience"]::view-transition-new(root),
+  html[data-vt="reach"]::view-transition-new(root),
+  html[data-vt="outings"]::view-transition-new(root) {
     animation-delay: 0.5s;
     animation-fill-mode: both;
   }
   html[data-vt="game"]::view-transition-group(letter),
-  html[data-vt="experience"]::view-transition-group(letter) {
+  html[data-vt="experience"]::view-transition-group(letter),
+  html[data-vt="reach"]::view-transition-group(letter),
+  html[data-vt="outings"]::view-transition-group(letter) {
     animation-duration: 0.75s;
     animation-delay: 0.5s;
   }
   html[data-vt="game"]::view-transition-image-pair(letter),
-  html[data-vt="experience"]::view-transition-image-pair(letter) {
+  html[data-vt="experience"]::view-transition-image-pair(letter),
+  html[data-vt="reach"]::view-transition-image-pair(letter),
+  html[data-vt="outings"]::view-transition-image-pair(letter) {
     animation: gl-pair 1.25s step-end both;
   }
   html[data-vt="game"]::view-transition-old(letter),
-  html[data-vt="experience"]::view-transition-old(letter) {
+  html[data-vt="experience"]::view-transition-old(letter),
+  html[data-vt="reach"]::view-transition-old(letter),
+  html[data-vt="outings"]::view-transition-old(letter) {
     animation: gl-old 1.25s step-end both;
     mix-blend-mode: normal;
   }
   html[data-vt="game"]::view-transition-new(letter),
-  html[data-vt="experience"]::view-transition-new(letter) {
+  html[data-vt="experience"]::view-transition-new(letter),
+  html[data-vt="reach"]::view-transition-new(letter),
+  html[data-vt="outings"]::view-transition-new(letter) {
     animation: gl-new 1.25s step-end both;
     mix-blend-mode: normal;
   }
@@ -262,21 +277,8 @@ body::before {
   100% { opacity: 1; }
 }
 
-/* Kdo má v systému vypnuté animace, nic se nehýbe (mráčky stojí na svých místech) */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-delay: 0s !important;
-    transition-duration: 0.01ms !important;
-  }
-
-  .mist .layer {
-    animation: none !important;
-    transform: translateX(-100vw);
-  }
-}
-
-/* G: starý (červený) snímek přeblikává do růžové, malé nové písmeno se objeví až při letu */
+/* G: starý (červený) snímek přeblikává do růžové barvy, malé nové písmeno se objeví až když letí.
+   Tím se nenatahuje malé písmeno s tmavým stínem do velkého rámečku. */
 @keyframes gl-old-g {
   0%   { opacity: 1; filter: none; }
   8%   { opacity: 1; filter: hue-rotate(-38deg) saturate(1.3); }
@@ -295,4 +297,18 @@ body::before {
 @media (prefers-reduced-motion: no-preference) {
   html[data-vt="game"]::view-transition-old(letter) { animation: gl-old-g 1.25s step-end both; }
   html[data-vt="game"]::view-transition-new(letter) { animation: gl-new-g 1.25s step-end both; }
+}
+
+/* Kdo má v systému vypnuté animace, nic se nehýbe (mráčky stojí na svých místech) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .mist .layer {
+    animation: none !important;
+    transform: translateX(-100vw);
+  }
 }
