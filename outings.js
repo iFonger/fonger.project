@@ -35,14 +35,14 @@
   function sx(lon) { return mod((lon + 180) * S + ox, full()); }
   function sy(lat) { return oy + (LAT_TOP - lat) * S; }
   function mapH() { return (LAT_TOP - LAT_BOT) * S; }
-  function clampY() { var lo = H * .4 - mapH(), hi = H * .6; oy = Math.max(lo, Math.min(hi, oy)); }
+  function clampY() { var lo = H - mapH(), hi = 0; oy = lo > hi ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, oy)); }
 
   function fit() {
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = innerWidth; H = innerHeight;
     cv.width = W * DPR; cv.height = H * DPR;
     cx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    S0 = Math.max(2.2, Math.min(4.2, H * .74 / (LAT_TOP - LAT_BOT)));
+    S0 = Math.max(W / 360, H / (LAT_TOP - LAT_BOT));
     landKey = '';
   }
 
@@ -415,7 +415,7 @@
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('wheel', function (e) { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * .0012)); }, { passive: false });
   function zoomAt(x, y, f) {
-    var ns = Math.max(S0 * .6, Math.min(S0 * 6, S * f)); f = ns / S;
+    var ns = Math.max(S0, Math.min(S0 * 6, S * f)); f = ns / S;
     ox = x - (x - ox) * f; oy = y - (y - oy) * f; S = ns; clampY(); need = true;
   }
   function pick(x, y) {
@@ -539,7 +539,7 @@
     else { var dockx = W - 28 - 340; tx = Math.min((W - 368) * .5, dockx - 150); ty = H * .46; }
     var F = full(), cur = (c.lon + 180) * S + ox, want = tx, d = mod(want - cur + F / 2, F) - F / 2;
     var ox1 = ox + d, oy1 = ty - (LAT_TOP - c.lat) * S;
-    oy1 = Math.max(H * .4 - mapH(), Math.min(H * .6, oy1));
+    oy1 = Math.max(H - mapH(), Math.min(0, oy1));
     if (reduce) { ox = ox1; oy = oy1; } else anim = { t0: performance.now(), d: 700, ox0: ox, oy0: oy, ox1: ox1, oy1: oy1, s0: S, s1: S };
     need = true;
     if (!noHash) try { history.replaceState(null, '', '#' + c.id); } catch (e) {}
@@ -638,7 +638,7 @@
   }
   function viewBox(b) {
     var mobile = innerWidth <= 720, aw = mobile ? W * .92 : W - 460, ah = mobile ? H * .3 : H * .7;
-    var s = Math.max(S0 * .6, Math.min(S0 * 6, Math.min(aw / (b[1] - b[0]), ah / (b[3] - b[2]))));
+    var s = Math.max(S0, Math.min(S0 * 6, Math.min(aw / (b[1] - b[0]), ah / (b[3] - b[2]))));
     var cxp = mobile ? W / 2 : (W - 400) / 2 + 10, cyp = mobile ? H * .31 : H * .5;
     return { s: s, ox: cxp - ((b[0] + b[1]) / 2 + 180) * s, oy: cyp - (LAT_TOP - (b[2] + b[3]) / 2) * s + LIFT * .5 };
   }
@@ -672,10 +672,11 @@
     var lo = vs.map(function (c) { return c.lon; }), la = vs.map(function (c) { return c.lat; });
     var minLo = Math.min.apply(null, lo), maxLo = Math.max.apply(null, lo), minLa = Math.min.apply(null, la), maxLa = Math.max.apply(null, la);
     var mobile = innerWidth <= 720, spanLo = Math.max(14, maxLo - minLo), spanLa = Math.max(10, maxLa - minLa);
-    var s = Math.max(S0 * .6, Math.min(S0 * 3.4, Math.min(W * (mobile ? .8 : .45) / spanLo, H * .5 / spanLa)));
+    var s = Math.max(S0, Math.min(S0 * 3.4, Math.min(W * (mobile ? .8 : .45) / spanLo, H * .5 / spanLa)));
     return { s: s, ox: (mobile ? W / 2 : W * .36) - ((minLo + maxLo) / 2 + 180) * s, oy: H * (mobile ? .32 : .5) - (LAT_TOP - (minLa + maxLa) / 2) * s };
   }
   function go(v) {
+    var mh = (LAT_TOP - LAT_BOT) * v.s, lo = H - mh; v = { s: v.s, ox: v.ox, oy: lo > 0 ? lo / 2 : Math.max(lo, Math.min(0, v.oy)) };
     if (reduce) { S = v.s; ox = v.ox; oy = v.oy; clampY(); need = true; return; }
     var F = full(), d = mod(v.ox - ox + F / 2, F) - F / 2;
     anim = { t0: performance.now(), d: 800, ox0: ox, oy0: oy, ox1: ox + d, oy1: v.oy, s0: S, s1: v.s };

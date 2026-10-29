@@ -1,64 +1,92 @@
 /* ============================================================
    OUTINGS: tady jsou všechna tvoje místa.
    Nové město přidáš zkopírováním jednoho bloku do "visited".
-   Povinné jsou jen: id, name, country, cont, lon, lat, date.
-   Všechno ostatní můžeš smazat a karta se tomu přizpůsobí.
-   cont: EU, AS, NA, SA, AF, OC
-   transport: plane, train, car, bus, ship
+   Povinné: id, name, country, cont, lon, lat, visits.
+   visits: jeden nebo víc pobytů, datum ve tvaru 'RRRR-MM-DD'.
+     Když jsi někde byl víckrát, napiš všechny pobyty do jednoho bloku.
+   Volitelné: transport (plane, train, car, bus, ship), photos,
+     food: { dish, place }, plus: [..], minus: [..]
    photos: cesty k fotkám, např. 'outings/tokyo-1.jpg'
+   cont: EU, AS, NA, SA, AF, OC
    ============================================================ */
 window.OUTINGS = {
   home: { name: 'Prague', code: 'PRG', lon: 14.42, lat: 50.08 },
 
   visited: [
-    { id: 'vienna', name: 'Vienna', code: 'VIE', country: 'Austria', cont: 'EU', lon: 16.37, lat: 48.21,
-      date: 'MAR 2019', transport: 'train', nights: 3,
-      plus: ['Coffee house culture'], minus: [] },
+    { id: 'kaltenbach', name: 'Kaltenbach', country: 'Austria', cont: 'EU', lon: 11.883, lat: 47.233,
+      visits: [{ from: '2018-03-12', to: '2018-03-18' }] },
 
-    { id: 'paris', name: 'Paris', code: 'CDG', country: 'France', cont: 'EU', lon: 2.35, lat: 48.86,
-      date: 'MAY 2020', transport: 'plane', nights: 4,
-      plus: ['Golden hour on the Seine', 'Croissants worth the queue'], minus: ['Tourist traps near the Eiffel Tower'] },
+    { id: 'banskabystrica', name: 'Banská Bystrica', country: 'Slovakia', cont: 'EU', lon: 19.1535, lat: 48.7395,
+      visits: [{ from: '2018-07-28', to: '2018-08-02' }] },
 
-    { id: 'barcelona', name: 'Barcelona', code: 'BCN', country: 'Spain', cont: 'EU', lon: 2.17, lat: 41.39,
-      date: 'JUL 2021', transport: 'plane', nights: 5, plus: ['Beach and city in one'], minus: [] },
+    { id: 'budapest', name: 'Budapest', country: 'Hungary', cont: 'EU', lon: 19.0402, lat: 47.4979,
+      visits: [{ from: '2018-08-03', to: '2018-08-05' }, { from: '2025-11-22', to: '2025-11-28' }] },
 
-    { id: 'rome', name: 'Rome', code: 'FCO', country: 'Italy', cont: 'EU', lon: 12.5, lat: 41.9,
-      date: 'OCT 2021', transport: 'plane', nights: 4,
-      food: { dish: 'Cacio e pepe', place: 'Da Enzo al 29' }, plus: ['Pasta everywhere'], minus: [] },
+    { id: 'bratislava', name: 'Bratislava', country: 'Slovakia', cont: 'EU', lon: 17.1077, lat: 48.1486,
+      visits: [{ from: '2019-06-28', to: '2019-06-29' }] },
 
-    { id: 'london', name: 'London', code: 'LHR', country: 'United Kingdom', cont: 'EU', lon: -0.12, lat: 51.5,
-      date: 'APR 2022', transport: 'plane', nights: 4, plus: ['Free museums'], minus: ['Prices'] },
+    { id: 'liptovskymikulas', name: 'Liptovský Mikuláš', country: 'Slovakia', cont: 'EU', lon: 19.6167, lat: 49.0833,
+      visits: [{ from: '2020-07-09', to: '2020-07-15' }] },
 
-    { id: 'lisbon', name: 'Lisbon', code: 'LIS', country: 'Portugal', cont: 'EU', lon: -9.14, lat: 38.72,
-      date: 'SEP 2022', transport: 'plane', nights: 6,
-      food: { dish: 'Pastel de nata', place: 'Manteigaria' }, plus: ['Sunsets from the viewpoints'], minus: ['Hills everywhere'] },
+    { id: 'linz', name: 'Linz', country: 'Austria', cont: 'EU', lon: 14.2858, lat: 48.3069,
+      visits: [{ from: '2020-08-14', to: '2020-08-17' }] },
 
-    { id: 'istanbul', name: 'Istanbul', code: 'IST', country: 'Türkiye', cont: 'EU', lon: 28.97, lat: 41.0,
-      date: 'MAY 2023', transport: 'plane', nights: 5, plus: ['Tea on every corner'], minus: [] },
+    { id: 'newyork', name: 'New York', country: 'USA', cont: 'NA', lon: -74.006, lat: 40.7128,
+      visits: [{ from: '2022-07-20', to: '2022-08-11' }] },
 
-    { id: 'dubai', name: 'Dubai', code: 'DXB', country: 'UAE', cont: 'AS', lon: 55.3, lat: 25.2,
-      date: 'DEC 2023', transport: 'plane', nights: 4, plus: ['Skyline at night'], minus: ['Heat'] },
+    { id: 'niagarafalls', name: 'Niagara Falls', country: 'USA', cont: 'NA', lon: -79.0377, lat: 43.0962,
+      visits: [{ from: '2022-07-29', to: '2022-07-30' }] },
 
-    { id: 'bangkok', name: 'Bangkok', code: 'BKK', country: 'Thailand', cont: 'AS', lon: 100.5, lat: 13.75,
-      date: 'FEB 2024', transport: 'plane', nights: 8,
-      food: { dish: 'Pad kra pao', place: 'Street stall near Ari' }, plus: ['Street food', 'Friendly people'], minus: ['Traffic'] },
+    { id: 'washingtondc', name: 'Washington D.C.', country: 'USA', cont: 'NA', lon: -77.0369, lat: 38.9072,
+      visits: [{ from: '2022-08-02', to: '2022-08-03' }] },
 
-    { id: 'tokyo', name: 'Tokyo', code: 'TYO', country: 'Japan', cont: 'AS', lon: 139.69, lat: 35.68,
-      date: 'OCT 2024', transport: 'plane', nights: 9,
-      photos: [],
-      food: { dish: 'Tonkotsu ramen', place: 'Ichiran Shibuya' },
-      plus: ['Spotless and on time', 'Konbini breakfast for 3 €'],
-      minus: ['Shinjuku station is a maze'] },
+    { id: 'vodice', name: 'Vodice', country: 'Croatia', cont: 'EU', lon: 15.7778, lat: 43.7608,
+      visits: [{ from: '2022-08-20', to: '2022-08-28' }] },
 
-    { id: 'newyork', name: 'New York', code: 'NYC', country: 'USA', cont: 'NA', lon: -74.0, lat: 40.71,
-      date: 'JUN 2025', transport: 'plane', nights: 7, plus: ['Walking at night'], minus: [] }
+    { id: 'nuremberg', name: 'Nuremberg', country: 'Germany', cont: 'EU', lon: 11.0767, lat: 49.4521,
+      visits: [{ from: '2023-02-03', to: '2023-02-05' }] },
+
+    { id: 'ebensee', name: 'Ebensee', country: 'Austria', cont: 'EU', lon: 13.7733, lat: 47.8056,
+      visits: [{ from: '2023-06-23', to: '2023-06-25' }] },
+
+    { id: 'lagodibraies', name: 'Lago di Braies', country: 'Italy', cont: 'EU', lon: 12.0855, lat: 46.6944,
+      visits: [{ from: '2023-06-25', to: '2023-06-25' }] },
+
+    { id: 'lidodijesolo', name: 'Lido di Jesolo', country: 'Italy', cont: 'EU', lon: 12.6417, lat: 45.5083,
+      visits: [{ from: '2023-06-26', to: '2023-07-02' }] },
+
+    { id: 'venice', name: 'Venice', country: 'Italy', cont: 'EU', lon: 12.3155, lat: 45.4408,
+      visits: [{ from: '2023-06-29', to: '2023-06-29' }] },
+
+    { id: 'dubai', name: 'Dubai', country: 'United Arab Emirates', cont: 'AS', lon: 55.2708, lat: 25.2048,
+      visits: [{ from: '2023-11-16', to: '2023-11-23' }] },
+
+    { id: 'nessebar', name: 'Nessebar', country: 'Bulgaria', cont: 'EU', lon: 27.7356, lat: 42.6597,
+      visits: [{ from: '2024-06-21', to: '2024-06-30' }] },
+
+    { id: 'vienna', name: 'Vienna', country: 'Austria', cont: 'EU', lon: 16.3738, lat: 48.2082,
+      visits: [{ from: '2024-08-31', to: '2024-09-01' }, { from: '2025-02-27', to: '2025-03-02' }, { from: '2025-11-28', to: '2025-11-30' }] },
+
+    { id: 'crikvenica', name: 'Crikvenica', country: 'Croatia', cont: 'EU', lon: 14.6919, lat: 45.1769,
+      visits: [{ from: '2024-09-02', to: '2024-09-04' }] },
+
+    { id: 'stuttgart', name: 'Stuttgart', country: 'Germany', cont: 'EU', lon: 9.1829, lat: 48.7758,
+      visits: [{ from: '2025-10-25', to: '2025-10-28' }] },
+
+    { id: 'karpacz', name: 'Karpacz', country: 'Poland', cont: 'EU', lon: 15.7459, lat: 50.7766,
+      visits: [{ from: '2026-04-08', to: '2026-04-10' }] },
+
+    { id: 'vrlika', name: 'Vrlika', country: 'Croatia', cont: 'EU', lon: 16.3883, lat: 43.9072,
+      visits: [{ from: '2026-06-20', to: '2026-06-21' }] },
+
+    { id: 'makarska', name: 'Makarska', country: 'Croatia', cont: 'EU', lon: 17.0179, lat: 43.2969,
+      visits: [{ from: '2026-06-21', to: '2026-06-27' }] },
+
+    { id: 'plitvicelakes', name: 'Plitvice Lakes', country: 'Croatia', cont: 'EU', lon: 15.582, lat: 44.8654,
+      visits: [{ from: '2026-06-27', to: '2026-06-28' }] }
   ],
 
   /* Kam chceš jet. Po návštěvě blok přesuň nahoru do "visited". */
   wishlist: [
-    { id: 'reykjavik', name: 'Reykjavik', country: 'Iceland', cont: 'EU', lon: -21.9, lat: 64.15, note: 'Northern lights' },
-    { id: 'capetown', name: 'Cape Town', country: 'South Africa', cont: 'AF', lon: 18.42, lat: -33.92, note: 'Table Mountain' },
-    { id: 'sydney', name: 'Sydney', country: 'Australia', cont: 'OC', lon: 151.21, lat: -33.87, note: 'Opera house at sunrise' },
-    { id: 'buenosaires', name: 'Buenos Aires', country: 'Argentina', cont: 'SA', lon: -58.38, lat: -34.6, note: 'Steak and tango' }
   ]
 };
