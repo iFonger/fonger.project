@@ -237,7 +237,7 @@
       }
     }
     g.save(); g.lineJoin = 'round'; g.globalAlpha = va;
-    g.fillStyle = 'rgba(255,196,96,.10)'; g.fill(path, 'evenodd');
+    g.fillStyle = 'rgba(255,196,96,.13)'; g.fill(path, 'evenodd');
     g.lineWidth = 6; g.strokeStyle = 'rgba(255,190,80,.07)'; g.stroke(path);
     g.lineWidth = 1.3; g.strokeStyle = 'rgba(255,224,160,.75)'; g.stroke(path);
     g.restore();
@@ -299,9 +299,9 @@
       drawSet(g, gr, bins, sp, 1, lift, 4, 1);
       drawBorders(g, lift, bx, true);
     } else {
-      var va = vec ? Math.max(0, Math.min(1, (S - 38) / 32)) : 0; vecA = va;
-      if (va < 1) {
-        g.globalAlpha = 1 - va;
+      var va = vec ? Math.max(0, Math.min(1, (S - 22) / 22)) : 0; vecA = va;
+      if (va < 1 || vec) {
+        g.globalAlpha = 1 - .85 * va;
         if (tl > .05) for (var dd2 = 3; dd2 >= 1; dd2--) drawSet(g, gr, bins, sp, 0, -dd2 * 3.4 * tl, undefined, .14 + .05 * (4 - dd2), 1);   /* tloušťka desky */
         drawSet(g, gr, bins, sp, 0, 0); g.globalAlpha = 1;
       }
@@ -400,12 +400,12 @@
     singles.sort(function (a, b) { return ((b.c === hov) * 2 + (b.c === sel)) - ((a.c === hov) * 2 + (a.c === sel)); });
     pts = singles;
     var occ = singles.concat(cl.filter(function (q) { return q.m.length > 1; }).map(function (q) { return { x: q.x, y: q.y }; }));
-    var cand = [[8, 0, 'l'], [-8, 0, 'r'], [0, -14, 'c'], [0, 12, 'c'], [8, -10, 'l'], [-8, -10, 'r'], [8, 10, 'l'], [-8, 10, 'r']];
+    var cand = [[9, 0, 'l'], [-9, 0, 'r'], [0, -17, 'c'], [0, 16, 'c'], [9, -13, 'l'], [-9, -13, 'r'], [9, 13, 'l'], [-9, 13, 'r']], mob = innerWidth <= 720;
     pts.forEach(function (p) {
       var c = p.c, isH = c === hov, isSel = c === sel, big = isH || isSel, k = (big ? 1.7 : 1) * k0, lab = c.name.toUpperCase();
       items.push({ k: 0, c: c, x: p.x, y: p.y, rad: 14 });
-      var f = big ? 11 : 9; cx.font = (big ? '700 ' : '600 ') + f + 'px ui-monospace,Menlo,monospace';
-      var w = cx.measureText(lab).width, h = f + 2, put = null;
+      var f = big ? (mob ? 15 : 14) : (mob ? 13 : 12); cx.font = '700 ' + f + 'px ui-monospace,Menlo,monospace';
+      var w = cx.measureText(lab).width, h = f + 4, put = null;
       for (var i = 0; i < cand.length && !put; i++) {
         var px = p.x + cand[i][0] * k, py = p.y + cand[i][1] * (big ? 1.4 : 1), al = cand[i][2];
         var l = al === 'l' ? px : al === 'r' ? px - w : px - w / 2, R = [l - 2, py - h / 2, l + w + 2, py + h / 2], bad = false;
@@ -434,7 +434,8 @@
       }
       if (put) {
         rects.push(put.R); cx.textAlign = put.al === 'l' ? 'left' : put.al === 'r' ? 'right' : 'center';
-        cx.fillStyle = big ? '#fff2cf' : (c.wish ? 'rgba(255,226,160,.6)' : 'rgba(255,233,184,.78)'); cx.fillText(lab, put.x, put.y);
+        cx.lineJoin = 'round'; cx.lineWidth = 4.5; cx.strokeStyle = 'rgba(6,4,1,.92)'; cx.strokeText(lab, put.x, put.y);   /* tmavý obrys, aby se nápis četl na tečkách */
+        cx.fillStyle = big ? '#ffffff' : (c.wish ? 'rgba(255,230,170,.8)' : '#ffeec4'); cx.fillText(lab, put.x, put.y);
       }
     });
     cx.textAlign = 'left';
