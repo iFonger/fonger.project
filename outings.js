@@ -196,6 +196,52 @@
       g.fill();
     }
   }
+  /* vektorové obrysy zemí: použijí se při velkém přiblížení, kdy by tečky byly příliš řídké */
+  var vec = null, vecA = 0, SMAX = 400;
+  function buildVec(geo) {
+    vec = [];
+    (geo.features || []).forEach(function (f) {
+      if (!contOf(f)) return;
+      polysOf(f).forEach(function (poly) {
+        var rings = [], x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+        poly.forEach(function (r, ri) {
+          var a = new Float32Array(r.length * 2), prev = null, add = 0;
+          for (var i = 0; i < r.length; i++) {
+            var lo = r[i][0]; if (prev !== null) { if (lo - prev > 180) add -= 360; else if (lo - prev < -180) add += 360; } prev = lo;
+            a[i * 2] = lo + add; a[i * 2 + 1] = r[i][1];
+            if (ri === 0) { if (lo + add < x0) x0 = lo + add; if (lo + add > x1) x1 = lo + add; if (r[i][1] < y0) y0 = r[i][1]; if (r[i][1] > y1) y1 = r[i][1]; }
+          }
+          rings.push(a);
+        });
+        vec.push({ r: rings, x0: x0, x1: x1, y0: y0, y1: y1 });
+      });
+    });
+  }
+  function drawVec(g, va) {
+    if (!vec) return;
+    var F = full(), base = mod(ox, F) - F, path = new Path2D();
+    for (var off = base - F; off < W + 10; off += F) {
+      for (var pi = 0; pi < vec.length; pi++) {
+        var p = vec[pi], xa = (p.x0 + 180) * S + off, xb = (p.x1 + 180) * S + off, ya = sy(p.y1), yb = sy(p.y0);
+        if (xb < -10 || xa > W + 10 || yb < -10 || ya > H + 10) continue;
+        for (var ri = 0; ri < p.r.length; ri++) {
+          var a = p.r[ri], lx = 0, ly = 0, st = false;
+          for (var i = 0; i < a.length; i += 2) {
+            var px = (a[i] + 180) * S + off, py = sy(a[i + 1]);
+            if (st && i < a.length - 2 && Math.abs(px - lx) < .6 && Math.abs(py - ly) < .6) continue;
+            if (!st) { path.moveTo(px, py); st = true; } else path.lineTo(px, py);
+            lx = px; ly = py;
+          }
+          path.closePath();
+        }
+      }
+    }
+    g.save(); g.lineJoin = 'round'; g.globalAlpha = va;
+    g.fillStyle = 'rgba(255,196,96,.10)'; g.fill(path, 'evenodd');
+    g.lineWidth = 6; g.strokeStyle = 'rgba(255,190,80,.07)'; g.stroke(path);
+    g.lineWidth = 1.3; g.strokeStyle = 'rgba(255,224,160,.75)'; g.stroke(path);
+    g.restore();
+  }
   function drawBorders(g, yoff, clipBox, inside) {
     if (!borders) return;
     var F = full(), base = mod(ox, F) - F, tol = .8;
@@ -225,11 +271,11 @@
         }
       }
     }
-    g.lineWidth = .8; g.strokeStyle = 'rgba(255,214,140,.2)'; g.stroke();
+    g.lineWidth = .8 + .8 * vecA; g.strokeStyle = 'rgba(255,214,140,' + (.2 + .3 * vecA) + ')'; g.stroke();
     g.restore();
   }
   function drawLand() {
-    var key = [W, H, S.toFixed(3), ox.toFixed(1), oy.toFixed(1), !!maskD, sunStamp, dnOn(), selC, lift.toFixed(1)].join();
+    var key = [W, H, S.toFixed(3), ox.toFixed(1), oy.toFixed(1), !!maskD, sunStamp, dnOn(), selC, lift.toFixed(1), tl.toFixed(2)].join();
     if (key === landKey) return;
     landKey = key;
     landCv.width = W * DPR; landCv.height = H * DPR; landCx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -253,7 +299,13 @@
       drawSet(g, gr, bins, sp, 1, lift, 4, 1);
       drawBorders(g, lift, bx, true);
     } else {
-      drawSet(g, gr, bins, sp, 0, 0);
+      var va = vec ? Math.max(0, Math.min(1, (S - 38) / 32)) : 0; vecA = va;
+      if (va < 1) {
+        g.globalAlpha = 1 - va;
+        if (tl > .05) for (var dd2 = 3; dd2 >= 1; dd2--) drawSet(g, gr, bins, sp, 0, -dd2 * 3.4 * tl, undefined, .14 + .05 * (4 - dd2), 1);   /* tloušťka desky */
+        drawSet(g, gr, bins, sp, 0, 0); g.globalAlpha = 1;
+      }
+      if (va > 0) drawVec(g, va);
       drawBorders(g, 0, null, false);
     }
   }
@@ -264,7 +316,7 @@
         var geo = topojson.feature(t, t.objects.countries);
         var mesh = topojson.mesh(t, t.objects.countries, function (a, b) { return a !== b; });
         borders = mesh.type === 'MultiLineString' ? mesh.coordinates : [mesh.coordinates];
-        buildMask(geo); haveGeo = true; grids = {}; landKey = ''; need = true; showConts();
+        buildMask(geo); buildVec(geo); haveGeo = true; grids = {}; landKey = ''; need = true; showConts();
       }).catch(function () { if (fail) fail(); });
     }
     add('https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js', function () {
@@ -292,16 +344,29 @@
   var need = true, pulse = 0;
   function cyOf(c) { return sy(c.lat) - (selC && CK[c.cont] === selC ? lift : 0); }
   function visibleX(lon, ref) { var F = full(), x = sx(lon); return x + Math.round((ref - x) / F) * F; }
+  /* nakloněná 3D deska (G8): svislé stlačení mapy podle přiblížení; K = měřítko Y, M = posun dolů, tl = míra náklonu 0..1 */
+  var tl = 0, K = 1, M = 0, STARS = [];
+  for (var si = 0; si < 90; si++) STARS.push([Math.abs(Math.sin(si * 12.9898) * 43758.5453) % 1, Math.abs(Math.sin(si * 78.233) * 12543.123) % 1, .25 + (si % 5) * .13]);
+  function tiltTarget() {
+    var z = Math.max(0, Math.min(1, (S / S0 - 1.2) / 4.3));
+    return (1 - z) * (selC ? .45 : 1) * (innerWidth <= 720 ? .7 : 1);
+  }
+  function tiltApply() { K = 1 - .36 * tl; M = (1 - K) * H * .6; }
   var hov = null, hovK = null, items = [];
   /* shluky: blízká města (na obrazovce) se spojí do jednoho pinu s číslem, při přiblížení se rozpadnou */
   function clusterR() { var m = innerWidth <= 720 ? 20 : 26, z = Math.max(0, Math.min(1, (S / S0 - 3) / 3)); return m * (1 - .75 * z); }
   function drawCities(t) {
     cx.clearRect(0, 0, W, H);
-    cx.drawImage(landCv, 0, 0, W, H);
+    if (tl > .02 && M > 6) {                                     /* obloha s hvězdami a zářící obzor */
+      STARS.forEach(function (q) { cx.fillStyle = 'rgba(200,225,255,' + (q[2] * tl * .8).toFixed(2) + ')'; cx.fillRect(q[0] * W, q[1] * (M + 24), 1.3, 1.3); });
+      var topY = M + oy * K;
+      if (topY > 4) { var hg = cx.createLinearGradient(0, topY - 70, 0, topY); hg.addColorStop(0, 'rgba(255,190,80,0)'); hg.addColorStop(1, 'rgba(255,190,80,' + (.16 * tl).toFixed(3) + ')'); cx.fillStyle = hg; cx.fillRect(0, topY - 70, W, 70); }
+    }
+    cx.save(); cx.setTransform(DPR, 0, 0, DPR * K, 0, M * DPR); cx.drawImage(landCv, 0, 0, W, H); cx.restore();
     var F = full(), k0 = Math.pow(S / S0, .25), rects = [], L = list();
     cx.textBaseline = 'middle';
     var pts = [];
-    L.forEach(function (c) { var x0 = sx(c.lon), y = cyOf(c); for (var x = x0 - F; x < W + 40; x += F) if (x > -40) pts.push({ c: c, x: x, y: y }); });
+    L.forEach(function (c) { var x0 = sx(c.lon), y = cyOf(c) * K + M; for (var x = x0 - F; x < W + 40; x += F) if (x > -40) pts.push({ c: c, x: x, y: y }); });
     pts.sort(function (a, b) { return a.x - b.x; });
     var R0 = clusterR(), cl = [];
     pts.forEach(function (p) {
@@ -361,7 +426,7 @@
           cx.strokeStyle = 'rgba(255,230,160,.95)'; cx.lineWidth = 1.3; cx.beginPath(); cx.arc(p.x, p.y, 10, 0, 7); cx.stroke();
           cx.strokeStyle = 'rgba(255,230,160,' + (1 - ph) * .6 + ')'; cx.beginPath(); cx.arc(p.x, p.y, 10 + ph * 16, 0, 7); cx.stroke();
         }
-        var sh = (big ? 12 : 8) * k0, g2 = cx.createLinearGradient(0, p.y - sh, 0, p.y); g2.addColorStop(0, 'rgba(255,230,160,.95)'); g2.addColorStop(1, 'rgba(255,170,60,.1)');
+        var sh = ((big ? 12 : 8) + 7 * tl) * k0, g2 = cx.createLinearGradient(0, p.y - sh, 0, p.y); g2.addColorStop(0, 'rgba(255,230,160,.95)'); g2.addColorStop(1, 'rgba(255,170,60,.1)');
         cx.strokeStyle = g2; cx.lineWidth = 1.6; cx.beginPath(); cx.moveTo(p.x, p.y); cx.lineTo(p.x, p.y - sh); cx.stroke();
         cx.fillStyle = 'rgba(255,207,106,.92)'; cx.beginPath(); cx.ellipse(p.x, p.y, 4 * k, 1.9 * k, 0, 0, 7); cx.fill();
         cx.fillStyle = '#fff3d6'; cx.beginPath(); cx.ellipse(p.x, p.y, 2 * k, .9 * k, 0, 0, 7); cx.fill();
@@ -374,7 +439,7 @@
     });
     cx.textAlign = 'left';
     if (dnOn()) {
-      var sy0 = sy(sunDec * 180 / Math.PI), sx0 = sx(mod(sunLon + 540, 360) - 180);
+      var sy0 = sy(sunDec * 180 / Math.PI) * K + M, sx0 = sx(mod(sunLon + 540, 360) - 180);
       for (var xs = sx0 - F; xs < W + 40; xs += F) if (xs > -40) {
         var gg2 = cx.createRadialGradient(xs, sy0, 0, xs, sy0, 30); gg2.addColorStop(0, 'rgba(255,240,190,.85)'); gg2.addColorStop(.3, 'rgba(255,200,100,.3)'); gg2.addColorStop(1, 'rgba(255,200,100,0)');
         cx.fillStyle = gg2; cx.fillRect(xs - 32, sy0 - 32, 64, 64); cx.fillStyle = '#fff6d6'; cx.beginPath(); cx.arc(xs, sy0, 3, 0, 7); cx.fill();
@@ -389,7 +454,7 @@
     if (p <= 0) return;
     var r = $('dk').getBoundingClientRect(), mobile = innerWidth <= 720;
     var Dx = r.left + r.width / 2, Dy = r.top + r.height / 2;
-    var ex = visibleX(sel.lon, Dx - 140), ey = cyOf(sel);
+    var ex = visibleX(sel.lon, Dx - 140), ey = cyOf(sel) * K + M;
     if (mobile) ex = visibleX(sel.lon, Dx);
     var E = mobile ? [ex, Math.max(ey + 20, Dy - 40)] : [ex + 70, Dy];
     if (!mobile && E[0] > Dx - 20) E[0] = Dx - 20;
@@ -429,6 +494,9 @@
       ox = anim.ox0 + (anim.ox1 - anim.ox0) * e; oy = anim.oy0 + (anim.oy1 - anim.oy0) * e; S = anim.s0 + (anim.s1 - anim.s0) * e;
       if (k >= 1) anim = null; need = true;
     }
+    var want = tiltTarget();
+    if (reduce) tl = want; else if (Math.abs(want - tl) > .004) { tl += (want - tl) * .16; need = true; } else tl = want;
+    tiltApply();
     if (Math.abs(liftTo - lift) > .3) { lift += (liftTo - lift) * .14; need = true; } else if (lift !== liftTo) { lift = liftTo; need = true; }
     if (vx || vy) { ox += vx; oy += vy; vx *= .94; vy *= .94; if (Math.abs(vx) < .05 && Math.abs(vy) < .05) vx = vy = 0; clampY(); need = true; }
     if (need || (sel && !reduce)) { drawLand(); drawCities(t); need = false; }
@@ -448,7 +516,7 @@
     var p = ptrs[e.pointerId], dx = e.clientX - p[0], dy = e.clientY - p[1];
     ptrs[e.pointerId] = [e.clientX, e.clientY];
     if (Object.keys(ptrs).length === 2) { var d = pdist(); zoomAt(e.clientX, e.clientY, d / pinch); pinch = d; moved += 10; return; }
-    moved += Math.abs(dx) + Math.abs(dy); ox += dx; oy += dy; vx = dx; vy = dy; clampY(); need = true;
+    moved += Math.abs(dx) + Math.abs(dy); ox += dx; oy += dy / K; vx = dx; vy = dy / K; clampY(); need = true;
   });
   function hit(x, y, extra) {
     var best = null, bd = 1e9;
@@ -468,7 +536,9 @@
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('wheel', function (e) { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * .0012)); }, { passive: false });
   function zoomAt(x, y, f) {
-    var ns = Math.max(S0, Math.min(S0 * 6, S * f)); f = ns / S;
+    y = (y - M) / K;
+    var ns = Math.max(S0, Math.min(Math.max(SMAX, S0 * 6), S * f)); f = ns / S;
+    if (selC && ns > S0 * 8) leaveCont();
     ox = x - (x - ox) * f; oy = y - (y - oy) * f; S = ns; clampY(); need = true;
   }
   function pick(x, y) {
@@ -481,8 +551,8 @@
     var lo = arr.map(function (c) { return c.lon; }), la = arr.map(function (c) { return c.lat; });
     var minLo = Math.min.apply(null, lo), maxLo = Math.max.apply(null, lo), minLa = Math.min.apply(null, la), maxLa = Math.max.apply(null, la);
     var mobile = innerWidth <= 720, spLo = Math.max(1.2, maxLo - minLo), spLa = Math.max(.9, maxLa - minLa);
-    var s = Math.max(S0, Math.min(S0 * 6, Math.min(W * (mobile ? .62 : .4) / spLo, H * (mobile ? .26 : .45) / spLa)));
-    if (arr.length > 1) s = Math.max(s, Math.min(S0 * 6, S * 1.7));
+    var s = Math.max(S0, Math.min(Math.max(120, S0 * 6), Math.min(W * (mobile ? .62 : .4) / spLo, H * (mobile ? .26 : .45) / spLa)));
+    if (arr.length > 1) s = Math.max(s, Math.min(Math.max(120, S0 * 6), S * 1.7));
     go({ s: s, ox: (mobile ? W / 2 : W * .4) - ((minLo + maxLo) / 2 + 180) * s, oy: H * (mobile ? .3 : .5) - (LAT_TOP - (minLa + maxLa) / 2) * s });
   }
 
@@ -581,7 +651,7 @@
     if (mobile) { tx = W / 2; ty = (H - H * .6) * .5 + 10; }
     else { var dockx = W - 28 - 340; tx = Math.min((W - 368) * .5, dockx - 150); ty = H * .46; }
     var F = full(), cur = (c.lon + 180) * S + ox, want = tx, d = mod(want - cur + F / 2, F) - F / 2;
-    var ox1 = ox + d, oy1 = ty - (LAT_TOP - c.lat) * S;
+    var ox1 = ox + d, oy1 = (ty - M) / K - (LAT_TOP - c.lat) * S;
     oy1 = Math.max(H - mapH(), Math.min(0, oy1));
     if (reduce) { ox = ox1; oy = oy1; } else anim = { t0: performance.now(), d: 700, ox0: ox, oy0: oy, ox1: ox1, oy1: oy1, s0: S, s1: S };
     need = true;
