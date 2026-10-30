@@ -49,17 +49,18 @@
   }
   function fmt(n) { return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
 
+
   /* ============================================================
      ZEMĚKOULE: kreslí ji WebGL shader (den, noc, mraky), nad ní je 2D vrstva s piny
      ============================================================ */
-  var DEG = Math.PI / 180, TAU = Math.PI * 2;
+  var DEG = Math.PI / 180, TAU = Math.PI * 2, LATMAX = 85 * DEG;
   var cv = $('map'), cx = cv.getContext('2d'), glc = $('gl'), stc = $('stars');
-  var W = 0, H = 0, DPR = 1;
-  var lon0 = -22 * DEG, lat0 = 36 * DEG, z = 1;          /* střed pohledu a přiblížení */
+  var W = 0, H = 0, DPR = 1, GLQ = 1;                        /* GLQ = kvalita vykreslení (1 = plná, nižší při pohybu na slabším stroji) */
+  var lon0 = -22 * DEG, lat0 = 36 * DEG, z = 1;              /* střed pohledu a přiblížení */
   var lay = { cx: 0, cy: 0, base: 200 }, layT = { cx: 0, cy: 0, base: 200 };
-  var ZMIN = .55, ZMAX = 30;
-  var need = true, sel = null, selC = 0, dn = true, anim = null, hov = null, hovK = null, items = [];
-  var haveGeo = true;
+  var ZMIN = .6, ZMAX = 40;
+  var sel = null, selC = 0, dn = true, anim = null, hov = null, hovK = null, items = [];
+  var haveGeo = true, fresh = true;                           /* fresh = nikdo se ještě nedotkl: smí se pomalu otáčet */
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function mod(a, n) { return ((a % n) + n) % n; }
   function wrapLon(l) { return mod(l + Math.PI, TAU) - Math.PI; }
@@ -78,11 +79,15 @@
       layT.cx = (W - pw) / 2; layT.cy = H * .53; layT.base = Math.min((W - pw) * .4, H * .405);
     }
   }
+  function sizeGL() {
+    var s = DPR * GLQ; glc.width = Math.max(2, Math.round(W * s)); glc.height = Math.max(2, Math.round(H * s));
+  }
   function resize() {
+    if (W === innerWidth && H === innerHeight && DPR === Math.min(window.devicePixelRatio || 1, 2)) return;
     W = innerWidth; H = innerHeight; DPR = Math.min(window.devicePixelRatio || 1, 2);
-    [cv, glc, stc].forEach(function (c) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); });
-    cx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    drawStars(); layout(); lay.cx = layT.cx; lay.cy = layT.cy; lay.base = layT.base; need = true;
+    [cv, stc].forEach(function (c) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); });
+    sizeGL(); cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    drawStars(); layout(); lay.cx = layT.cx; lay.cy = layT.cy; lay.base = layT.base;
   }
   function drawStars() {
     var g = stc.getContext('2d'), s = 7; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, stc.width, stc.height);
@@ -98,9 +103,9 @@
   function updateSun() {
     var n = new Date(), h = n.getUTCHours() + n.getUTCMinutes() / 60 + n.getUTCSeconds() / 3600;
     var doy = Math.floor((n - Date.UTC(n.getUTCFullYear(), 0, 0)) / 864e5);
-    sunLat = -23.44 * DEG * Math.cos(TAU / 365 * (doy + 10)); sunLon = -(h - 12) * 15 * DEG;
+    sunLat = -23.44 * DEG * Math.cos(TAU / 365 * (doy + 10)); sunLon = -(h - 12) * 15 * DEG; dirty = true;
   }
-  /* rotace svět → pohled: vrací [x, y, z] (z > 0 = přivrácená strana) */
+  /* rotace svět → pohled: [x, y, z] (z > 0 = přivrácená strana) */
   var cl0 = 1, sl0 = 0, cp0 = 1, sp0 = 0;
   function setRot() { cl0 = Math.cos(lon0); sl0 = Math.sin(lon0); cp0 = Math.cos(lat0); sp0 = Math.sin(lat0); }
   function rot(u) {
@@ -111,19 +116,42 @@
     if (!dn) return [-.35, .45, .82];
     var c = Math.cos(sunLat); return rot([c * Math.sin(sunLon), Math.sin(sunLat), c * Math.cos(sunLon)]);
   }
-  function inv(X, Y) {      /* pixel → [lon, lat] v radiánech, nebo null mimo kouli */
+  /* pixel → jednotkový vektor na kouli (nebo null, když je pixel mimo kouli) */
+  function pick3(X, Y) {
+    setRot();
     var r = R(), u = (X - lay.cx) / r, v = (lay.cy - Y) / r, rho2 = u * u + v * v;
-    if (rho2 > 1) return null;
-    var c = Math.sqrt(1 - rho2);
-    return [lon0 + Math.atan2(u, c * cp0 - v * sp0), Math.asin(clamp(c * sp0 + v * cp0, -1, 1))];
+    if (rho2 > .9996) return null;
+    var c = Math.sqrt(1 - rho2), y1 = v * cp0 + c * sp0, z1 = c * cp0 - v * sp0;
+    return [u * cl0 + z1 * sl0, y1, -u * sl0 + z1 * cl0];
+  }
+  /* PŘESNÉ chycení: natočí kouli tak, aby bod g ležel přesně pod pixelem (px, py) */
+  function solveGrab(g, px, py) {
+    var r = R(), u = (px - lay.cx) / r, v = (lay.cy - py) / r, n = Math.hypot(u, v);
+    if (n > .9995) { u *= .9995 / n; v *= .9995 / n; }
+    var w = Math.sqrt(Math.max(0, 1 - u * u - v * v)), A = Math.hypot(g[0], g[2]);
+    if (A < 1e-6) return false;
+    var phi = Math.atan2(g[2], g[0]), ac = Math.acos(clamp(u / A, -1, 1)), best = null, bs = 1e9;
+    [1, -1].forEach(function (sg) {
+      var l = sg * ac - phi, z1 = sg * A * Math.sin(ac);
+      var la = Math.atan2(w, v) - Math.atan2(z1, g[1]); la = mod(la + Math.PI, TAU) - Math.PI;
+      var pen = Math.abs(la) > LATMAX ? 5 : 0, d = Math.abs(wrapLon(l - lon0)) + Math.abs(la - lat0) + pen;
+      if (d < bs) { bs = d; best = [wrapLon(l), clamp(la, -LATMAX, LATMAX)]; }
+    });
+    lon0 = best[0]; lat0 = best[1]; setRot(); return true;
   }
 
-  /* ---------- WebGL ---------- */
-  var gl = null, prog = null, U = {}, texReady = 0, TEXN = 3;
+  /* ---------- WebGL: koule ze satelitních textur + ostrý detail z dlaždic při velkém přiblížení ---------- */
+  var gl = null, prog = null, U = {}, texReady = 0, TEXN = 3, glVer = 0;
   var VS = '#version 300 es\nvoid main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));gl_Position=vec4(p*2.0-1.0,0.0,1.0);}';
-  var FS = '#version 300 es\nprecision highp float;\n' +
-    'uniform vec2 uC;uniform float uR,uLon0,uLat0,uShift,uDN;uniform vec3 uSun;uniform sampler2D tDay,tNight,tAux;out vec4 o;\n' +
+  var FS = '#version 300 es\nprecision highp float;precision highp int;\n' +
+    'uniform vec2 uC;uniform float uR,uLon0,uLat0,uDN,uPOn,uPLon,uPWd,uPx0,uPy0,uPS;uniform vec3 uSun;uniform sampler2D tDay,tNight,tAux,tPatch;out vec4 o;\n' +
     'const float PI=3.14159265359;\n' +
+    'vec4 cr(float t){float t2=t*t,t3=t2*t;return vec4(-.5*t3+t2-.5*t,1.5*t3-2.5*t2+1.,-1.5*t3+2.*t2+.5*t,.5*t3-.5*t2);}\n' +
+    'vec3 cubicDay(vec2 uv){vec2 p=uv*vec2(4096.,2048.)-.5;vec2 f=fract(p);ivec2 i=ivec2(floor(p));vec4 wx=cr(f.x),wy=cr(f.y);vec3 s=vec3(0.);\n' +
+    ' for(int j=-1;j<=2;j++){for(int k=-1;k<=2;k++){s+=texelFetch(tDay,ivec2((i.x+k)&4095,clamp(i.y+j,0,2047)),0).rgb*wx[k+1]*wy[j+1];}}\n' +
+    ' return max(s,0.);}\n' +
+    'float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}\n' +
+    'float vnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}\n' +
     'void main(){\n' +
     ' vec2 p=(gl_FragCoord.xy-uC)/uR;float rr=length(p);\n' +
     ' float cov=clamp((1.0-rr)*uR+0.5,0.0,1.0);\n' +
@@ -138,8 +166,30 @@
     ' float lon=uLon0+atan(p.x,cz*c0-p.y*s0);\n' +
     ' vec2 uv=vec2(lon/(2.0*PI)+0.5,0.5-lat/PI);\n' +
     ' vec2 dx=dFdx(uv),dy=dFdy(uv);dx.x-=floor(dx.x+0.5);dy.x-=floor(dy.x+0.5);\n' +
-    ' vec3 day=textureGrad(tDay,uv,dx,dy).rgb;vec3 nit=textureGrad(tNight,uv,dx,dy).rgb;\n' +
-    ' vec4 aux=textureGrad(tAux,vec2(uv.x+uShift,uv.y),dx,dy);\n' +
+    ' float mag=max(length(dx*vec2(4096.,2048.)),length(dy*vec2(4096.,2048.)));\n' +
+    ' vec3 day=mag<0.7?cubicDay(uv):textureGrad(tDay,uv,dx,dy).rgb;\n' +
+    ' vec3 nit=textureGrad(tNight,uv,dx,dy).rgb;\n' +
+    ' vec4 aux=textureGrad(tAux,uv,dx,dy);\n' +
+    /* ostrý detail z dlaždic: barvy zůstanou ze základu, z dlaždic se vezme jen jemná kresba */
+    ' if(uPOn>0.5){\n' +
+    '  float dl0=lon-uPLon;dl0=dl0-2.0*PI*floor((dl0+PI)/(2.0*PI));\n' +
+    '  float sl=clamp(sin(lat),-0.9999,0.9999);float my=0.5*log((1.0+sl)/(1.0-sl));\n' +
+    '  vec2 pp=vec2(uPS*0.5+dl0/(2.0*PI)*uPWd,(1.0-my/PI)*0.5*uPWd-uPy0)/uPS;\n' +
+    '  if(pp.x>0.0&&pp.x<1.0&&pp.y>0.0&&pp.y<1.0){\n' +
+    '   vec2 q=vec2(dFdx(pp.x),dFdx(pp.y)),w=vec2(dFdy(pp.x),dFdy(pp.y));\n' +
+    '   vec4 pt=textureGrad(tPatch,pp,q,w);\n' +
+    '   float ratio=uPWd/4096.0;\n' +
+    '   vec3 low=textureLod(tPatch,pp,log2(ratio)+0.5).rgb;\n' +
+    '   float e=smoothstep(0.0,0.04,min(min(pp.x,1.0-pp.x),min(pp.y,1.0-pp.y)));\n' +
+    '   float a=pt.a*e;\n' +
+    '   vec3 hi=pt.rgb*clamp(day/max(low,vec3(0.03)),0.5,2.0);\n' +
+    '   day=mix(day,hi,a);\n' +
+    '   mag*=1.0-a;\n' +
+    '  }\n' +
+    ' }\n' +
+    /* zrnitý detail jen tam, kde je základní textura výrazně zvětšená */
+    ' float gr=smoothstep(0.5,0.05,mag);\n' +
+    ' if(gr>0.0){vec2 g2=uv*vec2(4096.,2048.)*6.0;float nz=vnoise(g2)*0.5+vnoise(g2*2.3)*0.3+vnoise(g2*5.1)*0.2-0.5;day*=1.0+nz*0.22*gr*(1.0-aux.g*0.7);}\n' +
     ' float nd=dot(n,uSun);\n' +
     ' float lit=0.08+0.92*pow(max(nd,0.0),0.82);\n' +
     ' float dl=smoothstep(-0.08,0.22,nd);\n' +
@@ -157,24 +207,24 @@
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); return null; }
     return s;
   }
+  function setTexParams(minf, aniso) {
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minf); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    var ext = gl.getExtension('EXT_texture_filter_anisotropic');
+    if (ext && aniso) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(8, gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+  }
   function loadTex(unit, url, name) {
     var t = gl.createTexture(), im = new Image();
     im.onload = function () {
       gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
-      gl.generateMipmap(gl.TEXTURE_2D);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      var ext = gl.getExtension('EXT_texture_filter_anisotropic');
-      if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(8, gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
-      gl.uniform1i(U[name], unit);
-      if (++texReady === TEXN) { glc.classList.add('ready'); need = true; }
+      gl.generateMipmap(gl.TEXTURE_2D); setTexParams(gl.LINEAR_MIPMAP_LINEAR, true);
+      if (++texReady === TEXN) { glc.classList.add('ready'); dirty = true; }
     };
     im.src = url;
   }
+  var patchTex = null;
   function initGL() {
     gl = glc.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, powerPreference: 'high-performance' });
     if (!gl) return false;
@@ -182,26 +232,99 @@
     prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(prog)); return false; }
     gl.useProgram(prog); gl.bindVertexArray(gl.createVertexArray());
-    ['uC', 'uR', 'uLon0', 'uLat0', 'uShift', 'uDN', 'uSun', 'tDay', 'tNight', 'tAux'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
+    ['uC', 'uR', 'uLon0', 'uLat0', 'uDN', 'uSun', 'uPOn', 'uPLon', 'uPWd', 'uPx0', 'uPy0', 'uPS', 'tDay', 'tNight', 'tAux', 'tPatch'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
+    gl.uniform1i(U.tDay, 0); gl.uniform1i(U.tNight, 1); gl.uniform1i(U.tAux, 2); gl.uniform1i(U.tPatch, 3);
     gl.clearColor(0, 0, 0, 0);
+    patchTex = gl.createTexture(); gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, patchTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0])); setTexParams(gl.LINEAR, false);
     loadTex(0, 'earth/day.jpg', 'tDay'); loadTex(1, 'earth/night.jpg', 'tNight'); loadTex(2, 'earth/aux.jpg', 'tAux');
     return true;
   }
-  function drawGlobe(t) {
+  function drawGlobe() {
     if (!gl || texReady < TEXN) return;
-    var s = sunView();
+    setRot(); var s = sunView(), k = GLQ * DPR;
     gl.viewport(0, 0, glc.width, glc.height); gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.uniform2f(U.uC, lay.cx * DPR, (H - lay.cy) * DPR); gl.uniform1f(U.uR, R() * DPR);
-    gl.uniform1f(U.uLon0, lon0); gl.uniform1f(U.uLat0, lat0);
-    gl.uniform1f(U.uShift, (t * 1.2e-6) % 1); gl.uniform1f(U.uDN, dn ? 1 : 0);
+    gl.uniform2f(U.uC, lay.cx * k, (H - lay.cy) * k); gl.uniform1f(U.uR, R() * k);
+    gl.uniform1f(U.uLon0, lon0); gl.uniform1f(U.uLat0, lat0); gl.uniform1f(U.uDN, dn ? 1 : 0);
     gl.uniform3f(U.uSun, s[0], s[1], s[2]);
+    gl.uniform1f(U.uPOn, PT.on ? 1 : 0); gl.uniform1f(U.uPLon, PT.lon); gl.uniform1f(U.uPWd, PT.Wd); gl.uniform1f(U.uPx0, PT.px0); gl.uniform1f(U.uPy0, PT.py0); gl.uniform1f(U.uPS, PT.S);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  /* ---------- Dlaždice s ostrým detailem (NASA GIBS, Blue Marble). Když se nenačtou, zůstane základní textura. ---------- */
+  var TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
+  var PT = { on: false, lon: 0, Wd: 1, px0: 0, py0: 0, S: 2048, Z: 0, cvs: null, ctx: null, ver: 0, gen: 0, cx: 0, cy: 0, fail: 0, pending: 0, upAt: 0, want: false };
+  var tileCache = {}, tileN = 0;
+  function mercY(lat) { var s = clamp(Math.sin(lat), -.9999, .9999); return .5 * Math.log((1 + s) / (1 - s)); }
+  function worldX(lon, Wd) { return (lon + Math.PI) / TAU * Wd; }
+  function worldY(lat, Wd) { return (1 - mercY(lat) / Math.PI) / 2 * Wd; }
+  function tileImg(zz, x, y, cb) {
+    var key = zz + '/' + x + '/' + y, t = tileCache[key];
+    if (t) { if (t.ok) cb(t.im); else if (!t.err) t.cbs.push(cb); return; }
+    var im = new Image(); t = tileCache[key] = { im: im, ok: false, err: false, cbs: [cb] }; im.crossOrigin = 'anonymous';
+    if (++tileN > 700) { /* paměť: starší dlaždice pryč */ Object.keys(tileCache).slice(0, 300).forEach(function (k) { delete tileCache[k]; }); tileN = 400; }
+    PT.pending++;
+    im.onload = function () { t.ok = true; PT.pending--; t.cbs.forEach(function (f) { f(im); }); t.cbs = []; };
+    im.onerror = function () { t.err = true; PT.pending--; PT.fail++; t.cbs = []; };
+    im.src = TILE_URL.replace('{z}', zz).replace('{y}', y).replace('{x}', x);
+  }
+  function patchUpload() {
+    if (!gl || !PT.cvs) return;
+    try {
+      gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, patchTex); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, PT.cvs); gl.generateMipmap(gl.TEXTURE_2D); setTexParams(gl.LINEAR_MIPMAP_LINEAR, true);
+      PT.on = true; PT.ver++; dirty = true; PT.upAt = performance.now();
+    } catch (e) { PT.on = false; PT.fail = 99; }   /* např. zakázané CORS: dál bez detailu */
+  }
+  var upTimer = 0;
+  function patchSoon() { if (upTimer) return; upTimer = setTimeout(function () { upTimer = 0; if (moving) { patchSoon(); return; } patchUpload(); }, 220); }
+  /* sestaví okno dlaždic kolem středu obrazovky pro dané přiblížení */
+  function patchUpdate() {
+    if (PT.fail > 12 || !gl || texReady < TEXN) return;
+    var rdev = R() * DPR, zneed = Math.log(rdev * TAU / 256) / Math.LN2, diag = Math.hypot(W, H) * DPR;
+    var Z = Math.floor(zneed - Math.max(0, Math.log(diag / 1800) / Math.LN2));
+    if (zneed < 4.6 || Z < 5) { if (PT.on) { PT.on = false; dirty = true; } return; }
+    Z = Math.min(8, Z);
+    var cg = pick3(lay.cx, lay.cy); if (!cg) return;
+    var clon = Math.atan2(cg[0], cg[2]), clat = Math.asin(clamp(cg[1], -1, 1)), Wd = 256 * Math.pow(2, Z);
+    var wx = worldX(clon, Wd), wy = worldY(clat, Wd);
+    if (PT.on && PT.Z === Z && Math.abs(wx - PT.cx) < PT.S * .16 && Math.abs(wy - PT.cy) < PT.S * .16) return;   /* pořád pokrývá */
+    var P = 2048, px0 = Math.round((wx - P / 2) / 256) * 256, py0 = Math.round((wy - P / 2) / 256) * 256;
+    py0 = clamp(py0, 0, Wd - P);
+    if (!PT.cvs) { PT.cvs = document.createElement('canvas'); PT.cvs.width = PT.cvs.height = P; PT.ctx = PT.cvs.getContext('2d'); }
+    var ctx = PT.ctx; ctx.clearRect(0, 0, P, P);
+    PT.Z = Z; PT.Wd = Wd; PT.px0 = px0; PT.py0 = py0; PT.S = P; PT.cx = wx; PT.cy = wy; PT.lon = (px0 + P / 2) / Wd * TAU - Math.PI;
+    var gen = ++PT.gen;
+    function drawLevel(zz) {
+      var f = Math.pow(2, Z - zz), ts = 256 * f, x0 = Math.floor(px0 / ts), x1 = Math.floor((px0 + P - 1) / ts), y0 = Math.floor(py0 / ts), y1 = Math.floor((py0 + P - 1) / ts), n = Math.pow(2, zz);
+      for (var ty = y0; ty <= y1; ty++) for (var tx = x0; tx <= x1; tx++) {
+        if (ty < 0 || ty >= n) continue;
+        (function (tx, ty) {
+          tileImg(zz, mod(tx, n), ty, function (im) {
+            if (gen !== PT.gen) return;   /* okno mezitím odjelo */
+            ctx.drawImage(im, tx * ts - px0, ty * ts - py0, ts, ts); patchSoon();
+          });
+        })(tx, ty);
+      }
+    }
+    drawLevel(Math.max(3, Z - 2)); drawLevel(Z);
+    patchSoon();
   }
 
   /* ---------- Hranice států (volitelné, z internetu; bez nich glóbus funguje dál) ---------- */
   var BR = { lo: null, hi: null };
   function lines(coords) {
-    return coords.map(function (r) { var a = new Float32Array(r.length * 3); r.forEach(function (p, i) { var u = unit(p[0], p[1]); a[i * 3] = u[0]; a[i * 3 + 1] = u[1]; a[i * 3 + 2] = u[2]; }); return a; });
+    var out = [], CH = 40;
+    coords.forEach(function (r) {
+      for (var s = 0; s < r.length - 1; s += CH - 1) {
+        var e = Math.min(r.length, s + CH), n = e - s, a = new Float32Array(n * 3), sx = 0, sy = 0, sz = 0;
+        for (var i = 0; i < n; i++) { var u = unit(r[s + i][0], r[s + i][1]); a[i * 3] = u[0]; a[i * 3 + 1] = u[1]; a[i * 3 + 2] = u[2]; sx += u[0]; sy += u[1]; sz += u[2]; }
+        var m = Math.hypot(sx, sy, sz) || 1, c = [sx / m, sy / m, sz / m], rad = 0;
+        for (var j = 0; j < n; j++) rad = Math.max(rad, Math.acos(clamp(a[j * 3] * c[0] + a[j * 3 + 1] * c[1] + a[j * 3 + 2] * c[2], -1, 1)));
+        out.push({ a: a, n: n, c: c, r: rad });
+      }
+    });
+    return out;
   }
   function loadBorders() {
     function add(src, cb) { var s = document.createElement('script'); s.src = src; s.onload = cb; s.onerror = function () {}; document.head.appendChild(s); }
@@ -212,36 +335,38 @@
       }).catch(function () {});
     }
     add('https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js', function () {
-      get('110m', function (l) { BR.lo = l; need = true; get('50m', function (l2) { BR.hi = l2; need = true; }); });
+      get('110m', function (l) { BR.lo = l; dirty = true; get('50m', function (l2) { BR.hi = l2; dirty = true; }); });
     });
   }
-  function drawBorders() {
-    var set = (z > 2.2 && BR.hi) ? BR.hi : BR.lo; if (!set) return;
-    var r = R(), a = clamp(.2 + (z - 1) * .08, .2, .5), C = lay.cx, Y0 = lay.cy;
+  function drawBorders(moving) {
+    var set = (z > 3 && BR.hi && !(moving && z < 8)) ? BR.hi : BR.lo; if (!set) return;
+    var r = R(), a = clamp(.22 + (z - 1) * .05, .22, .55), C = lay.cx, Y0 = lay.cy;
     cx.beginPath();
     for (var li = 0; li < set.length; li++) {
-      var L = set[li], n = L.length / 3, pen = false, lx = -1e9, ly = -1e9;
+      var ch = set[li], c = ch.c, x1 = c[0] * cl0 - c[2] * sl0, z1 = c[0] * sl0 + c[2] * cl0, zz = c[1] * sp0 + z1 * cp0, sr = Math.sin(ch.r);
+      if (zz < -sr) continue;                                              /* celý kus je na odvrácené straně */
+      var pxc = C + r * x1, pyc = Y0 - r * (c[1] * cp0 - z1 * sp0), pr = r * Math.min(1, sr) + 4;
+      if (pxc + pr < 0 || pxc - pr > W || pyc + pr < 0 || pyc - pr > H) continue;   /* mimo obrazovku */
+      var L = ch.a, n = ch.n, pen = false, lx = -1e9, ly = -1e9;
       for (var i = 0; i < n; i++) {
         var ux = L[i * 3], uy = L[i * 3 + 1], uz = L[i * 3 + 2];
-        var x1 = ux * cl0 - uz * sl0, z1 = ux * sl0 + uz * cl0, zz = uy * sp0 + z1 * cp0;
-        if (zz <= 0) { pen = false; continue; }
-        var px = C + r * x1, py = Y0 - r * (uy * cp0 - z1 * sp0);
-        if (pen && i < n - 1 && Math.abs(px - lx) < .6 && Math.abs(py - ly) < .6) continue;
-        if (px < -50 || px > W + 50 || py < -50 || py > H + 50) { pen = false; lx = px; ly = py; continue; }
+        var xx = ux * cl0 - uz * sl0, zq = ux * sl0 + uz * cl0, depth = uy * sp0 + zq * cp0;
+        if (depth <= 0) { pen = false; continue; }
+        var px = C + r * xx, py = Y0 - r * (uy * cp0 - zq * sp0);
+        if (pen && i < n - 1 && Math.abs(px - lx) < .7 && Math.abs(py - ly) < .7) continue;
         if (!pen) { cx.moveTo(px, py); pen = true; } else cx.lineTo(px, py);
         lx = px; ly = py;
       }
     }
-    cx.lineWidth = .8; cx.strokeStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; cx.stroke();
+    cx.lineWidth = .9; cx.strokeStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; cx.stroke();
   }
-
   /* ---------- Piny, shluky a popisky ---------- */
   function list() { return showWish ? ALL : V; }
   function clusterR() { var m = innerWidth <= 720 ? 15 : 17, k = clamp((z - 1.2) / 2, 0, 1); return m * (1 - .9 * k); }
   function inCont(c) { return !selC || c.cont === CKEY[selC]; }
   function drawOverlay(t) {
     cx.clearRect(0, 0, W, H); setRot();
-    drawBorders();
+    drawBorders(isMoving());
     var r = R(), L = list(), vis = [];
     L.forEach(function (c) {
       var q = rot(c.u); if (q[2] < .06) return;
@@ -312,61 +437,95 @@
     cx.globalAlpha = 1; cx.textAlign = 'left';
   }
 
-  /* ---------- Pohyb kamery ---------- */
-  var idleAt = performance.now();
+
+  /* ---------- Kamera: lety, setrvačnost, plynulý zoom, hlavní smyčka ---------- */
+  var dirty = true, ovDirty = true, vl = 0, va = 0, zT = null, lastT = 0, lastChange = 0, moving = false, ema = 16.6, moveQ = 1, lastPatch = 0, goodFrames = 0;
+  function isMoving() { return moving; }
+  function killMotion() { anim = null; vl = va = 0; zT = null; fresh = false; }
   function go(v, ms) {
-    var tl = wrapLon(v.lon * DEG), ta = clamp(v.lat * DEG, -1.4, 1.4), tz = clamp(v.z, ZMIN, ZMAX);
-    if (reduce) { lon0 = tl; lat0 = ta; z = tz; need = true; return; }
+    fresh = false; vl = va = 0; zT = null;
+    var tl = wrapLon(v.lon * DEG), ta = clamp(v.lat * DEG, -LATMAX, LATMAX), tz = clamp(v.z, ZMIN, ZMAX);
+    if (reduce) { lon0 = tl; lat0 = ta; z = tz; dirty = true; return; }
     anim = { t0: performance.now(), d: ms || 1000, l0: lon0, a0: lat0, z0: z, dl: mod(tl - lon0 + Math.PI, TAU) - Math.PI, a1: ta, z1: tz };
   }
-  var vl = 0, va = 0;
   function frame(t) {
-    var dt = Math.min(.1, (t - (frame.t || t)) / 1000); frame.t = t;
+    var raw = t - lastT; lastT = t; if (raw > 250 || raw <= 0) raw = 16.7;
+    var dt = clamp(raw / 1000, .001, .1), chg = false;
     if (anim) {
       var k = Math.min(1, (t - anim.t0) / anim.d), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
       lon0 = wrapLon(anim.l0 + anim.dl * e); lat0 = anim.a0 + (anim.a1 - anim.a0) * e;
       z = Math.exp(Math.log(anim.z0) + (Math.log(anim.z1) - Math.log(anim.z0)) * e);
-      if (k >= 1) anim = null;
+      if (k >= 1) anim = null; chg = true;
+    } else if (down) {
+      /* tažení řídí ukazatel, nic nepřidáváme */
     } else if (vl || va) {
-      lon0 = wrapLon(lon0 + vl); lat0 = clamp(lat0 + va, -1.45, 1.45); vl *= .93; va *= .93;
-      if (Math.abs(vl) < 1e-5 && Math.abs(va) < 1e-5) vl = va = 0;
-    } else if (!reduce && !sel && !selC && !down && !hov && !hovK && z < 2.4 && t - idleAt > 3500 && !document.hidden) {
-      lon0 = wrapLon(lon0 - dt * .03);
+      lon0 = wrapLon(lon0 + vl * dt); lat0 = clamp(lat0 + va * dt, -LATMAX, LATMAX);
+      var f = Math.exp(-dt * 3.4); vl *= f; va *= f; if (Math.hypot(vl, va) < .02) vl = va = 0; chg = true;
+    } else if (fresh && !reduce && !sel && !selC && z < 1.5 && !document.hidden) {
+      lon0 = wrapLon(lon0 - dt * .016); chg = true;                  /* jen úplně na začátku, než se někdo dotkne */
     }
-    var moving = false;
+    if (zT) {
+      var lz = Math.log(z), lt = Math.log(zT.z), kz = 1 - Math.exp(-dt * 14), nl = lz + (lt - lz) * kz;
+      if (reduce || Math.abs(lt - lz) < .003) nl = lt;
+      z = Math.exp(nl); if (zT.g) solveGrab(zT.g, zT.ax, zT.ay); if (nl === lt) zT = null; chg = true;
+    }
     ['cx', 'cy', 'base'].forEach(function (p) {
       var d = layT[p] - lay[p];
-      if (Math.abs(d) > .25) { lay[p] += reduce ? d : d * .14; moving = true; } else lay[p] = layT[p];
+      if (Math.abs(d) > .2) { lay[p] += reduce ? d : d * (1 - Math.exp(-dt * 10)); chg = true; } else if (d) { lay[p] = layT[p]; chg = true; }
     });
-    drawGlobe(t); drawOverlay(t);
+    moving = chg || down;
+    if (moving) { lastChange = t; dirty = true; }
+    /* když je stroj pomalý, během pohybu se kreslí v nižším rozlišení; v klidu se dokreslí naplno */
+    if (moving) {
+      ema = ema * .9 + raw * .1;
+      if (ema > 28 && moveQ > .5) { moveQ = Math.max(.5, moveQ * .85); ema = 17; goodFrames = 0; }
+      else if (ema < 18 && moveQ < 1 && ++goodFrames > 90) { moveQ = Math.min(1, moveQ * 1.12); goodFrames = 0; }
+    }
+    var wantQ = moving ? moveQ : 1;
+    if (Math.abs(wantQ - GLQ) > .001) { GLQ = wantQ; sizeGL(); dirty = true; }
+    if (t - lastPatch > (moving ? 350 : 120)) { lastPatch = t; patchUpdate(); }
+    var drew = false;
+    if (dirty) { drawGlobe(); dirty = false; drew = true; }
+    if (drew || ovDirty || sel) { setRot(); drawOverlay(t); ovDirty = false; }
     requestAnimationFrame(frame);
   }
 
-  /* ---------- Ovládání: tažení, kolečko, štípnutí, klik ---------- */
-  var ptrs = {}, down = false, moved = 0, grab = null, pinch = 0, lastMove = 0;
+  /* ---------- Ovládání: tažení, kolečko, štípnutí, dvojklik, klik ---------- */
+  var ptrs = {}, down = false, moved = 0, grab = null, pinch = null, hist = [], tapAt = 0, tapX = -99, tapY = -99, touchLike = false;
   function pcount() { return Object.keys(ptrs).length; }
-  function pdist() { var k = Object.keys(ptrs); return Math.hypot(ptrs[k[0]][0] - ptrs[k[1]][0], ptrs[k[0]][1] - ptrs[k[1]][1]); }
+  function startGesture() {
+    var k = Object.keys(ptrs);
+    if (k.length >= 2) {
+      var a = ptrs[k[0]], b = ptrs[k[1]], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), z: z, g: pick3(mx, my) }; grab = null;
+    } else if (k.length === 1) { var p = ptrs[k[0]]; grab = pick3(p[0], p[1]); pinch = null; }
+    else { grab = null; pinch = null; }
+    hist = [];
+  }
   cv.addEventListener('pointerdown', function (e) {
-    cv.setPointerCapture(e.pointerId); ptrs[e.pointerId] = [e.clientX, e.clientY];
-    down = true; moved = 0; vl = va = 0; anim = null; idleAt = performance.now(); cv.classList.add('drag');
-    grab = inv(e.clientX, e.clientY);
-    if (pcount() === 2) pinch = pdist();
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+    touchLike = e.pointerType !== 'mouse';
+    ptrs[e.pointerId] = [e.clientX, e.clientY]; killMotion();
+    if (pcount() === 1) { down = true; moved = 0; cv.classList.add('drag'); }
+    startGesture();
   });
   cv.addEventListener('pointermove', function (e) {
-    idleAt = performance.now();
-    if (!ptrs[e.pointerId]) { setHover(e.clientX, e.clientY); return; }
-    var p = ptrs[e.pointerId], dx = e.clientX - p[0], dy = e.clientY - p[1]; ptrs[e.pointerId] = [e.clientX, e.clientY];
-    if (pcount() === 2) { var d = pdist(); zoomAt(e.clientX, e.clientY, d / pinch); pinch = d; moved += 10; return; }
-    moved += Math.abs(dx) + Math.abs(dy);
-    var before = [lon0, lat0];
-    if (grab) {                       /* chycený bod zůstane pod prstem */
-      var g = inv(e.clientX, e.clientY);
-      if (g) { lon0 = wrapLon(lon0 + grab[0] - g[0]); lat0 = clamp(lat0 + grab[1] - g[1], -1.45, 1.45); setRot(); }
-      else { grab = null; }
+    var p = ptrs[e.pointerId];
+    if (!p) { if (e.pointerType === 'mouse' && !down) setHover(e.clientX, e.clientY); return; }
+    var dx = e.clientX - p[0], dy = e.clientY - p[1]; ptrs[e.pointerId] = [e.clientX, e.clientY]; moved += Math.abs(dx) + Math.abs(dy);
+    var k = Object.keys(ptrs);
+    if (k.length >= 2 && pinch) {
+      var a = ptrs[k[0]], b = ptrs[k[1]], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      if (pinch.d > 12) z = clamp(pinch.z * d / pinch.d, ZMIN, ZMAX);
+      if (pinch.g) solveGrab(pinch.g, mx, my);
+      dirty = true; return;
     }
-    if (!grab) { var r = R(); lon0 = wrapLon(lon0 - dx / (r * Math.max(.25, Math.cos(lat0)))); lat0 = clamp(lat0 + dy / r, -1.45, 1.45); }
-    vl = wrapLon(lon0 - before[0]); va = lat0 - before[1]; lastMove = performance.now();
-    setRot();
+    if (moved < 3) return;                                           /* drobné chvění prstu se ignoruje */
+    if (grab) solveGrab(grab, e.clientX, e.clientY);
+    else { var r = R(); lon0 = wrapLon(lon0 - dx / (r * Math.max(.3, Math.cos(lat0)))); lat0 = clamp(lat0 + dy / r, -LATMAX, LATMAX); }
+    var now = performance.now(); hist.push({ t: now, lon: lon0, lat: lat0 }); while (hist.length > 2 && now - hist[0].t > 140) hist.shift();
+    dirty = true;
   });
   function hit(x, y, extra) {
     var best = null, bd = 1e9;
@@ -375,24 +534,48 @@
   }
   function setHover(x, y) {
     var it = hit(x, y), c = it && !it.k ? it.c : null, kk = it && it.k ? it.cities[0].id : null;
-    if (c !== hov || kk !== hovK) { hov = c; hovK = kk; cv.style.cursor = it ? 'pointer' : ''; }
+    if (c !== hov || kk !== hovK) { hov = c; hovK = kk; cv.style.cursor = it ? 'pointer' : ''; ovDirty = true; }
   }
-  cv.addEventListener('pointerleave', function () { hov = null; hovK = null; });
-  function up(e) {
-    delete ptrs[e.pointerId]; if (!pcount()) { down = false; cv.classList.remove('drag'); }
-    grab = pcount() === 1 ? inv.apply(null, ptrs[Object.keys(ptrs)[0]]) : null;
-    if (moved < 6 && e.type === 'pointerup') pick(e.clientX, e.clientY);
-    if (performance.now() - lastMove > 80 || reduce) vl = va = 0;
-    idleAt = performance.now();
+  cv.addEventListener('pointerleave', function () { if (hov || hovK) { hov = null; hovK = null; ovDirty = true; } });
+  function endPtr(e) {
+    if (!ptrs[e.pointerId]) return;
+    delete ptrs[e.pointerId];
+    if (pcount() > 0) { startGesture(); return; }                    /* druhý prst puštěn: zbylý pokračuje jako tažení */
+    down = false; cv.classList.remove('drag'); grab = null; pinch = null;
+    var thr = touchLike ? 10 : 5, now = performance.now();
+    if (e.type === 'pointerup' && moved < thr) { tapAt2(e.clientX, e.clientY, now); return; }
+    if (!reduce && hist.length > 1 && e.type === 'pointerup') {      /* setrvačnost podle posledních ~100 ms tažení */
+      var last = hist[hist.length - 1], first = hist[0], dtm = (last.t - first.t) / 1000;
+      if (now - last.t < 70 && dtm > .02) {
+        vl = wrapLon(last.lon - first.lon) / dtm; va = (last.lat - first.lat) / dtm;
+        var sp = Math.hypot(vl, va), cap = 5 / Math.max(1, Math.sqrt(z)); if (sp > cap) { vl *= cap / sp; va *= cap / sp; }
+        if (sp < .1) vl = va = 0;
+      }
+    }
+    hist = [];
   }
-  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
-  cv.addEventListener('wheel', function (e) { e.preventDefault(); idleAt = performance.now(); anim = null; zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0014))); }, { passive: false });
-  function zoomAt(x, y, f) {
-    setRot(); var g0 = inv(x, y); z = clamp(z * f, ZMIN, ZMAX);
-    var g1 = inv(x, y);
-    if (g0 && g1) { lon0 = wrapLon(lon0 + g0[0] - g1[0]); lat0 = clamp(lat0 + g0[1] - g1[1], -1.45, 1.45); }
-    setRot();
+  cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr); cv.addEventListener('lostpointercapture', endPtr);
+  window.addEventListener('blur', function () { ptrs = {}; down = false; cv.classList.remove('drag'); grab = pinch = null; });
+  function tapAt2(x, y, now) {
+    var it = hit(x, y, 8);
+    if (it) { tapAt = 0; pick(x, y); return; }
+    if (now - tapAt < 330 && Math.hypot(x - tapX, y - tapY) < 30) { tapAt = 0; zoomTo(x, y, z * 2.4); return; }   /* dvojklepnutí = přiblížit */
+    tapAt = now; tapX = x; tapY = y;
+    if (sel) close();
   }
+  cv.addEventListener('dblclick', function (e) { if (!hit(e.clientX, e.clientY, 8)) zoomTo(e.clientX, e.clientY, z * 2.4); });
+  function zoomTo(x, y, nz) {
+    fresh = false; anim = null; vl = va = 0;
+    zT = { z: clamp(nz, ZMIN, ZMAX), ax: x, ay: y, g: pick3(x, y) || pick3(lay.cx, lay.cy) };
+  }
+  cv.addEventListener('wheel', function (e) {
+    e.preventDefault(); fresh = false; anim = null; vl = va = 0;
+    var d = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
+    var f = Math.exp(-clamp(d, -240, 240) * (e.ctrlKey ? .011 : .0017));
+    if (!zT) zT = { z: z, ax: e.clientX, ay: e.clientY, g: null };
+    zT.z = clamp(zT.z * f, ZMIN, ZMAX); zT.ax = e.clientX; zT.ay = e.clientY;
+    zT.g = pick3(e.clientX, e.clientY) || zT.g || pick3(lay.cx, lay.cy);
+  }, { passive: false });
   function pick(x, y) {
     var it = hit(x, y, 8);
     if (!it) { if (sel) close(); return; }
@@ -405,11 +588,10 @@
     var m = Math.hypot(sx, sy, sz) || 1, cl = [sx / m, sy / m, sz / m], ang = 0;
     arr.forEach(function (c) { ang = Math.max(ang, Math.acos(clamp(c.u[0] * cl[0] + c.u[1] * cl[1] + c.u[2] * cl[2], -1, 1))); });
     var mobile = innerWidth <= 720, avail = mobile ? Math.min(W * .4, H * .25) : Math.min(W, H) * .3;
-    var zt = clamp(avail / (Math.max(.004, Math.sin(Math.min(ang, 1.2))) * layBase()), 1.4, 20);
+    var zt = clamp(avail / (Math.max(.004, Math.sin(Math.min(ang, 1.2))) * layT.base), 1.4, 20);
     if (arr.length > 1) zt = Math.max(zt, Math.min(ZMAX, z * 1.7));
     go({ lon: Math.atan2(cl[0], cl[2]) / DEG, lat: Math.asin(clamp(cl[1], -1, 1)) / DEG, z: zt }, 1000);
   }
-  function layBase() { return layT.base; }
   /* ---------- Vlajky (kreslené, bez emoji, aby fungovaly všude) ---------- */
   var FLAGCODE = { 'Austria': 'AT', 'Slovakia': 'SK', 'Hungary': 'HU', 'Croatia': 'HR', 'Germany': 'DE', 'Italy': 'IT', 'Bulgaria': 'BG', 'Poland': 'PL',
     'Czechia': 'CZ', 'Czech Republic': 'CZ', 'USA': 'US', 'United States': 'US', 'United Arab Emirates': 'AE', 'France': 'FR', 'Netherlands': 'NL',
@@ -538,7 +720,7 @@
   /* ---------- Wishlist a seznam ---------- */
   $('btn-wish').onclick = function () {
     showWish = !showWish; this.classList.toggle('on', showWish); this.setAttribute('aria-pressed', showWish);
-    if (!showWish && sel && sel.wish) close(); need = true; if (listMode === 'places') buildList();
+    if (!showWish && sel && sel.wish) close(); dirty = ovDirty = true; if (listMode === 'places') buildList();
   };
   var listMode = 'places';
   function listToggle(mode) {
@@ -643,7 +825,7 @@
   if (!initGL()) { $('nogl').hidden = false; }
   worldView(true);
   $('btn-world').onclick = function () { worldView(); };
-  $('btn-dn').onclick = function () { dn = !dn; this.classList.toggle('on', dn); this.setAttribute('aria-pressed', dn); };
+  $('btn-dn').onclick = function () { dn = !dn; dirty = true; this.classList.toggle('on', dn); this.setAttribute('aria-pressed', dn); };
   $('btn-cont').onclick = function (e) { e.stopPropagation(); contsOpen(); };
   document.addEventListener('click', function (e) { if (!$('conts').hidden && !$('conts').contains(e.target)) contsOpen(false); });
   function bind(id, fn) { var el = $(id).parentNode; el.setAttribute('role', 'button'); el.tabIndex = 0; el.onclick = function (e) { e.stopPropagation(); fn(); }; el.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } }; }
@@ -654,5 +836,10 @@
   var hash = location.hash.slice(1), start = ALL.filter(function (c) { return c.id === hash; })[0];
   requestAnimationFrame(frame);
   if (start) setTimeout(function () { open(start, true); }, 150);
-  window.__outings = { open: open, close: close, ALL: ALL, selectCont: selectCont, worldView: worldView, go: go, state: function () { return { lon: lon0 / DEG, lat: lat0 / DEG, z: z, tex: texReady, items: items.length }; } };
+  window.__outings = { open: open, close: close, ALL: ALL, selectCont: selectCont, worldView: worldView, go: go,
+    state: function () { return { lon: lon0 / DEG, lat: lat0 / DEG, z: z, tex: texReady, items: items.length, glq: GLQ, anim: !!anim, zt: !!zT, vel: Math.hypot(vl, va), patch: PT.on, pz: PT.Z, fail: PT.fail, pend: PT.pending }; },
+    screenOf: function (lo, la) { setRot(); var q = rot(unit(lo, la)), r = R(); return { x: lay.cx + r * q[0], y: lay.cy - r * q[1], z: q[2] }; },
+    geoAt: function (x, y) { var g = pick3(x, y); return g ? { lon: Math.atan2(g[0], g[2]) / DEG, lat: Math.asin(g[1]) / DEG } : null; },
+    grabTest: function (x, y) { var g = pick3(x, y), a = lon0, b = lat0; solveGrab(g, x, y); var r = [lon0 - a, lat0 - b]; lon0 = a; lat0 = b; return r; },
+    lay: function () { return { cx: lay.cx, cy: lay.cy, R: R() }; } };
 })();
