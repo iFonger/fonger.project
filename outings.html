@@ -23,10 +23,13 @@
     </svg>
   </a>
 
-  <canvas id="map" aria-label="World map of visited places"></canvas>
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <canvas id="gl" aria-hidden="true"></canvas>
+  <canvas id="map" aria-label="Globe with the places I have visited"></canvas>
+  <div id="nogl" hidden>Your browser cannot show the 3D globe.</div>
 
   <div class="hud">
-    <div class="ttl">OUTINGS · CITY LIGHTS</div>
+    <div class="ttl">OUTINGS</div>
     <div class="flap">
       <div><div class="d" id="n-cities"></div><span>CITIES</span></div>
       <div><div class="d" id="n-countries"></div><span>COUNTRIES</span></div>
@@ -35,12 +38,12 @@
   </div>
 
   <div class="tools">
-    <div class="tag">THE WORLD STAYS DARK UNTIL I VISIT IT</div>
+    <div class="tag">PLACES I'VE BEEN</div>
     <button id="btn-wish" class="tb on" type="button" aria-pressed="true">WISHLIST <b id="n-wish">0</b></button>
     <button id="btn-world" class="tb" type="button">WORLD</button>
     <button id="btn-list" class="tb" type="button">PLACES</button>
     <button id="btn-dn" class="tb on" type="button" aria-pressed="true">DAY/NIGHT</button>
-    <button id="btn-cont" class="tb" type="button" hidden>CONTINENTS</button>
+    <button id="btn-cont" class="tb" type="button">CONTINENTS</button>
   </div>
 
   <!-- výběr kontinentu -->
@@ -54,14 +57,11 @@
 
   <!-- karta města -->
   <section id="card" class="cw" aria-live="polite">
-    <div class="o"></div>
     <div class="i cd" id="card-in"></div>
-    <span class="dk" id="dk"></span>
   </section>
 
   <!-- panel kontinentu -->
   <section id="cp" class="cw" aria-live="polite">
-    <div class="o"></div>
     <div class="i cd" id="cp-in"></div>
   </section>
 
@@ -75,7 +75,6 @@
   </div>
 
   <script src="outings-data.js"></script>
-  <script src="outings-dots.js"></script>
   <script src="outings.js"></script>
 </body>
 </html>

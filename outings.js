@@ -1,4 +1,4 @@
-/* OUTINGS: plochá zlatá mapa. Data jsou v outings-data.js. */
+/* OUTINGS: otáčivá zeměkoule (WebGL). Data jsou v outings-data.js. */
 (function () {
   'use strict';
   var D = window.OUTINGS, V = D.visited, WL = D.wishlist;
@@ -24,310 +24,13 @@
   V.sort(function (x, y) { return (x.visits[0] ? pd(x.visits[0].from) : 0) - (y.visits[0] ? pd(y.visits[0].from) : 0); });
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var $ = function (id) { return document.getElementById(id); };
-  var cv = $('map'), cx = cv.getContext('2d');
-  var W = 0, H = 0, DPR = 1;
-
-  /* ---------- Projekce: ploché, dokola ---------- */
-  var LAT_TOP = 84, LAT_BOT = -58;
-  var S = 3.4, S0 = 3.4, ox = 0, oy = 0;
-  function full() { return 360 * S; }
-  function mod(a, n) { return ((a % n) + n) % n; }
-  function sx(lon) { return mod((lon + 180) * S + ox, full()); }
-  function sy(lat) { return oy + (LAT_TOP - lat) * S; }
-  function mapH() { return (LAT_TOP - LAT_BOT) * S; }
-  function clampY() { var lo = H - mapH(), hi = 0; oy = lo > hi ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, oy)); }
-
-  function fit() {
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
-    W = innerWidth; H = innerHeight;
-    cv.width = W * DPR; cv.height = H * DPR;
-    cx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    S0 = Math.max(W / 360, H / (LAT_TOP - LAT_BOT));
-    landKey = '';
-  }
-
-  /* ---------- Kontinenty ---------- */
   var CK = { EU: 1, AS: 2, AF: 3, NA: 4, SA: 5, OC: 6 };
   var CN = { 1: 'EUROPE', 2: 'ASIA', 3: 'AFRICA', 4: 'NORTH AMERICA', 5: 'SOUTH AMERICA', 6: 'OCEANIA' };
   var CKEY = { 1: 'EU', 2: 'AS', 3: 'AF', 4: 'NA', 5: 'SA', 6: 'OC' };
   var TOT = { EU: 44, AS: 48, AF: 54, NA: 23, SA: 12, OC: 14 };
-  /* ohraničení pro přiblížení: lon0, lon1, lat0, lat1 */
-  var CBOX = { 1: [-25, 45, 34, 72], 2: [25, 150, -10, 70], 3: [-18, 52, -36, 37], 4: [-170, -50, 7, 75], 5: [-82, -34, -56, 13], 6: [110, 180, -48, -1] };
-  var HOME = { country: 'Czechia', cont: 'EU' };
-  var OC_NAMES = { 'Australia': 1, 'New Zealand': 1, 'Papua New Guinea': 1, 'Fiji': 1, 'Solomon Is.': 1, 'Vanuatu': 1, 'New Caledonia': 1, 'Samoa': 1, 'Tonga': 1, 'Kiribati': 1, 'Micronesia': 1 };
-  var AS_NAMES = { 'Indonesia': 1, 'Philippines': 1, 'Timor-Leste': 1, 'Turkey': 1, 'Georgia': 1, 'Armenia': 1, 'Azerbaijan': 1, 'Kazakhstan': 1, 'N. Cyprus': 0 };
-  function polysOf(f) { var gm = f.geometry || f; return gm.type === 'Polygon' ? [gm.coordinates] : (gm.type === 'MultiPolygon' ? gm.coordinates : []); }
-  function bigCenter(f) {
-    var best = null, ba = -1;
-    polysOf(f).forEach(function (p) {
-      var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
-      p[0].forEach(function (q) { if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0]; if (q[1] < y0) y0 = q[1]; if (q[1] > y1) y1 = q[1]; });
-      var a = (x1 - x0) * (y1 - y0); if (a > ba) { ba = a; best = [(x0 + x1) / 2, (y0 + y1) / 2]; }
-    });
-    return best || [0, 0];
-  }
-  function contOf(f) {
-    var n = (f.properties && f.properties.name) || '';
-    if (/Antarctic/.test(n)) return 0;
-    if (n === 'Russia') return 2;           /* západ (do Uralu) se dokreslí zvlášť jako Evropa */
-    if (n === 'Greenland') return 4;
-    if (n === 'Egypt') return 3;
-    if (n === 'Malta' || n === 'Cyprus') return 1;
-    if (OC_NAMES[n]) return 6;
-    if (AS_NAMES[n]) return 2;
-    var c = bigCenter(f), lo = c[0], la = c[1];
-    if (lo < -30) return la > 7.5 ? 4 : 5;
-    if (lo > 110 && la < -8) return 6;
-    if (lo < 52 && la > -36 && la < 36) {
-      if ((lo > 34 && la > 16) || (lo > 42 && la > 12) || (lo > 33.5 && la > 28)) return 2;
-      return 3;
-    }
-    if (la >= 36 && lo <= 45 && lo > -30) return 1;
-    return 2;
-  }
-
-  /* ---------- Souš: tečky z reálné mapy (CDN), jinak záložní tečky ---------- */
-  var MR = 8, MW = 2880, MH = 1440, maskD = null, borders = null, haveGeo = false;
-  var STEPS = [1.25, .625, .3125, .15625], grids = {}, landKey = '', landCv = document.createElement('canvas'), landCx = landCv.getContext('2d');
-  var dn = true; function dnOn() { return dn && !selC; }
-  var sunStamp = 0, sunLon = 0, sunDec = 0, LIFT = 26, lift = 0, liftTo = 0, selC = 0;
-  function buildMask(geo) {
-    var m = document.createElement('canvas'); m.width = MW; m.height = MH;
-    var g = m.getContext('2d');
-    /* zeměpisná délka se "rozbalí" (bez skoku přes ±180°) a polygon se nakreslí 3×, aby nevznikaly pruhy přes celou mapu */
-    function ring(r, dx) {
-      var prev = null, add = 0;
-      r.forEach(function (p, i) {
-        var lo = p[0]; if (prev !== null) { if (lo - prev > 180) add -= 360; else if (lo - prev < -180) add += 360; } prev = lo;
-        var x = (lo + add + 180 + dx) * MR, y = (90 - p[1]) * MR; i ? g.lineTo(x, y) : g.moveTo(x, y);
-      }); g.closePath();
-    }
-    function paint(f, k) {
-      g.fillStyle = 'rgb(' + (k * 36) + ',0,0)';
-      polysOf(f).forEach(function (poly) { [-360, 0, 360].forEach(function (dx) { g.beginPath(); poly.forEach(function (r) { ring(r, dx); }); g.fill('evenodd'); }); });
-    }
-    (geo.features || []).forEach(function (f) {
-      var k = contOf(f); if (!k) return;
-      paint(f, k);
-      if (f.properties && f.properties.name === 'Russia') {
-        g.save(); g.beginPath(); g.rect(0, 0, (60 + 180) * MR, MH); g.clip(); paint(f, 1); g.restore();
-      }
-    });
-    maskD = g.getImageData(0, 0, MW, MH).data;
-  }
-  function landAt(lon, lat) {
-    var px = ((lon + 180) * MR) | 0, py = ((90 - lat) * MR) | 0;
-    if (px < 0) px += MW; else if (px >= MW) px -= MW;
-    if (py < 0 || py >= MH) return -1;
-    var o = (py * MW + px) * 4;
-    return maskD[o + 3] > 100 ? Math.round(maskD[o] / 36) : -1;
-  }
-  var RAD = [1, 2, 3.5, 5.5], DIRS = [[1, 0], [.7, .7], [0, 1], [-.7, .7], [-1, 0], [-.7, -.7], [0, -1], [.7, -.7]];
-  function gridFor(i) {
-    if (grids[i]) return grids[i];
-    var xs = [], ys = [], dp = [], ct = [], st = STEPS[i];
-    if (maskD) {
-      for (var lat = LAT_BOT; lat <= LAT_TOP; lat += st) for (var lon = -180; lon < 180; lon += st) {
-        var c = landAt(lon, lat); if (c < 0) continue;
-        var d = 4;
-        for (var r = 0; r < 4 && d === 4; r++) for (var k = 0; k < 8; k++) {
-          if (landAt(lon + DIRS[k][0] * RAD[r] * st, lat + DIRS[k][1] * RAD[r] * st) < 0) { d = r; break; }
-        }
-        xs.push(lon); ys.push(lat); dp.push(d); ct.push(c);
-      }
-    } else {
-      (window.DOTS || []).forEach(function (p) { xs.push(p[0]); ys.push(p[1]); dp.push(1); ct.push(0); });
-    }
-    return (grids[i] = { x: Float32Array.from(xs), y: Float32Array.from(ys), d: Uint8Array.from(dp), c: Uint8Array.from(ct), stamp: -1, bins: null });
-  }
-  /* slunce: poloha a rozdělení teček do 30 tříd (hloubka × den/noc) */
-  function updateSun() {
-    var n = new Date(), h = n.getUTCHours() + n.getUTCMinutes() / 60 + n.getUTCSeconds() / 3600;
-    var doy = Math.floor((n - Date.UTC(n.getUTCFullYear(), 0, 0)) / 864e5);
-    sunDec = -23.44 * Math.PI / 180 * Math.cos(2 * Math.PI / 365 * (doy + 10));
-    sunLon = -(h - 12) * 15; sunStamp++; landKey = ''; need = true;
-  }
-  var aTab = new Float32Array(1441), bTab = new Float32Array(1441), cTab = new Float32Array(2881);
-  function level(sinEl) { var d = (sinEl + .242) / .381; return d <= 0 ? 0 : d >= 1 ? 5 : Math.round(d * 5); }
-  function binsFor(gr) {
-    var DN = dnOn();
-    if (gr.bins && gr.stamp === sunStamp && gr.dnf === DN) return gr.bins;
-    var nL = gr.x.length, cls = new Uint8Array(nL), counts = new Uint32Array(31), i;
-    if (DN) {
-      for (i = 0; i <= 1440; i++) { var la = (i / 8 - 90) * Math.PI / 180; aTab[i] = Math.sin(la) * Math.sin(sunDec); bTab[i] = Math.cos(la) * Math.cos(sunDec); }
-      for (i = 0; i <= 2880; i++) cTab[i] = Math.cos((i / 8 - 180 - sunLon) * Math.PI / 180);
-    }
-    for (i = 0; i < nL; i++) {
-      var n5 = 5;
-      if (DN) { var li = ((gr.y[i] + 90) * 8 + .5) | 0, ci = ((gr.x[i] + 180) * 8 + .5) | 0; n5 = level(aTab[li] + bTab[li] * cTab[ci]); }
-      var c = gr.d[i] * 6 + n5; cls[i] = c; counts[c + 1]++;
-    }
-    for (i = 1; i < 31; i++) counts[i] += counts[i - 1];
-    var out = new Uint32Array(nL), pos = counts.slice(0, 30);
-    for (i = 0; i < nL; i++) out[pos[cls[i]]++] = i;
-    gr.bins = { idx: out, start: counts }; gr.stamp = sunStamp; gr.dnf = DN;
-    return gr.bins;
-  }
-  var DPAL = [[1.5, .95, 226, 150], [1.2, .7, 205, 105], [1, .5, 205, 105], [.85, .38, 205, 105], [.75, .3, 205, 105]];
-  function styleOf(d, n, boost) {
-    var on = dnOn(), f = on ? n / 5 : 1, p = DPAL[d], a = p[1] * (on ? .14 + .86 * f : 1) * (boost || 1);
-    return 'rgba(255,' + Math.round(175 + (p[2] - 175) * f) + ',' + Math.round(85 + (p[3] - 85) * f) + ',' + Math.min(1, a).toFixed(2) + ')';
-  }
-  /* mode: 0 = vše mimo vybraný kontinent, 1 = jen vybraný (posunutý nahoru), 2 = jen vybraný jako stopa */
-  function drawSet(g, gr, bins, sp, mode, yoff, maxDepth, boost, rm) {
-    var F = full(), latMax = LAT_TOP - (-8 - oy) / S + (yoff ? 0 : 0), latMin = LAT_TOP - (H + 8 - oy) / S;
-    if (mode) { latMax += LIFT / S + 1; latMin -= 1; }
-    var rs = Math.max(.6, Math.min(2.2, sp / 4.6)), idx = bins.idx, ys = gr.y, xs = gr.x, cs = gr.c;
-    for (var cl = 0; cl < 30; cl++) {
-      var d = (cl / 6) | 0, n = cl % 6; if (maxDepth !== undefined && d > maxDepth) continue;
-      var s0 = bins.start[cl], s1 = bins.start[cl + 1]; if (s0 === s1) continue;
-      var lo = s0, hi = s1;
-      while (lo < hi) { var m = (lo + hi) >> 1; if (ys[idx[m]] < latMin) lo = m + 1; else hi = m; }
-      var r = DPAL[d][0] * rs * (mode === 1 ? 1.08 : 1) * (rm || 1);
-      g.fillStyle = mode === 2 ? 'rgba(184,152,80,.28)' : styleOf(d, mode === 1 ? 5 : n, boost);
-      g.beginPath();
-      for (var k = lo; k < s1; k++) {
-        var i = idx[k], lat = ys[i]; if (lat > latMax) break;
-        if (selC) { var inSel = cs[i] === selC; if (mode === 0 && inSel) continue; if (mode && !inSel) continue; }
-        var y = oy + (LAT_TOP - lat) * S - yoff; if (y < -6 || y > H + 6) continue;
-        var x = mod((xs[i] + 180) * S + ox, F);
-        for (; x < W + 6; x += F) if (x > -6) { g.moveTo(x + r, y); g.arc(x, y, r, 0, 6.2832); }
-      }
-      g.fill();
-    }
-  }
-  /* vektorové obrysy zemí: použijí se při velkém přiblížení, kdy by tečky byly příliš řídké */
-  var vec = null, vecA = 0, SMAX = 400;
-  function buildVec(geo) {
-    vec = [];
-    (geo.features || []).forEach(function (f) {
-      if (!contOf(f)) return;
-      polysOf(f).forEach(function (poly) {
-        var rings = [], x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
-        poly.forEach(function (r, ri) {
-          var a = new Float32Array(r.length * 2), prev = null, add = 0;
-          for (var i = 0; i < r.length; i++) {
-            var lo = r[i][0]; if (prev !== null) { if (lo - prev > 180) add -= 360; else if (lo - prev < -180) add += 360; } prev = lo;
-            a[i * 2] = lo + add; a[i * 2 + 1] = r[i][1];
-            if (ri === 0) { if (lo + add < x0) x0 = lo + add; if (lo + add > x1) x1 = lo + add; if (r[i][1] < y0) y0 = r[i][1]; if (r[i][1] > y1) y1 = r[i][1]; }
-          }
-          rings.push(a);
-        });
-        vec.push({ r: rings, x0: x0, x1: x1, y0: y0, y1: y1 });
-      });
-    });
-  }
-  function drawVec(g, va) {
-    if (!vec) return;
-    var F = full(), base = mod(ox, F) - F, path = new Path2D();
-    for (var off = base - F; off < W + 10; off += F) {
-      for (var pi = 0; pi < vec.length; pi++) {
-        var p = vec[pi], xa = (p.x0 + 180) * S + off, xb = (p.x1 + 180) * S + off, ya = sy(p.y1), yb = sy(p.y0);
-        if (xb < -10 || xa > W + 10 || yb < -10 || ya > H + 10) continue;
-        for (var ri = 0; ri < p.r.length; ri++) {
-          var a = p.r[ri], lx = 0, ly = 0, st = false;
-          for (var i = 0; i < a.length; i += 2) {
-            var px = (a[i] + 180) * S + off, py = sy(a[i + 1]);
-            if (st && i < a.length - 2 && Math.abs(px - lx) < .6 && Math.abs(py - ly) < .6) continue;
-            if (!st) { path.moveTo(px, py); st = true; } else path.lineTo(px, py);
-            lx = px; ly = py;
-          }
-          path.closePath();
-        }
-      }
-    }
-    g.save(); g.lineJoin = 'round'; g.globalAlpha = va;
-    g.fillStyle = 'rgba(255,196,96,.13)'; g.fill(path, 'evenodd');
-    g.lineWidth = 6; g.strokeStyle = 'rgba(255,190,80,.07)'; g.stroke(path);
-    g.lineWidth = 1.3; g.strokeStyle = 'rgba(255,224,160,.75)'; g.stroke(path);
-    g.restore();
-  }
-  function drawBorders(g, yoff, clipBox, inside) {
-    if (!borders) return;
-    var F = full(), base = mod(ox, F) - F, tol = .8;
-    g.save();
-    if (clipBox) {
-      var b = clipBox;
-      g.beginPath();
-      if (!inside) g.rect(0, 0, W, H);
-      for (var off0 = base; off0 < W + 10; off0 += F) {
-        var x0 = (b[0] + 180) * S + off0, x1 = (b[1] + 180) * S + off0;
-        g.rect(x0, sy(b[3]), x1 - x0, (b[3] - b[2]) * S);
-      }
-      g.clip(inside ? 'nonzero' : 'evenodd');
-    }
-    if (yoff) g.translate(0, -yoff);
-    g.beginPath();
-    for (var off = base; off < W + 10; off += F) {
-      if (off + F < -10) continue;
-      for (var li = 0; li < borders.length; li++) {
-        var r = borders[li], lx = 1e9, ly = 1e9, started = false, n = r.length;
-        for (var pi = 0; pi < n; pi++) {
-          var px = (r[pi][0] + 180) * S + off, py = sy(r[pi][1]);
-          var jump = started && pi > 0 && Math.abs(r[pi][0] - r[pi - 1][0]) > 180;
-          if (started && !jump && pi < n - 1 && Math.abs(px - lx) < tol && Math.abs(py - ly) < tol) continue;
-          if (!started || jump) { g.moveTo(px, py); started = true; } else g.lineTo(px, py);
-          lx = px; ly = py;
-        }
-      }
-    }
-    g.lineWidth = .8 + .8 * vecA; g.strokeStyle = 'rgba(255,214,140,' + (.2 + .3 * vecA) + ')'; g.stroke();
-    g.restore();
-  }
-  function drawLand() {
-    var key = [W, H, S.toFixed(3), ox.toFixed(1), oy.toFixed(1), !!maskD, sunStamp, dnOn(), selC, lift.toFixed(1), tl.toFixed(2)].join();
-    if (key === landKey) return;
-    landKey = key;
-    landCv.width = W * DPR; landCv.height = H * DPR; landCx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    var g = landCx, F = full();
-    /* jemná síť */
-    g.strokeStyle = 'rgba(255,207,106,.05)'; g.lineWidth = 1; g.beginPath();
-    for (var lat = -60; lat <= 80; lat += 20) { var yy = Math.round(sy(lat)) + .5; g.moveTo(0, yy); g.lineTo(W, yy); }
-    for (var lon = -180; lon < 180; lon += 20) { for (var x = sx(lon) - F; x < W; x += F) if (x > -2) { var xx = Math.round(x) + .5; g.moveTo(xx, sy(LAT_TOP)); g.lineTo(xx, sy(LAT_BOT)); } }
-    g.stroke();
-    var gi = 0; if (maskD) { gi = 3; for (var q = 0; q < 4; q++) if (STEPS[q] * S <= 8) { gi = q; break; } }
-    var gr = gridFor(gi), bins = binsFor(gr), sp = STEPS[gi] * S;
-    if (!maskD) { sp = 4.6; }
-    if (selC && lift > .5) {
-      drawSet(g, gr, bins, sp, 2, 0);                         /* stopa po kontinentu */
-      drawSet(g, gr, bins, sp, 0, 0, undefined, .3);          /* zbytek světa je ztlumený */
-      var bx = CBOX[selC];
-      drawBorders(g, 0, bx, false);
-      /* tloušťka desky: kopie pobřeží pod sebou */
-      for (var o = lift; o > 1; o -= 3) drawSet(g, gr, bins, sp, 1, o, 0, .12 + .25 * (1 - o / lift));
-      drawSet(g, gr, bins, sp, 1, lift, 4, .13 * lift / LIFT, 2.8);   /* záře kolem vybraného */
-      drawSet(g, gr, bins, sp, 1, lift, 4, 1);
-      drawBorders(g, lift, bx, true);
-    } else {
-      var va = vec ? Math.max(0, Math.min(1, (S - 22) / 22)) : 0; vecA = va;
-      if (va < 1 || vec) {
-        g.globalAlpha = 1 - .85 * va;
-        if (tl > .05) for (var dd2 = 3; dd2 >= 1; dd2--) drawSet(g, gr, bins, sp, 0, -dd2 * 3.4 * tl, undefined, .14 + .05 * (4 - dd2), 1);   /* tloušťka desky */
-        drawSet(g, gr, bins, sp, 0, 0); g.globalAlpha = 1;
-      }
-      if (va > 0) drawVec(g, va);
-      drawBorders(g, 0, null, false);
-    }
-  }
-  function loadLand() {
-    function add(src, cb) { var s = document.createElement('script'); s.src = src; s.onload = cb; s.onerror = function () {}; document.head.appendChild(s); }
-    function fetchGeo(res, fail) {
-      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-' + res + '.json').then(function (r) { return r.json(); }).then(function (t) {
-        var geo = topojson.feature(t, t.objects.countries);
-        var mesh = topojson.mesh(t, t.objects.countries, function (a, b) { return a !== b; });
-        borders = mesh.type === 'MultiLineString' ? mesh.coordinates : [mesh.coordinates];
-        buildMask(geo); buildVec(geo); haveGeo = true; grids = {}; landKey = ''; need = true; showConts();
-      }).catch(function () { if (fail) fail(); });
-    }
-    add('https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js', function () {
-      fetchGeo('50m', function () { fetchGeo('110m'); });
-    });
-  }
-
   /* ---------- Data ---------- */
   var ALL = V.map(function (c, i) { c.wish = false; c.no = i + 1; return c; }).concat(WL.map(function (c) { c.wish = true; return c; }));
-  var showWish = true, sel = null, selAt = 0;
-  function list() { return showWish ? ALL : V; }
+  var showWish = true;
 
   /* ---------- Čítače ---------- */
   function uniq(k) { var o = {}; V.forEach(function (c) { o[c[k]] = 1; }); return Object.keys(o).length; }
@@ -339,147 +42,6 @@
   counter($('n-cities'), V.length); counter($('n-countries'), uniq('country')); counter($('n-conts'), uniq('cont'));
   $('n-wish').textContent = WL.length;
   if (!WL.length) { $('btn-wish').style.display = 'none'; showWish = false; }
-
-  /* ---------- Vykreslení měst a paprsku ---------- */
-  var need = true, pulse = 0;
-  function cyOf(c) { return sy(c.lat) - (selC && CK[c.cont] === selC ? lift : 0); }
-  function visibleX(lon, ref) { var F = full(), x = sx(lon); return x + Math.round((ref - x) / F) * F; }
-  /* nakloněná 3D deska (G8): svislé stlačení mapy podle přiblížení; K = měřítko Y, M = posun dolů, tl = míra náklonu 0..1 */
-  var tl = 0, K = 1, M = 0, STARS = [];
-  for (var si = 0; si < 90; si++) STARS.push([Math.abs(Math.sin(si * 12.9898) * 43758.5453) % 1, Math.abs(Math.sin(si * 78.233) * 12543.123) % 1, .25 + (si % 5) * .13]);
-  function tiltTarget() {
-    var z = Math.max(0, Math.min(1, (S / S0 - 1.2) / 4.3));
-    return (1 - z) * (selC ? .45 : 1) * (innerWidth <= 720 ? .7 : 1);
-  }
-  function tiltApply() { K = 1 - .36 * tl; M = (1 - K) * H * .6; }
-  var hov = null, hovK = null, items = [];
-  /* shluky: blízká města (na obrazovce) se spojí do jednoho pinu s číslem, při přiblížení se rozpadnou */
-  function clusterR() { var m = innerWidth <= 720 ? 20 : 26, z = Math.max(0, Math.min(1, (S / S0 - 3) / 3)); return m * (1 - .75 * z); }
-  function drawCities(t) {
-    cx.clearRect(0, 0, W, H);
-    if (tl > .02 && M > 6) {                                     /* obloha s hvězdami a zářící obzor */
-      STARS.forEach(function (q) { cx.fillStyle = 'rgba(200,225,255,' + (q[2] * tl * .8).toFixed(2) + ')'; cx.fillRect(q[0] * W, q[1] * (M + 24), 1.3, 1.3); });
-      var topY = M + oy * K;
-      if (topY > 4) { var hg = cx.createLinearGradient(0, topY - 70, 0, topY); hg.addColorStop(0, 'rgba(255,190,80,0)'); hg.addColorStop(1, 'rgba(255,190,80,' + (.16 * tl).toFixed(3) + ')'); cx.fillStyle = hg; cx.fillRect(0, topY - 70, W, 70); }
-    }
-    cx.save(); cx.setTransform(DPR, 0, 0, DPR * K, 0, M * DPR); cx.drawImage(landCv, 0, 0, W, H); cx.restore();
-    var F = full(), k0 = Math.pow(S / S0, .25), rects = [], L = list();
-    cx.textBaseline = 'middle';
-    var pts = [];
-    L.forEach(function (c) { var x0 = sx(c.lon), y = cyOf(c) * K + M; for (var x = x0 - F; x < W + 40; x += F) if (x > -40) pts.push({ c: c, x: x, y: y }); });
-    pts.sort(function (a, b) { return a.x - b.x; });
-    var R0 = clusterR(), cl = [];
-    pts.forEach(function (p) {
-      if (p.c === sel) { cl.push({ m: [p], x: p.x, y: p.y }); return; }
-      for (var i = cl.length - 1; i >= 0; i--) {
-        var q = cl[i]; if (q.m[0].c === sel && q.m.length === 1) continue;
-        if (p.x - q.x > R0 * 2) break;
-        if (Math.hypot(p.x - q.x, p.y - q.y) < R0) { q.m.push(p); var n = q.m.length; q.x = q.x + (p.x - q.x) / n; q.y = q.y + (p.y - q.y) / n; return; }
-      }
-      cl.push({ m: [p], x: p.x, y: p.y });
-    });
-    items = [];
-    var singles = [];
-    cl.forEach(function (q) {
-      if (q.m.length === 1) { singles.push(q.m[0]); return; }
-      var key = q.m.map(function (p) { return p.c.id; }).sort().join('|'), n = q.m.length, r = 10 + Math.sqrt(n) * 2.6, h = 8 + Math.sqrt(n) * 6, isH = hovK === key;
-      q.key = key; q.r = r; q.h = h; q.cities = q.m.map(function (p) { return p.c; });
-      items.push({ k: 1, q: q, x: q.x, y: q.y - h * .6, rad: r + h * .5 + 3 });
-      /* podstava + sloupek + kruh s číslem */
-      var g = cx.createLinearGradient(0, q.y - h, 0, q.y); g.addColorStop(0, 'rgba(255,226,150,.95)'); g.addColorStop(1, 'rgba(255,170,60,.08)');
-      cx.fillStyle = 'rgba(255,190,80,' + (isH ? .4 : .24) + ')'; cx.beginPath(); cx.ellipse(q.x, q.y, r + 4, (r + 4) * .42, 0, 0, 7); cx.fill();
-      cx.strokeStyle = g; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(q.x, q.y); cx.lineTo(q.x, q.y - h); cx.stroke();
-      var rr = r * (isH ? 1.15 : 1), gy = q.y - h;
-      var gg = cx.createRadialGradient(q.x, gy, 0, q.x, gy, rr * 2.4); gg.addColorStop(0, 'rgba(255,207,106,.45)'); gg.addColorStop(1, 'rgba(255,207,106,0)');
-      cx.fillStyle = gg; cx.fillRect(q.x - rr * 2.4, gy - rr * 2.4, rr * 4.8, rr * 4.8);
-      cx.fillStyle = isH ? '#fff3d6' : '#ffd27a'; cx.beginPath(); cx.arc(q.x, gy, rr, 0, 7); cx.fill();
-      cx.strokeStyle = 'rgba(255,243,214,.9)'; cx.lineWidth = 1.2; cx.beginPath(); cx.arc(q.x, gy, rr + 2.5, 0, 7); cx.stroke();
-      cx.fillStyle = '#2a1a04'; cx.font = '700 ' + (r > 14 ? 14 : 12) + 'px ui-monospace,Menlo,monospace'; cx.textAlign = 'center'; cx.fillText(String(n), q.x, gy + .5);
-      rects.push([q.x - rr - 3, gy - rr - 3, q.x + rr + 3, q.y + 4]);
-    });
-    singles.sort(function (a, b) { return ((b.c === hov) * 2 + (b.c === sel)) - ((a.c === hov) * 2 + (a.c === sel)); });
-    pts = singles;
-    var occ = singles.concat(cl.filter(function (q) { return q.m.length > 1; }).map(function (q) { return { x: q.x, y: q.y }; }));
-    var cand = [[9, 0, 'l'], [-9, 0, 'r'], [0, -17, 'c'], [0, 16, 'c'], [9, -13, 'l'], [-9, -13, 'r'], [9, 13, 'l'], [-9, 13, 'r']], mob = innerWidth <= 720;
-    pts.forEach(function (p) {
-      var c = p.c, isH = c === hov, isSel = c === sel, big = isH || isSel, k = (big ? 1.7 : 1) * k0, lab = c.name.toUpperCase();
-      items.push({ k: 0, c: c, x: p.x, y: p.y, rad: 14 });
-      var f = big ? (mob ? 15 : 14) : (mob ? 13 : 12); cx.font = '700 ' + f + 'px ui-monospace,Menlo,monospace';
-      var w = cx.measureText(lab).width, h = f + 4, put = null;
-      for (var i = 0; i < cand.length && !put; i++) {
-        var px = p.x + cand[i][0] * k, py = p.y + cand[i][1] * (big ? 1.4 : 1), al = cand[i][2];
-        var l = al === 'l' ? px : al === 'r' ? px - w : px - w / 2, R = [l - 2, py - h / 2, l + w + 2, py + h / 2], bad = false;
-        for (var j = 0; j < rects.length; j++) { var q = rects[j]; if (!(R[2] < q[0] || R[0] > q[2] || R[3] < q[1] || R[1] > q[3])) { bad = true; break; } }
-        if (!bad) for (var m = 0; m < occ.length; m++) { var o = occ[m]; if (o !== p && o.x > R[0] - 4 && o.x < R[2] + 4 && o.y > R[1] - 3 && o.y < R[3] + 3) { bad = true; break; } }
-        if (!bad) { put = { x: px, y: py, al: al, R: R }; }
-      }
-      if (!put && big) put = { x: p.x + 8 * k, y: p.y, al: 'l', R: [0, 0, 0, 0] };
-      /* pin: elipsa na zemi + krátký zářící sloupek */
-      if (c.wish) {
-        cx.save(); cx.strokeStyle = 'rgba(255,214,120,' + (big ? .95 : .55) + ')'; cx.lineWidth = 1.2; cx.setLineDash([3, 3]);
-        cx.beginPath(); cx.arc(p.x, p.y, 5 * k, 0, 7); cx.stroke(); cx.restore();
-      } else {
-        if (isH && !isSel) { cx.fillStyle = 'rgba(255,207,106,.14)'; cx.beginPath(); cx.arc(p.x, p.y, 15, 0, 7); cx.fill(); cx.strokeStyle = '#ffcf6a'; cx.lineWidth = 1.2; cx.beginPath(); cx.arc(p.x, p.y, 10, 0, 7); cx.stroke(); }
-        if (isSel) {
-          var ph = reduce ? 0 : (t / 1400) % 1;
-          cx.fillStyle = 'rgba(255,207,106,.14)'; cx.beginPath(); cx.arc(p.x, p.y, 15, 0, 7); cx.fill();
-          cx.strokeStyle = 'rgba(255,230,160,.95)'; cx.lineWidth = 1.3; cx.beginPath(); cx.arc(p.x, p.y, 10, 0, 7); cx.stroke();
-          cx.strokeStyle = 'rgba(255,230,160,' + (1 - ph) * .6 + ')'; cx.beginPath(); cx.arc(p.x, p.y, 10 + ph * 16, 0, 7); cx.stroke();
-        }
-        var sh = ((big ? 12 : 8) + 7 * tl) * k0, g2 = cx.createLinearGradient(0, p.y - sh, 0, p.y); g2.addColorStop(0, 'rgba(255,230,160,.95)'); g2.addColorStop(1, 'rgba(255,170,60,.1)');
-        cx.strokeStyle = g2; cx.lineWidth = 1.6; cx.beginPath(); cx.moveTo(p.x, p.y); cx.lineTo(p.x, p.y - sh); cx.stroke();
-        cx.fillStyle = 'rgba(255,207,106,.92)'; cx.beginPath(); cx.ellipse(p.x, p.y, 4 * k, 1.9 * k, 0, 0, 7); cx.fill();
-        cx.fillStyle = '#fff3d6'; cx.beginPath(); cx.ellipse(p.x, p.y, 2 * k, .9 * k, 0, 0, 7); cx.fill();
-        cx.beginPath(); cx.arc(p.x, p.y - sh, 1.9, 0, 7); cx.fill();
-      }
-      if (put) {
-        rects.push(put.R); cx.textAlign = put.al === 'l' ? 'left' : put.al === 'r' ? 'right' : 'center';
-        cx.lineJoin = 'round'; cx.lineWidth = 4.5; cx.strokeStyle = 'rgba(6,4,1,.92)'; cx.strokeText(lab, put.x, put.y);   /* tmavý obrys, aby se nápis četl na tečkách */
-        cx.fillStyle = big ? '#ffffff' : (c.wish ? 'rgba(255,230,170,.8)' : '#ffeec4'); cx.fillText(lab, put.x, put.y);
-      }
-    });
-    cx.textAlign = 'left';
-    if (dnOn()) {
-      var sy0 = sy(sunDec * 180 / Math.PI) * K + M, sx0 = sx(mod(sunLon + 540, 360) - 180);
-      for (var xs = sx0 - F; xs < W + 40; xs += F) if (xs > -40) {
-        var gg2 = cx.createRadialGradient(xs, sy0, 0, xs, sy0, 30); gg2.addColorStop(0, 'rgba(255,240,190,.85)'); gg2.addColorStop(.3, 'rgba(255,200,100,.3)'); gg2.addColorStop(1, 'rgba(255,200,100,0)');
-        cx.fillStyle = gg2; cx.fillRect(xs - 32, sy0 - 32, 64, 64); cx.fillStyle = '#fff6d6'; cx.beginPath(); cx.arc(xs, sy0, 3, 0, 7); cx.fill();
-      }
-    }
-    drawBeam(t);
-  }
-  var DOCK = null;
-  function drawBeam(t) {
-    if (!sel || !$('card').classList.contains('open')) return;
-    var p = Math.min(1, Math.max(0, (t - selAt - 300) / 450)); if (reduce) p = 1;
-    if (p <= 0) return;
-    var r = $('dk').getBoundingClientRect(), mobile = innerWidth <= 720;
-    var Dx = r.left + r.width / 2, Dy = r.top + r.height / 2;
-    var ex = visibleX(sel.lon, Dx - 140), ey = cyOf(sel) * K + M;
-    if (mobile) ex = visibleX(sel.lon, Dx);
-    var E = mobile ? [ex, Math.max(ey + 20, Dy - 40)] : [ex + 70, Dy];
-    if (!mobile && E[0] > Dx - 20) E[0] = Dx - 20;
-    var pts = [[ex, ey], E, [Dx, Dy]];
-    /* kolik čáry se má vykreslit (p = 0..1) */
-    var L1 = Math.hypot(E[0] - ex, E[1] - ey), L2 = Math.hypot(Dx - E[0], Dy - E[1]), tot = L1 + L2, cut = tot * p;
-    function path() {
-      cx.beginPath(); cx.moveTo(ex, ey);
-      if (cut <= L1) { var k = cut / L1; cx.lineTo(ex + (E[0] - ex) * k, ey + (E[1] - ey) * k); }
-      else { cx.lineTo(E[0], E[1]); var k2 = (cut - L1) / L2; cx.lineTo(E[0] + (Dx - E[0]) * k2, E[1] + (Dy - E[1]) * k2); }
-    }
-    cx.save(); cx.globalCompositeOperation = 'lighter'; cx.lineJoin = 'round';
-    cx.strokeStyle = 'rgba(255,207,106,.22)'; cx.lineWidth = 10; path(); cx.stroke();
-    cx.strokeStyle = '#fff3d6'; cx.lineWidth = 1.8; cx.shadowColor = '#ffcf6a'; cx.shadowBlur = 16; path(); cx.stroke();
-    if (p >= 1) {
-      cx.shadowBlur = 0; cx.fillStyle = '#fff3d6'; cx.beginPath(); cx.arc(E[0], E[1], 4, 0, 7); cx.fill();
-      if (!sel.wish && !mobile) {
-        var km = dist(D.home, sel);
-        if (km > 50) { cx.font = '9px ui-monospace,monospace'; cx.fillStyle = 'rgba(255,226,150,.9)'; cx.fillText(fmt(km) + ' KM', E[0] - 64, E[1] - 12);
-          cx.fillStyle = 'rgba(255,207,106,.5)'; for (var i = 0; i < 6; i++) cx.fillRect(E[0] + 10 + i * 8 - 80 + 80, E[1] + 8, 5, 2); }
-      }
-    }
-    cx.restore();
-  }
   function dist(a, b) {
     var r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLo = (b.lon - a.lon) * r;
     var h = Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLo / 2) ** 2;
@@ -487,37 +49,324 @@
   }
   function fmt(n) { return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
 
-  /* ---------- Smyčka ---------- */
-  var anim = null;
-  function frame(t) {
-    if (anim) {
-      var k = Math.min(1, (t - anim.t0) / anim.d), e = 1 - Math.pow(1 - k, 3);
-      ox = anim.ox0 + (anim.ox1 - anim.ox0) * e; oy = anim.oy0 + (anim.oy1 - anim.oy0) * e; S = anim.s0 + (anim.s1 - anim.s0) * e;
-      if (k >= 1) anim = null; need = true;
+  /* ============================================================
+     ZEMĚKOULE: kreslí ji WebGL shader (den, noc, mraky), nad ní je 2D vrstva s piny
+     ============================================================ */
+  var DEG = Math.PI / 180, TAU = Math.PI * 2;
+  var cv = $('map'), cx = cv.getContext('2d'), glc = $('gl'), stc = $('stars');
+  var W = 0, H = 0, DPR = 1;
+  var lon0 = -22 * DEG, lat0 = 36 * DEG, z = 1;          /* střed pohledu a přiblížení */
+  var lay = { cx: 0, cy: 0, base: 200 }, layT = { cx: 0, cy: 0, base: 200 };
+  var ZMIN = .55, ZMAX = 30;
+  var need = true, sel = null, selC = 0, dn = true, anim = null, hov = null, hovK = null, items = [];
+  var haveGeo = true;
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function mod(a, n) { return ((a % n) + n) % n; }
+  function wrapLon(l) { return mod(l + Math.PI, TAU) - Math.PI; }
+  function R() { return lay.base * z; }
+  function unit(lo, la) { var c = Math.cos(la * DEG); return [c * Math.sin(lo * DEG), Math.sin(la * DEG), c * Math.cos(lo * DEG)]; }
+  ALL.forEach(function (c) { c.u = unit(c.lon, c.lat); });
+
+  /* ---------- Rozložení: kam se postaví koule (podle karty a mobilu) ---------- */
+  function layout() {
+    var mobile = innerWidth <= 720, panel = !!(sel || selC);
+    if (mobile) {
+      if (panel) { layT.cx = W / 2; layT.cy = H * .2 + 40; layT.base = Math.min(W * .36, H * .15); }
+      else { layT.cx = W / 2; layT.cy = H * .56; layT.base = Math.min(W * .44, H * .3); }
+    } else {
+      var pw = panel ? 368 : 0;
+      layT.cx = (W - pw) / 2; layT.cy = H * .53; layT.base = Math.min((W - pw) * .4, H * .405);
     }
-    var want = tiltTarget();
-    if (reduce) tl = want; else if (Math.abs(want - tl) > .004) { tl += (want - tl) * .16; need = true; } else tl = want;
-    tiltApply();
-    if (Math.abs(liftTo - lift) > .3) { lift += (liftTo - lift) * .14; need = true; } else if (lift !== liftTo) { lift = liftTo; need = true; }
-    if (vx || vy) { ox += vx; oy += vy; vx *= .94; vy *= .94; if (Math.abs(vx) < .05 && Math.abs(vy) < .05) vx = vy = 0; clampY(); need = true; }
-    if (need || (sel && !reduce)) { drawLand(); drawCities(t); need = false; }
+  }
+  function resize() {
+    W = innerWidth; H = innerHeight; DPR = Math.min(window.devicePixelRatio || 1, 2);
+    [cv, glc, stc].forEach(function (c) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); });
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    drawStars(); layout(); lay.cx = layT.cx; lay.cy = layT.cy; lay.base = layT.base; need = true;
+  }
+  function drawStars() {
+    var g = stc.getContext('2d'), s = 7; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, stc.width, stc.height);
+    for (var i = 0; i < 420; i++) {
+      s = (s * 16807) % 2147483647; var a = s / 2147483647; s = (s * 16807) % 2147483647; var b = s / 2147483647; s = (s * 16807) % 2147483647; var c = s / 2147483647;
+      g.fillStyle = 'rgba(' + (c > .8 ? '255,230,200' : '215,230,255') + ',' + (.15 + c * .6).toFixed(2) + ')';
+      var r = (c > .96 ? 1.6 : 1) * DPR; g.fillRect(a * stc.width, b * stc.height, r, r);
+    }
+  }
+
+  /* ---------- Slunce (skutečná poloha podle času) ---------- */
+  var sunLon = 0, sunLat = 0;
+  function updateSun() {
+    var n = new Date(), h = n.getUTCHours() + n.getUTCMinutes() / 60 + n.getUTCSeconds() / 3600;
+    var doy = Math.floor((n - Date.UTC(n.getUTCFullYear(), 0, 0)) / 864e5);
+    sunLat = -23.44 * DEG * Math.cos(TAU / 365 * (doy + 10)); sunLon = -(h - 12) * 15 * DEG;
+  }
+  /* rotace svět → pohled: vrací [x, y, z] (z > 0 = přivrácená strana) */
+  var cl0 = 1, sl0 = 0, cp0 = 1, sp0 = 0;
+  function setRot() { cl0 = Math.cos(lon0); sl0 = Math.sin(lon0); cp0 = Math.cos(lat0); sp0 = Math.sin(lat0); }
+  function rot(u) {
+    var x1 = u[0] * cl0 - u[2] * sl0, z1 = u[0] * sl0 + u[2] * cl0;
+    return [x1, u[1] * cp0 - z1 * sp0, u[1] * sp0 + z1 * cp0];
+  }
+  function sunView() {
+    if (!dn) return [-.35, .45, .82];
+    var c = Math.cos(sunLat); return rot([c * Math.sin(sunLon), Math.sin(sunLat), c * Math.cos(sunLon)]);
+  }
+  function inv(X, Y) {      /* pixel → [lon, lat] v radiánech, nebo null mimo kouli */
+    var r = R(), u = (X - lay.cx) / r, v = (lay.cy - Y) / r, rho2 = u * u + v * v;
+    if (rho2 > 1) return null;
+    var c = Math.sqrt(1 - rho2);
+    return [lon0 + Math.atan2(u, c * cp0 - v * sp0), Math.asin(clamp(c * sp0 + v * cp0, -1, 1))];
+  }
+
+  /* ---------- WebGL ---------- */
+  var gl = null, prog = null, U = {}, texReady = 0, TEXN = 3;
+  var VS = '#version 300 es\nvoid main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));gl_Position=vec4(p*2.0-1.0,0.0,1.0);}';
+  var FS = '#version 300 es\nprecision highp float;\n' +
+    'uniform vec2 uC;uniform float uR,uLon0,uLat0,uShift,uDN;uniform vec3 uSun;uniform sampler2D tDay,tNight,tAux;out vec4 o;\n' +
+    'const float PI=3.14159265359;\n' +
+    'void main(){\n' +
+    ' vec2 p=(gl_FragCoord.xy-uC)/uR;float rr=length(p);\n' +
+    ' float cov=clamp((1.0-rr)*uR+0.5,0.0,1.0);\n' +
+    ' float d=max(rr-1.0,0.0);vec2 dir=p/max(rr,1e-4);\n' +
+    ' float lg=clamp(dot(normalize(vec3(dir*0.8,0.35)),uSun)*0.6+0.55,0.18,1.0);\n' +
+    ' float ga=(0.72*exp(-d*24.0)+0.28*exp(-d*7.0))*lg;\n' +
+    ' vec3 gc=vec3(0.36,0.56,1.0)*ga;\n' +
+    ' if(cov<=0.0){o=vec4(gc*0.9,ga*0.9);return;}\n' +
+    ' float cz=sqrt(max(0.0,1.0-rr*rr));vec3 n=vec3(p,cz);\n' +
+    ' float s0=sin(uLat0),c0=cos(uLat0);\n' +
+    ' float lat=asin(clamp(cz*s0+p.y*c0,-1.0,1.0));\n' +
+    ' float lon=uLon0+atan(p.x,cz*c0-p.y*s0);\n' +
+    ' vec2 uv=vec2(lon/(2.0*PI)+0.5,0.5-lat/PI);\n' +
+    ' vec2 dx=dFdx(uv),dy=dFdy(uv);dx.x-=floor(dx.x+0.5);dy.x-=floor(dy.x+0.5);\n' +
+    ' vec3 day=textureGrad(tDay,uv,dx,dy).rgb;vec3 nit=textureGrad(tNight,uv,dx,dy).rgb;\n' +
+    ' vec4 aux=textureGrad(tAux,vec2(uv.x+uShift,uv.y),dx,dy);\n' +
+    ' float nd=dot(n,uSun);\n' +
+    ' float lit=0.08+0.92*pow(max(nd,0.0),0.82);\n' +
+    ' float dl=smoothstep(-0.08,0.22,nd);\n' +
+    ' vec3 c=day*lit*1.12;\n' +
+    ' float cl=clamp((aux.r-0.38)*1.55,0.0,1.0)*0.92;c=mix(c,vec3(lit*1.1),cl);\n' +
+    ' vec3 h=normalize(uSun+vec3(0.0,0.0,1.0));\n' +
+    ' float sp=pow(max(dot(n,h),0.0),70.0)*aux.g*0.55*step(0.0,nd)*(1.0-cl);c+=vec3(1.0,0.95,0.85)*sp;\n' +
+    ' float tw=(1.0-dl)*0.92*uDN;\n' +
+    ' c=mix(c,vec3(0.035,0.05,0.095)+nit*vec3(1.25,1.1,0.85),tw);\n' +
+    ' float fr=pow(1.0-cz,2.6);c+=vec3(0.16,0.31,0.78)*fr*(0.25+0.75*clamp(nd+0.3,0.0,1.0));\n' +
+    ' o=vec4(c*cov+gc*(1.0-cov)*0.9,cov+ga*0.9*(1.0-cov));\n' +
+    '}';
+  function sh(type, src) {
+    var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); return null; }
+    return s;
+  }
+  function loadTex(unit, url, name) {
+    var t = gl.createTexture(), im = new Image();
+    im.onload = function () {
+      gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      var ext = gl.getExtension('EXT_texture_filter_anisotropic');
+      if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(8, gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+      gl.uniform1i(U[name], unit);
+      if (++texReady === TEXN) { glc.classList.add('ready'); need = true; }
+    };
+    im.src = url;
+  }
+  function initGL() {
+    gl = glc.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, powerPreference: 'high-performance' });
+    if (!gl) return false;
+    var vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, FS); if (!vs || !fs) return false;
+    prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(prog)); return false; }
+    gl.useProgram(prog); gl.bindVertexArray(gl.createVertexArray());
+    ['uC', 'uR', 'uLon0', 'uLat0', 'uShift', 'uDN', 'uSun', 'tDay', 'tNight', 'tAux'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
+    gl.clearColor(0, 0, 0, 0);
+    loadTex(0, 'earth/day.jpg', 'tDay'); loadTex(1, 'earth/night.jpg', 'tNight'); loadTex(2, 'earth/aux.jpg', 'tAux');
+    return true;
+  }
+  function drawGlobe(t) {
+    if (!gl || texReady < TEXN) return;
+    var s = sunView();
+    gl.viewport(0, 0, glc.width, glc.height); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform2f(U.uC, lay.cx * DPR, (H - lay.cy) * DPR); gl.uniform1f(U.uR, R() * DPR);
+    gl.uniform1f(U.uLon0, lon0); gl.uniform1f(U.uLat0, lat0);
+    gl.uniform1f(U.uShift, (t * 1.2e-6) % 1); gl.uniform1f(U.uDN, dn ? 1 : 0);
+    gl.uniform3f(U.uSun, s[0], s[1], s[2]);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  /* ---------- Hranice států (volitelné, z internetu; bez nich glóbus funguje dál) ---------- */
+  var BR = { lo: null, hi: null };
+  function lines(coords) {
+    return coords.map(function (r) { var a = new Float32Array(r.length * 3); r.forEach(function (p, i) { var u = unit(p[0], p[1]); a[i * 3] = u[0]; a[i * 3 + 1] = u[1]; a[i * 3 + 2] = u[2]; }); return a; });
+  }
+  function loadBorders() {
+    function add(src, cb) { var s = document.createElement('script'); s.src = src; s.onload = cb; s.onerror = function () {}; document.head.appendChild(s); }
+    function get(res, done) {
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-' + res + '.json').then(function (r) { return r.json(); }).then(function (t) {
+        var m = topojson.mesh(t, t.objects.countries, function (a, b) { return a !== b; });
+        done(lines(m.type === 'MultiLineString' ? m.coordinates : [m.coordinates]));
+      }).catch(function () {});
+    }
+    add('https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js', function () {
+      get('110m', function (l) { BR.lo = l; need = true; get('50m', function (l2) { BR.hi = l2; need = true; }); });
+    });
+  }
+  function drawBorders() {
+    var set = (z > 2.2 && BR.hi) ? BR.hi : BR.lo; if (!set) return;
+    var r = R(), a = clamp(.2 + (z - 1) * .08, .2, .5), C = lay.cx, Y0 = lay.cy;
+    cx.beginPath();
+    for (var li = 0; li < set.length; li++) {
+      var L = set[li], n = L.length / 3, pen = false, lx = -1e9, ly = -1e9;
+      for (var i = 0; i < n; i++) {
+        var ux = L[i * 3], uy = L[i * 3 + 1], uz = L[i * 3 + 2];
+        var x1 = ux * cl0 - uz * sl0, z1 = ux * sl0 + uz * cl0, zz = uy * sp0 + z1 * cp0;
+        if (zz <= 0) { pen = false; continue; }
+        var px = C + r * x1, py = Y0 - r * (uy * cp0 - z1 * sp0);
+        if (pen && i < n - 1 && Math.abs(px - lx) < .6 && Math.abs(py - ly) < .6) continue;
+        if (px < -50 || px > W + 50 || py < -50 || py > H + 50) { pen = false; lx = px; ly = py; continue; }
+        if (!pen) { cx.moveTo(px, py); pen = true; } else cx.lineTo(px, py);
+        lx = px; ly = py;
+      }
+    }
+    cx.lineWidth = .8; cx.strokeStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; cx.stroke();
+  }
+
+  /* ---------- Piny, shluky a popisky ---------- */
+  function list() { return showWish ? ALL : V; }
+  function clusterR() { var m = innerWidth <= 720 ? 15 : 17, k = clamp((z - 1.2) / 2, 0, 1); return m * (1 - .9 * k); }
+  function inCont(c) { return !selC || c.cont === CKEY[selC]; }
+  function drawOverlay(t) {
+    cx.clearRect(0, 0, W, H); setRot();
+    drawBorders();
+    var r = R(), L = list(), vis = [];
+    L.forEach(function (c) {
+      var q = rot(c.u); if (q[2] < .06) return;
+      vis.push({ c: c, x: lay.cx + r * q[0], y: lay.cy - r * q[1], z: q[2], n: 1, mem: null });
+    });
+    vis.sort(function (a, b) { return (b.c === sel) - (a.c === sel) || b.z - a.z; });
+    var RC = clusterR(), out = [];
+    vis.forEach(function (p) {
+      var q = null;
+      if (p.c !== sel) for (var i = 0; i < out.length; i++) { var m = out[i]; if (m.c !== sel && Math.hypot(m.x - p.x, m.y - p.y) < RC) { q = m; break; } }
+      if (q) { if (!q.mem) q.mem = [{ x: q.x, y: q.y, c: q.c }]; q.mem.push({ x: p.x, y: p.y, c: p.c }); q.n++; q.cities.push(p.c);
+        q.x = q.mem.reduce(function (s, m2) { return s + m2.x; }, 0) / q.n; q.y = q.mem.reduce(function (s, m2) { return s + m2.y; }, 0) / q.n; q.z = Math.max(q.z, p.z); }
+      else { p.cities = [p.c]; out.push(p); }
+    });
+    /* shluky, jejichž značky by se překrývaly, se sloučí do jednoho */
+    for (var again = true, guard = 0; again && guard < 30; guard++) {
+      again = false;
+      for (var a = 0; a < out.length && !again; a++) for (var b = a + 1; b < out.length && !again; b++) {
+        var A = out[a], B = out[b];
+        if ((A.n > 1 || B.n > 1) && A.c !== sel && B.c !== sel && Math.hypot(A.x - B.x, A.y - B.y) < Math.max(RC, 27 * clamp(1.4 - z / 6, 0, 1))) {
+          A.cities = A.cities.concat(B.cities); A.x = (A.x * A.n + B.x * B.n) / (A.n + B.n); A.y = (A.y * A.n + B.y * B.n) / (A.n + B.n); A.n += B.n; A.z = Math.max(A.z, B.z); out.splice(b, 1); again = true;
+        }
+      }
+    }
+    out.forEach(function (p) { p.k = p.n > 1; p.rad = p.k ? 17 : 13; p.dim = p.k ? !p.cities.some(inCont) : !inCont(p.c); });
+    out.sort(function (a, b) { return a.z - b.z; });
+    items = out;
+    var pulse = (t % 1800) / 1800, big = innerWidth > 720;
+    out.forEach(function (p) {
+      var al = clamp((p.z - .06) / .22, 0, 1) * (p.dim ? .3 : 1);
+      cx.globalAlpha = al;
+      if (p.k) {
+        var hv = hovK === p.cities[0].id;
+        cx.save(); cx.shadowColor = 'rgba(242,194,77,.9)'; cx.shadowBlur = 18; cx.fillStyle = hv ? '#ffe08a' : '#f2c24d'; cx.beginPath(); cx.arc(p.x, p.y, 13, 0, TAU); cx.fill(); cx.restore();
+        cx.strokeStyle = 'rgba(255,255,255,.85)'; cx.lineWidth = 1.2; cx.beginPath(); cx.arc(p.x, p.y, 13, 0, TAU); cx.stroke();
+        cx.fillStyle = '#1a1203'; cx.font = '800 13px Inter,system-ui,sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(p.n, p.x, p.y + .5);
+      } else {
+        var c = p.c, isSel = c === sel, isH = c === hov, w = c.wish;
+        if (w) {
+          cx.strokeStyle = 'rgba(255,224,138,.9)'; cx.setLineDash([3, 3]); cx.lineWidth = 1.4; cx.beginPath(); cx.arc(p.x, p.y, 6, 0, TAU); cx.stroke(); cx.setLineDash([]);
+        } else {
+          cx.save(); cx.shadowColor = '#f2c24d'; cx.shadowBlur = isSel ? 22 : 14; cx.fillStyle = isSel ? '#fff' : '#ffe08a';
+          cx.beginPath(); cx.arc(p.x, p.y, isSel ? 5.6 : (isH ? 5 : 3.6), 0, TAU); cx.fill(); cx.restore();
+          cx.strokeStyle = isSel ? '#fff' : 'rgba(255,224,138,.85)'; cx.lineWidth = 1.3; cx.beginPath(); cx.arc(p.x, p.y, isSel ? 12 : (isH ? 10 : 8), 0, TAU); cx.stroke();
+        }
+        if (isSel) { cx.strokeStyle = 'rgba(242,194,77,' + (1 - pulse).toFixed(2) + ')'; cx.lineWidth = 2; cx.beginPath(); cx.arc(p.x, p.y, 12 + pulse * 22, 0, TAU); cx.stroke(); }
+      }
+    });
+    /* popisky: chamtivě, aby se nepřekrývaly */
+    var fs = big ? 14 : 13, used = [];
+    cx.font = '700 ' + fs + 'px Inter,system-ui,sans-serif'; cx.textBaseline = 'middle'; cx.lineJoin = 'round';
+    var cand = out.filter(function (p) { return !p.k && !p.dim; }).sort(function (a, b) { return (b.c === sel) - (a.c === sel) || (b.c === hov) - (a.c === hov) || b.z - a.z; });
+    cand.forEach(function (p) {
+      var c = p.c, w = cx.measureText(c.name).width + 4, h = fs + 5, force = c === sel || c === hov;
+      var spots = [[12, 0, 'l'], [-12, 0, 'r'], [0, -18, 'c'], [0, 19, 'c'], [12, -15, 'l'], [-12, -15, 'r'], [12, 15, 'l'], [-12, 15, 'r']];
+      for (var i = 0; i < spots.length; i++) {
+        var s2 = spots[i], px = p.x + s2[0], py = p.y + s2[1], l = s2[2] === 'l' ? px : s2[2] === 'r' ? px - w : px - w / 2;
+        var B = { l: l - 1, r: l + w + 1, t: py - h / 2, b: py + h / 2 };
+        if (!force && used.some(function (u) { return !(B.r < u.l || B.l > u.r || B.b < u.t || B.t > u.b); })) continue;
+        if (!force && out.some(function (m) { return m !== p && m.x > B.l - 6 && m.x < B.r + 6 && m.y > B.t - 5 && m.y < B.b + 5; })) continue;
+        used.push(B); cx.globalAlpha = clamp((p.z - .06) / .22, 0, 1);
+        cx.textAlign = s2[2] === 'l' ? 'left' : s2[2] === 'r' ? 'right' : 'center';
+        cx.lineWidth = 4; cx.strokeStyle = 'rgba(3,3,12,.85)'; cx.strokeText(c.name, px, py);
+        cx.fillStyle = c === sel ? '#ffe9b8' : c.wish ? 'rgba(255,255,255,.7)' : '#fff'; cx.fillText(c.name, px, py);
+        break;
+      }
+    });
+    cx.globalAlpha = 1; cx.textAlign = 'left';
+  }
+
+  /* ---------- Pohyb kamery ---------- */
+  var idleAt = performance.now();
+  function go(v, ms) {
+    var tl = wrapLon(v.lon * DEG), ta = clamp(v.lat * DEG, -1.4, 1.4), tz = clamp(v.z, ZMIN, ZMAX);
+    if (reduce) { lon0 = tl; lat0 = ta; z = tz; need = true; return; }
+    anim = { t0: performance.now(), d: ms || 1000, l0: lon0, a0: lat0, z0: z, dl: mod(tl - lon0 + Math.PI, TAU) - Math.PI, a1: ta, z1: tz };
+  }
+  var vl = 0, va = 0;
+  function frame(t) {
+    var dt = Math.min(.1, (t - (frame.t || t)) / 1000); frame.t = t;
+    if (anim) {
+      var k = Math.min(1, (t - anim.t0) / anim.d), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      lon0 = wrapLon(anim.l0 + anim.dl * e); lat0 = anim.a0 + (anim.a1 - anim.a0) * e;
+      z = Math.exp(Math.log(anim.z0) + (Math.log(anim.z1) - Math.log(anim.z0)) * e);
+      if (k >= 1) anim = null;
+    } else if (vl || va) {
+      lon0 = wrapLon(lon0 + vl); lat0 = clamp(lat0 + va, -1.45, 1.45); vl *= .93; va *= .93;
+      if (Math.abs(vl) < 1e-5 && Math.abs(va) < 1e-5) vl = va = 0;
+    } else if (!reduce && !sel && !selC && !down && !hov && !hovK && z < 2.4 && t - idleAt > 3500 && !document.hidden) {
+      lon0 = wrapLon(lon0 - dt * .03);
+    }
+    var moving = false;
+    ['cx', 'cy', 'base'].forEach(function (p) {
+      var d = layT[p] - lay[p];
+      if (Math.abs(d) > .25) { lay[p] += reduce ? d : d * .14; moving = true; } else lay[p] = layT[p];
+    });
+    drawGlobe(t); drawOverlay(t);
     requestAnimationFrame(frame);
   }
 
-  /* ---------- Ovládání mapy ---------- */
-  var ptrs = {}, vx = 0, vy = 0, moved = 0, startX = 0, startY = 0, pinch = 0;
+  /* ---------- Ovládání: tažení, kolečko, štípnutí, klik ---------- */
+  var ptrs = {}, down = false, moved = 0, grab = null, pinch = 0, lastMove = 0;
+  function pcount() { return Object.keys(ptrs).length; }
+  function pdist() { var k = Object.keys(ptrs); return Math.hypot(ptrs[k[0]][0] - ptrs[k[1]][0], ptrs[k[0]][1] - ptrs[k[1]][1]); }
   cv.addEventListener('pointerdown', function (e) {
     cv.setPointerCapture(e.pointerId); ptrs[e.pointerId] = [e.clientX, e.clientY];
-    startX = e.clientX; startY = e.clientY; moved = 0; vx = vy = 0; anim = null; cv.classList.add('drag');
-    if (Object.keys(ptrs).length === 2) pinch = pdist();
+    down = true; moved = 0; vl = va = 0; anim = null; idleAt = performance.now(); cv.classList.add('drag');
+    grab = inv(e.clientX, e.clientY);
+    if (pcount() === 2) pinch = pdist();
   });
-  function pdist() { var k = Object.keys(ptrs); return Math.hypot(ptrs[k[0]][0] - ptrs[k[1]][0], ptrs[k[0]][1] - ptrs[k[1]][1]); }
   cv.addEventListener('pointermove', function (e) {
+    idleAt = performance.now();
     if (!ptrs[e.pointerId]) { setHover(e.clientX, e.clientY); return; }
-    var p = ptrs[e.pointerId], dx = e.clientX - p[0], dy = e.clientY - p[1];
-    ptrs[e.pointerId] = [e.clientX, e.clientY];
-    if (Object.keys(ptrs).length === 2) { var d = pdist(); zoomAt(e.clientX, e.clientY, d / pinch); pinch = d; moved += 10; return; }
-    moved += Math.abs(dx) + Math.abs(dy); ox += dx; oy += dy / K; vx = dx; vy = dy / K; clampY(); need = true;
+    var p = ptrs[e.pointerId], dx = e.clientX - p[0], dy = e.clientY - p[1]; ptrs[e.pointerId] = [e.clientX, e.clientY];
+    if (pcount() === 2) { var d = pdist(); zoomAt(e.clientX, e.clientY, d / pinch); pinch = d; moved += 10; return; }
+    moved += Math.abs(dx) + Math.abs(dy);
+    var before = [lon0, lat0];
+    if (grab) {                       /* chycený bod zůstane pod prstem */
+      var g = inv(e.clientX, e.clientY);
+      if (g) { lon0 = wrapLon(lon0 + grab[0] - g[0]); lat0 = clamp(lat0 + grab[1] - g[1], -1.45, 1.45); setRot(); }
+      else { grab = null; }
+    }
+    if (!grab) { var r = R(); lon0 = wrapLon(lon0 - dx / (r * Math.max(.25, Math.cos(lat0)))); lat0 = clamp(lat0 + dy / r, -1.45, 1.45); }
+    vl = wrapLon(lon0 - before[0]); va = lat0 - before[1]; lastMove = performance.now();
+    setRot();
   });
   function hit(x, y, extra) {
     var best = null, bd = 1e9;
@@ -525,41 +374,42 @@
     return best;
   }
   function setHover(x, y) {
-    var it = hit(x, y), c = it && !it.k ? it.c : null, kk = it && it.k ? it.q.key : null;
-    if (c !== hov || kk !== hovK) { hov = c; hovK = kk; cv.style.cursor = it ? 'pointer' : ''; need = true; }
+    var it = hit(x, y), c = it && !it.k ? it.c : null, kk = it && it.k ? it.cities[0].id : null;
+    if (c !== hov || kk !== hovK) { hov = c; hovK = kk; cv.style.cursor = it ? 'pointer' : ''; }
   }
-  cv.addEventListener('pointerleave', function () { if (hov || hovK) { hov = null; hovK = null; need = true; } });
+  cv.addEventListener('pointerleave', function () { hov = null; hovK = null; });
   function up(e) {
-    delete ptrs[e.pointerId]; cv.classList.remove('drag');
+    delete ptrs[e.pointerId]; if (!pcount()) { down = false; cv.classList.remove('drag'); }
+    grab = pcount() === 1 ? inv.apply(null, ptrs[Object.keys(ptrs)[0]]) : null;
     if (moved < 6 && e.type === 'pointerup') pick(e.clientX, e.clientY);
-    if (reduce) vx = vy = 0;
+    if (performance.now() - lastMove > 80 || reduce) vl = va = 0;
+    idleAt = performance.now();
   }
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
-  cv.addEventListener('wheel', function (e) { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * .0012)); }, { passive: false });
+  cv.addEventListener('wheel', function (e) { e.preventDefault(); idleAt = performance.now(); anim = null; zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0014))); }, { passive: false });
   function zoomAt(x, y, f) {
-    y = (y - M) / K;
-    var ns = Math.max(S0, Math.min(Math.max(SMAX, S0 * 6), S * f)); f = ns / S;
-    if (selC && ns > S0 * 8) leaveCont();
-    ox = x - (x - ox) * f; oy = y - (y - oy) * f; S = ns; clampY(); need = true;
+    setRot(); var g0 = inv(x, y); z = clamp(z * f, ZMIN, ZMAX);
+    var g1 = inv(x, y);
+    if (g0 && g1) { lon0 = wrapLon(lon0 + g0[0] - g1[0]); lat0 = clamp(lat0 + g0[1] - g1[1], -1.45, 1.45); }
+    setRot();
   }
   function pick(x, y) {
     var it = hit(x, y, 8);
     if (!it) { if (sel) close(); return; }
-    if (it.k) { if (sel) close(); fitPts(it.q.cities); } else open(it.c);
+    if (it.k) { if (sel) close(); fitPts(it.cities); } else { open(it.c); }
   }
   /* přiblížení na skupinu měst (klik na shluk) */
   function fitPts(arr) {
-    var lo = arr.map(function (c) { return c.lon; }), la = arr.map(function (c) { return c.lat; });
-    var minLo = Math.min.apply(null, lo), maxLo = Math.max.apply(null, lo), minLa = Math.min.apply(null, la), maxLa = Math.max.apply(null, la);
-    var mobile = innerWidth <= 720, spLo = Math.max(1.2, maxLo - minLo), spLa = Math.max(.9, maxLa - minLa);
-    var s = Math.max(S0, Math.min(Math.max(120, S0 * 6), Math.min(W * (mobile ? .62 : .4) / spLo, H * (mobile ? .26 : .45) / spLa)));
-    if (arr.length > 1) s = Math.max(s, Math.min(Math.max(120, S0 * 6), S * 1.7));
-    go({ s: s, ox: (mobile ? W / 2 : W * .4) - ((minLo + maxLo) / 2 + 180) * s, oy: H * (mobile ? .3 : .5) - (LAT_TOP - (minLa + maxLa) / 2) * s });
+    var sx = 0, sy = 0, sz = 0;
+    arr.forEach(function (c) { sx += c.u[0]; sy += c.u[1]; sz += c.u[2]; });
+    var m = Math.hypot(sx, sy, sz) || 1, cl = [sx / m, sy / m, sz / m], ang = 0;
+    arr.forEach(function (c) { ang = Math.max(ang, Math.acos(clamp(c.u[0] * cl[0] + c.u[1] * cl[1] + c.u[2] * cl[2], -1, 1))); });
+    var mobile = innerWidth <= 720, avail = mobile ? Math.min(W * .4, H * .25) : Math.min(W, H) * .3;
+    var zt = clamp(avail / (Math.max(.004, Math.sin(Math.min(ang, 1.2))) * layBase()), 1.4, 20);
+    if (arr.length > 1) zt = Math.max(zt, Math.min(ZMAX, z * 1.7));
+    go({ lon: Math.atan2(cl[0], cl[2]) / DEG, lat: Math.asin(clamp(cl[1], -1, 1)) / DEG, z: zt }, 1000);
   }
-
-  /* zvuky jsou vypnuté (nevyhovovaly) */
-  function tone() {} function sOpen() {} function sCont() {} function sClose() {}
-
+  function layBase() { return layT.base; }
   /* ---------- Vlajky (kreslené, bez emoji, aby fungovaly všude) ---------- */
   var FLAGCODE = { 'Austria': 'AT', 'Slovakia': 'SK', 'Hungary': 'HU', 'Croatia': 'HR', 'Germany': 'DE', 'Italy': 'IT', 'Bulgaria': 'BG', 'Poland': 'PL',
     'Czechia': 'CZ', 'Czech Republic': 'CZ', 'USA': 'US', 'United States': 'US', 'United Arab Emirates': 'AE', 'France': 'FR', 'Netherlands': 'NL',
@@ -646,26 +496,20 @@
     [].forEach.call($('card-in').querySelectorAll('.im[data-p]'), function (b) { b.onclick = function () { openLb(c.photos, +b.dataset.p); }; });
   }
 
+  /* ---------- Otevření a zavření karty ---------- */
+  function syncPn() { document.body.classList.toggle('pn', !!(sel || selC)); layout(); }
+  function hideCpanel() { $('cp').classList.remove('open'); }
   function open(c, noHash) {
-    sel = c; selAt = performance.now(); if (!noHash) sOpen(); render(c); $('card').classList.add('open'); hideCpanel();
-    var mobile = innerWidth <= 720, tx, ty;
-    if (mobile) { tx = W / 2; ty = (H - H * .6) * .5 + 10; }
-    else { var dockx = W - 28 - 340; tx = Math.min((W - 368) * .5, dockx - 150); ty = H * .46; }
-    var F = full(), cur = (c.lon + 180) * S + ox, want = tx, d = mod(want - cur + F / 2, F) - F / 2;
-    var ox1 = ox + d, oy1 = (ty - M) / K - (LAT_TOP - c.lat) * S;
-    oy1 = Math.max(H - mapH(), Math.min(0, oy1));
-    if (reduce) { ox = ox1; oy = oy1; } else anim = { t0: performance.now(), d: 700, ox0: ox, oy0: oy, ox1: ox1, oy1: oy1, s0: S, s1: S };
-    need = true;
+    if (selC) { selC = 0; hideCpanel(); markTabs(); }
+    sel = c; render(c); $('card').classList.add('open'); syncPn();
+    go({ lon: c.lon, lat: c.lat, z: Math.max(z, innerWidth <= 720 ? 4.4 : 2.6) }, 1100);
     if (!noHash) try { history.replaceState(null, '', '#' + c.id); } catch (e) {}
-    selAt = performance.now(); syncPn();
   }
   function close() {
-    if (sel) sClose(); sel = null; $('card').classList.remove('open'); need = true;
+    sel = null; $('card').classList.remove('open'); syncPn();
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
-    syncPn();
   }
   function step(d) { var L = list(), i = L.indexOf(sel); if (i < 0) i = 0; open(L[mod(i + d, L.length)]); }
-
   /* ---------- Fotky na celou obrazovku ---------- */
   var lbList = [], lbI = 0;
   function openLb(arr, i) { lbList = arr; lbI = i; $('lb').hidden = false; showLb(); }
@@ -689,6 +533,7 @@
     else if (e.key === 'ArrowRight' && sel) step(1);
     else if (e.key === 'ArrowLeft' && sel) step(-1);
   });
+
 
   /* ---------- Wishlist a seznam ---------- */
   $('btn-wish').onclick = function () {
@@ -725,22 +570,7 @@
       b.onclick = function () { var c = ALL.filter(function (x) { return x.id === b.dataset.id; })[0]; $('list').hidden = true; open(c); };
     });
   }
-
-  /* ---------- Kontinenty: výběr, vyjetí z mapy, statistiky ---------- */
   var TABS = [[1, 'EUROPE'], [4, 'N. AMERICA'], [5, 'S. AMERICA'], [2, 'ASIA'], [3, 'AFRICA'], [6, 'OCEANIA']];
-  function contsOpen(on) {
-    var box = $('conts'), b = $('btn-cont'); if (!haveGeo) return;
-    if (on === undefined) on = box.hidden;
-    if (on) { var r = b.getBoundingClientRect(); box.style.top = (r.bottom + 8) + 'px'; box.style.right = Math.max(8, innerWidth - r.right) + 'px'; $('list').hidden = true; }
-    box.hidden = !on; b.classList.toggle('on', on);
-  }
-  function showConts() {
-    var box = $('conts'); if (!haveGeo) return;
-    box.innerHTML = TABS.map(function (t) { return '<button type="button" data-k="' + t[0] + '"' + (t[0] === selC ? ' class="on"' : '') + '>' + t[1] + '</button>'; }).join('');
-    $('btn-cont').hidden = false;
-    [].forEach.call(box.querySelectorAll('button'), function (b) { b.onclick = function () { contsOpen(false); selectCont(+b.dataset.k); }; });
-  }
-  function markTabs() { [].forEach.call($('conts').querySelectorAll('button'), function (b) { b.classList.toggle('on', +b.dataset.k === selC); }); $('btn-cont').classList.toggle('sel', !!selC); }
   function statsFor(k) {
     var key = CKEY[k], cs = V.filter(function (c) { return c.cont === key && c.visits.length; });
     var co = {}; cs.forEach(function (c) { co[c.country] = 1; });
@@ -763,9 +593,9 @@
     var st = statsFor(k), name = CN[k], cls = name.length > 12 ? ' l3' : name.length > 8 ? ' l2' : ' long';
     var R = 38, C2 = 2 * Math.PI * R, h = '<div class="cb"><div class="hd"><span>CONTINENT</span><i>● SELECTED</i></div>';
     h += '<div class="nm' + cls + '">' + name + '</div>';
-    h += '<div class="rg"><svg viewBox="0 0 100 100" width="92" height="92"><circle cx="50" cy="50" r="' + R + '" fill="none" stroke="rgba(255,207,106,.18)" stroke-width="8"/>' +
-      '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="#ffcf6a" stroke-width="8" stroke-dasharray="' + (C2 * st.pct / 100).toFixed(1) + ' ' + C2.toFixed(1) + '" transform="rotate(-90 50 50)"/>' +
-      '<text x="50" y="57" text-anchor="middle" fill="#ffe9b8" font-family="ui-monospace,monospace" font-weight="700" font-size="22">' + st.pct + '%</text></svg>' +
+    h += '<div class="rg"><svg viewBox="0 0 100 100" width="92" height="92"><circle cx="50" cy="50" r="' + R + '" fill="none" stroke="rgba(242,194,77,.18)" stroke-width="8"/>' +
+      '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="#f2c24d" stroke-width="8" stroke-dasharray="' + (C2 * st.pct / 100).toFixed(1) + ' ' + C2.toFixed(1) + '" transform="rotate(-90 50 50)"/>' +
+      '<text x="50" y="57" text-anchor="middle" fill="#fff" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="22">' + st.pct + '%</text></svg>' +
       '<div><b>' + st.nC + ' / ' + st.tot + '</b><small>COUNTRIES VISITED</small></div></div>';
     h += '<div class="gr"><div><b>' + st.cs.length + '</b><small>CITIES</small></div><div><b>' + st.nights + '</b><small>NIGHTS</small></div><div><b>' + st.trips + '</b><small>TRIPS</small></div></div>';
     if (st.facts.length) h += '<div class="h">DID YOU KNOW</div>' + st.facts.map(function (f) { return '<div class="t"><b>›</b>' + esc(f) + '</div>'; }).join('');
@@ -776,65 +606,53 @@
     var fl = $('fls'); if (fl) st.co.forEach(function (c) { var e = flagEl(c, 32, 22); e.title = c; fl.appendChild(e); });
     $('cp-x').onclick = worldView;
   }
-  function viewBox(b) {
-    var mobile = innerWidth <= 720, aw = mobile ? W * .92 : W - 460, ah = mobile ? H * .4 - 84 : H * .7;
-    var s = Math.max(mobile ? S0 * .4 : S0, Math.min(S0 * 6, Math.min(aw / (b[1] - b[0]), ah / (b[3] - b[2]))));
-    var cxp = mobile ? W / 2 : (W - 400) / 2 + 10, cyp = mobile ? 66 + ah / 2 : H * .5;
-    return { s: s, ox: cxp - ((b[0] + b[1]) / 2 + 180) * s, oy: cyp - (LAT_TOP - (b[2] + b[3]) / 2) * s + LIFT * .5 };
+
+  /* ---------- Kontinenty: tlačítko, pohled, statistiky ---------- */
+  var CV = { 1: { lon: 14, lat: 47, z: 2.6 }, 2: { lon: 90, lat: 32, z: 1.35 }, 3: { lon: 20, lat: 3, z: 1.5 },
+             4: { lon: -98, lat: 40, z: 1.6 }, 5: { lon: -60, lat: -16, z: 1.65 }, 6: { lon: 134, lat: -25, z: 2 } };
+  function contsOpen(on) {
+    var box = $('conts'), b = $('btn-cont');
+    if (on === undefined) on = box.hidden;
+    if (on) { var r = b.getBoundingClientRect(); box.style.top = (r.bottom + 8) + 'px'; box.style.right = Math.max(8, innerWidth - r.right) + 'px'; $('list').hidden = true; }
+    box.hidden = !on; b.classList.toggle('on', on);
   }
-  function syncPn() { document.body.classList.toggle('pn', !!(sel || selC)); }
-  function hideCpanel() { $('cp').classList.remove('open'); }
+  function showConts() {
+    var box = $('conts');
+    box.innerHTML = TABS.map(function (t) { return '<button type="button" data-k="' + t[0] + '"' + (t[0] === selC ? ' class="on"' : '') + '>' + t[1] + '</button>'; }).join('');
+    [].forEach.call(box.querySelectorAll('button'), function (b) { b.onclick = function () { contsOpen(false); selectCont(+b.dataset.k); }; });
+  }
+  function markTabs() { [].forEach.call($('conts').querySelectorAll('button'), function (b) { b.classList.toggle('on', +b.dataset.k === selC); }); $('btn-cont').classList.toggle('sel', !!selC); }
   function selectCont(k) {
     if (sel) { sel = null; $('card').classList.remove('open'); }
-    LIFT = innerWidth <= 720 ? 16 : 26;
-    selC = k; liftTo = LIFT; landKey = ''; need = true; renderCpanel(k); $('cp').classList.add('open'); markTabs(); sCont();
-    go(viewBox(CBOX[k])); syncPn();
+    selC = k; renderCpanel(k); $('cp').classList.add('open'); markTabs(); syncPn();
+    var v = CV[k], mobile = innerWidth <= 720; go({ lon: v.lon, lat: v.lat, z: mobile ? v.z * .8 : v.z }, 1200);
   }
-  function leaveCont() { if (selC) { selC = 0; liftTo = 0; lift = 0; landKey = ''; hideCpanel(); markTabs(); syncPn(); need = true; } }
-  function worldView() {
-    if (selC) { selC = 0; liftTo = 0; lift = 0; landKey = ''; } else if (sel) close();
-    hideCpanel(); markTabs(); need = true; go(viewFor(true)); syncPn();
+  function leaveCont() { if (selC) { selC = 0; hideCpanel(); markTabs(); syncPn(); } }
+  function worldView(instant) {
+    if (selC) { selC = 0; hideCpanel(); markTabs(); } if (sel) { sel = null; $('card').classList.remove('open'); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
+    syncPn();
+    var vs = V.filter(function (c) { return c.visits.length; }), sx = 0, sy = 0, sz = 0;
+    vs.forEach(function (c) { sx += c.u[0]; sy += c.u[1]; sz += c.u[2]; });
+    var m = Math.hypot(sx, sy, sz), v = m > .01 ? { lon: Math.atan2(sx, sz) / DEG, lat: Math.asin(sy / m) / DEG, z: 1 } : { lon: 15, lat: 35, z: 1 };
+    if (instant) { lon0 = wrapLon(v.lon * DEG); lat0 = v.lat * DEG; z = 1; } else go(v, 1200);
   }
 
   /* ---------- Start ---------- */
-  addEventListener('resize', function () { var old = S0; fit(); if (!sel) { S = S0; clampY(); } need = true; });
-  fit();
-  /* pohled: all = všechna místa, jinak jen hlavní shluk (nejvíc míst pohromadě) */
-  function viewFor(all) {
-    var vs = V.filter(function (c) { return c.visits.length; });
-    if (!vs.length) return { s: S0, ox: W / 2 - 195 * S0, oy: H * .5 - (LAT_TOP - 30) * S0 };
-    if (!all) {
-      /* shluk: místa do 1500 km od místa, které má nejvíc sousedů */
-      var best = vs[0], bn = -1;
-      vs.forEach(function (c) { var n = vs.filter(function (d) { return dist(c, d) < 1500; }).length; if (n > bn) { bn = n; best = c; } });
-      var grp = vs.filter(function (d) { return dist(best, d) < 1500; });
-      if (grp.length < vs.length) vs = grp;
-    }
-    var lo = vs.map(function (c) { return c.lon; }), la = vs.map(function (c) { return c.lat; });
-    var minLo = Math.min.apply(null, lo), maxLo = Math.max.apply(null, lo), minLa = Math.min.apply(null, la), maxLa = Math.max.apply(null, la);
-    var mobile = innerWidth <= 720, spanLo = Math.max(14, maxLo - minLo), spanLa = Math.max(10, maxLa - minLa);
-    var s = Math.max(S0, Math.min(S0 * 3.4, Math.min(W * (mobile ? .8 : .45) / spanLo, H * .5 / spanLa)));
-    return { s: s, ox: (mobile ? W / 2 : W * .36) - ((minLo + maxLo) / 2 + 180) * s, oy: H * (mobile ? .32 : .5) - (LAT_TOP - (minLa + maxLa) / 2) * s };
-  }
-  function go(v) {
-    var mh = (LAT_TOP - LAT_BOT) * v.s, lo = H - mh; v = { s: v.s, ox: v.ox, oy: lo > 0 ? lo / 2 : Math.max(lo, Math.min(0, v.oy)) };
-    if (reduce) { S = v.s; ox = v.ox; oy = v.oy; clampY(); need = true; return; }
-    var F1 = 360 * v.s, ox1 = v.ox + Math.round((ox - v.ox) / F1) * F1;   /* délka světa při cílovém přiblížení */
-    anim = { t0: performance.now(), d: 800, ox0: ox, oy0: oy, ox1: ox1, oy1: v.oy, s0: S, s1: v.s };
-  }
-  (function () { var v = viewFor(false); S = v.s; ox = v.ox; oy = v.oy; clampY(); })();
-  $('btn-world').onclick = function () { if (sel) close(); worldView(); };
-  $('btn-dn').onclick = function () { dn = !dn; this.classList.toggle('on', dn); this.setAttribute('aria-pressed', dn); landKey = ''; need = true; };
+  addEventListener('resize', resize);
+  resize();
+  if (!initGL()) { $('nogl').hidden = false; }
+  worldView(true);
+  $('btn-world').onclick = function () { worldView(); };
+  $('btn-dn').onclick = function () { dn = !dn; this.classList.toggle('on', dn); this.setAttribute('aria-pressed', dn); };
   $('btn-cont').onclick = function (e) { e.stopPropagation(); contsOpen(); };
   document.addEventListener('click', function (e) { if (!$('conts').hidden && !$('conts').contains(e.target)) contsOpen(false); });
-  /* klikací čítače */
   function bind(id, fn) { var el = $(id).parentNode; el.setAttribute('role', 'button'); el.tabIndex = 0; el.onclick = function (e) { e.stopPropagation(); fn(); }; el.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } }; }
   bind('n-cities', function () { listToggle('places'); });
   bind('n-countries', function () { listToggle('countries'); });
-  bind('n-conts', function () { if (haveGeo) contsOpen(); });
-  buildList(); updateSun(); setInterval(updateSun, 60000); loadLand();
+  bind('n-conts', function () { contsOpen(); });
+  buildList(); showConts(); updateSun(); setInterval(updateSun, 60000); loadBorders();
   var hash = location.hash.slice(1), start = ALL.filter(function (c) { return c.id === hash; })[0];
   requestAnimationFrame(frame);
   if (start) setTimeout(function () { open(start, true); }, 150);
-  window.__outings = { open: open, close: close, ALL: ALL, selectCont: selectCont, worldView: worldView };
+  window.__outings = { open: open, close: close, ALL: ALL, selectCont: selectCont, worldView: worldView, go: go, state: function () { return { lon: lon0 / DEG, lat: lat0 / DEG, z: z, tex: texReady, items: items.length }; } };
 })();
