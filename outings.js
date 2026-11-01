@@ -147,8 +147,8 @@
     'uniform vec2 uC;uniform float uR,uLon0,uLat0,uDN,uPOn,uPLon,uPWd,uPx0,uPy0,uPS;uniform vec3 uSun;uniform sampler2D tDay,tNight,tAux,tPatch;out vec4 o;\n' +
     'const float PI=3.14159265359;\n' +
     'vec4 cr(float t){float t2=t*t,t3=t2*t;return vec4(-.5*t3+t2-.5*t,1.5*t3-2.5*t2+1.,-1.5*t3+2.*t2+.5*t,.5*t3-.5*t2);}\n' +
-    'vec3 cubicDay(vec2 uv){vec2 p=uv*vec2(4096.,2048.)-.5;vec2 f=fract(p);ivec2 i=ivec2(floor(p));vec4 wx=cr(f.x),wy=cr(f.y);vec3 s=vec3(0.);\n' +
-    ' for(int j=-1;j<=2;j++){for(int k=-1;k<=2;k++){s+=texelFetch(tDay,ivec2((i.x+k)&4095,clamp(i.y+j,0,2047)),0).rgb*wx[k+1]*wy[j+1];}}\n' +
+    'vec3 cubicTex(sampler2D tx,vec2 uv){vec2 p=uv*vec2(4096.,2048.)-.5;vec2 f=fract(p);ivec2 i=ivec2(floor(p));vec4 wx=cr(f.x),wy=cr(f.y);vec3 s=vec3(0.);\n' +
+    ' for(int j=-1;j<=2;j++){for(int k=-1;k<=2;k++){s+=texelFetch(tx,ivec2((i.x+k)&4095,clamp(i.y+j,0,2047)),0).rgb*wx[k+1]*wy[j+1];}}\n' +
     ' return max(s,0.);}\n' +
     'float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}\n' +
     'float vnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}\n' +
@@ -167,8 +167,8 @@
     ' vec2 uv=vec2(lon/(2.0*PI)+0.5,0.5-lat/PI);\n' +
     ' vec2 dx=dFdx(uv),dy=dFdy(uv);dx.x-=floor(dx.x+0.5);dy.x-=floor(dy.x+0.5);\n' +
     ' float mag=max(length(dx*vec2(4096.,2048.)),length(dy*vec2(4096.,2048.)));\n' +
-    ' vec3 day=mag<0.7?cubicDay(uv):textureGrad(tDay,uv,dx,dy).rgb;\n' +
-    ' vec3 nit=textureGrad(tNight,uv,dx,dy).rgb;\n' +
+    ' float magN=mag;vec3 day=mag<0.7?cubicTex(tDay,uv):textureGrad(tDay,uv,dx,dy).rgb;\n' +
+    ' vec3 nit=mag<0.7?cubicTex(tNight,uv):textureGrad(tNight,uv,dx,dy).rgb;\n' +
     ' vec4 aux=textureGrad(tAux,uv,dx,dy);\n' +
     /* ostrý detail z dlaždic: barvy zůstanou ze základu, z dlaždic se vezme jen jemná kresba */
     ' if(uPOn>0.5){\n' +
@@ -198,7 +198,10 @@
     ' vec3 h=normalize(uSun+vec3(0.0,0.0,1.0));\n' +
     ' float sp=pow(max(dot(n,h),0.0),70.0)*aux.g*0.55*step(0.0,nd)*(1.0-cl);c+=vec3(1.0,0.95,0.85)*sp;\n' +
     ' float tw=(1.0-dl)*0.92*uDN;\n' +
-    ' c=mix(c,vec3(0.035,0.05,0.095)+nit*vec3(1.25,1.1,0.85),tw);\n' +
+    ' float lz=smoothstep(0.7,0.08,magN);float ll=dot(nit,vec3(0.3,0.6,0.1));\n' +
+    ' if(lz>0.0){vec2 g3=uv*vec2(4096.,2048.)*14.0;float nn=vnoise(g3)*0.5+vnoise(g3*2.1)*0.3+vnoise(g3*4.3)*0.2;float th=1.0-clamp(ll*1.5,0.0,0.97);float dots=smoothstep(th,th+0.12,nn);float st=smoothstep(0.35,0.6,vnoise(uv*vec2(4096.,2048.)*3.0+vnoise(g3*0.5)*2.0));nit=mix(nit,nit*(0.25+1.9*dots)*(0.6+0.8*st),lz);}\n' +
+    ' vec3 moon=day*vec3(0.05,0.07,0.12)*(1.0-cl*0.5);\n' +
+    ' c=mix(c,vec3(0.03,0.042,0.085)+moon+nit*vec3(1.25,1.1,0.85),tw);\n' +
     ' float fr=pow(1.0-cz,2.6);c+=vec3(0.16,0.31,0.78)*fr*(0.25+0.75*clamp(nd+0.3,0.0,1.0));\n' +
     ' o=vec4(c*cov+gc*(1.0-cov)*0.9,cov+ga*0.9*(1.0-cov));\n' +
     '}';
@@ -460,7 +463,7 @@
       /* tažení řídí ukazatel, nic nepřidáváme */
     } else if (vl || va) {
       lon0 = wrapLon(lon0 + vl * dt); lat0 = clamp(lat0 + va * dt, -LATMAX, LATMAX);
-      var f = Math.exp(-dt * 3.4); vl *= f; va *= f; if (Math.hypot(vl, va) < .02) vl = va = 0; chg = true;
+      var f = Math.exp(-dt * 4.6); vl *= f; va *= f; if (Math.hypot(vl, va) < .02) vl = va = 0; chg = true;
     } else if (fresh && !reduce && !sel && !selC && z < 1.5 && !document.hidden) {
       lon0 = wrapLon(lon0 - dt * .016); chg = true;                  /* jen úplně na začátku, než se někdo dotkne */
     }
@@ -491,14 +494,14 @@
   }
 
   /* ---------- Ovládání: tažení, kolečko, štípnutí, dvojklik, klik ---------- */
-  var ptrs = {}, down = false, moved = 0, grab = null, pinch = null, hist = [], tapAt = 0, tapX = -99, tapY = -99, touchLike = false;
+  var DRAG_K = .55, ptrs = {}, gx0 = 0, gy0 = 0, down = false, moved = 0, grab = null, pinch = null, hist = [], tapAt = 0, tapX = -99, tapY = -99, touchLike = false;
   function pcount() { return Object.keys(ptrs).length; }
   function startGesture() {
     var k = Object.keys(ptrs);
     if (k.length >= 2) {
       var a = ptrs[k[0]], b = ptrs[k[1]], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
       pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), z: z, g: pick3(mx, my) }; grab = null;
-    } else if (k.length === 1) { var p = ptrs[k[0]]; grab = pick3(p[0], p[1]); pinch = null; }
+    } else if (k.length === 1) { var p = ptrs[k[0]]; grab = pick3(p[0], p[1]); gx0 = p[0]; gy0 = p[1]; pinch = null; }
     else { grab = null; pinch = null; }
     hist = [];
   }
@@ -522,7 +525,7 @@
       dirty = true; return;
     }
     if (moved < 3) return;                                           /* drobné chvění prstu se ignoruje */
-    if (grab) solveGrab(grab, e.clientX, e.clientY);
+    if (grab) solveGrab(grab, gx0 + (e.clientX - gx0) * DRAG_K, gy0 + (e.clientY - gy0) * DRAG_K);   /* DRAG_K < 1 = zem jede pomaleji než prst */
     else { var r = R(); lon0 = wrapLon(lon0 - dx / (r * Math.max(.3, Math.cos(lat0)))); lat0 = clamp(lat0 + dy / r, -LATMAX, LATMAX); }
     var now = performance.now(); hist.push({ t: now, lon: lon0, lat: lat0 }); while (hist.length > 2 && now - hist[0].t > 140) hist.shift();
     dirty = true;
@@ -548,7 +551,7 @@
       var last = hist[hist.length - 1], first = hist[0], dtm = (last.t - first.t) / 1000;
       if (now - last.t < 70 && dtm > .02) {
         vl = wrapLon(last.lon - first.lon) / dtm; va = (last.lat - first.lat) / dtm;
-        var sp = Math.hypot(vl, va), cap = 5 / Math.max(1, Math.sqrt(z)); if (sp > cap) { vl *= cap / sp; va *= cap / sp; }
+        var sp = Math.hypot(vl, va), cap = 3 / Math.max(1, Math.sqrt(z)); if (sp > cap) { vl *= cap / sp; va *= cap / sp; }
         if (sp < .1) vl = va = 0;
       }
     }
@@ -840,6 +843,7 @@
     state: function () { return { lon: lon0 / DEG, lat: lat0 / DEG, z: z, tex: texReady, items: items.length, glq: GLQ, anim: !!anim, zt: !!zT, vel: Math.hypot(vl, va), patch: PT.on, pz: PT.Z, fail: PT.fail, pend: PT.pending }; },
     screenOf: function (lo, la) { setRot(); var q = rot(unit(lo, la)), r = R(); return { x: lay.cx + r * q[0], y: lay.cy - r * q[1], z: q[2] }; },
     geoAt: function (x, y) { var g = pick3(x, y); return g ? { lon: Math.atan2(g[0], g[2]) / DEG, lat: Math.asin(g[1]) / DEG } : null; },
+    sunSet: function (lo, la) { sunLon = lo * DEG; sunLat = la * DEG; dirty = true; },
     grabTest: function (x, y) { var g = pick3(x, y), a = lon0, b = lat0; solveGrab(g, x, y); var r = [lon0 - a, lat0 - b]; lon0 = a; lat0 = b; return r; },
     lay: function () { return { cx: lay.cx, cy: lay.cy, R: R() }; } };
 })();
