@@ -4,9 +4,10 @@
   var D = window.OUTINGS, V = D.visited, WL = D.wishlist;
   /* pobyty: spočítat datum, noci a počet návštěv */
   var MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-  function pd(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function pd(s) { var p = String(s).split('-'); return new Date(+p[0], p[1] ? +p[1] - 1 : 0, p[2] ? +p[2] : 1); }   /* stačí i jen rok: '2014' */
   function dd(n) { return (n < 10 ? '0' : '') + n; }
   function fmtVisit(v) {
+    if (String(v.from).length === 4) return String(v.from);
     var a = pd(v.from), b = pd(v.to || v.from), ya = a.getFullYear(), yb = b.getFullYear();
     if (+a === +b) return dd(a.getDate()) + ' ' + MON[a.getMonth()] + ' ' + ya;
     if (ya === yb && a.getMonth() === b.getMonth()) return dd(a.getDate()) + '–' + dd(b.getDate()) + ' ' + MON[a.getMonth()] + ' ' + ya;
@@ -18,6 +19,7 @@
     c.visits.sort(function (x, y) { return pd(x.from) - pd(y.from); });
     var last = c.visits[c.visits.length - 1], n = 0;
     c.visits.forEach(function (v) { n += Math.round((pd(v.to || v.from) - pd(v.from)) / 864e5); });
+    c.yearOnly = c.visits.some(function (v) { return String(v.from).length === 4; });
     c.date = fmtVisit(last); c.nights = n; c.nv = c.visits.length;
     c.years = pd(c.visits[0].from).getFullYear() + (pd(last.from).getFullYear() !== pd(c.visits[0].from).getFullYear() ? '–' + pd(last.from).getFullYear() : '');
   });
@@ -687,7 +689,7 @@
   var FLAGCODE = { 'Austria': 'AT', 'Slovakia': 'SK', 'Hungary': 'HU', 'Croatia': 'HR', 'Germany': 'DE', 'Italy': 'IT', 'Bulgaria': 'BG', 'Poland': 'PL',
     'Czechia': 'CZ', 'Czech Republic': 'CZ', 'USA': 'US', 'United States': 'US', 'United Arab Emirates': 'AE', 'France': 'FR', 'Netherlands': 'NL',
     'Belgium': 'BE', 'Spain': 'ES', 'Romania': 'RO', 'Ireland': 'IE', 'Russia': 'RU', 'Ukraine': 'UA', 'Slovenia': 'SI', 'Sweden': 'SE',
-    'Switzerland': 'CH', 'Denmark': 'DK', 'Finland': 'FI', 'Japan': 'JP', 'Lithuania': 'LT', 'Estonia': 'EE', 'Luxembourg': 'LU' };
+    'Switzerland': 'CH', 'Denmark': 'DK', 'Finland': 'FI', 'Japan': 'JP', 'Lithuania': 'LT', 'Estonia': 'EE', 'Luxembourg': 'LU', 'Egypt': 'EG', 'Cape Verde': 'CV', 'Tunisia': 'TN', 'United Kingdom': 'GB' };
   function drawFlag(cv2, country) {
     var code = FLAGCODE[country] || '', g = cv2.getContext('2d'), w = cv2.width, h = cv2.height;
     function S3(cols, vert) { cols.forEach(function (c, i) { g.fillStyle = c; vert ? g.fillRect(i * w / cols.length, 0, w / cols.length + .5, h) : g.fillRect(0, i * h / cols.length, w, h / cols.length + .5); }); }
@@ -708,6 +710,10 @@
       LT: function () { S3(['#fdb913', '#006a44', '#c1272d']); }, EE: function () { S3(['#0072ce', '#000', '#fff']); }, LU: function () { S3(['#ed2939', '#fff', '#00a1de']); },
       SE: function () { cross('#006aa7', '#fecc00'); }, DK: function () { cross('#c8102e', '#fff'); }, FI: function () { cross('#fff', '#003580'); },
       CH: function () { g.fillStyle = '#d52b1e'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.fillRect(w * .43, h * .2, w * .14, h * .6); g.fillRect(w * .3, h * .43, w * .4, h * .14); },
+      EG: function () { S3(['#ce1126', '#fff', '#000']); g.fillStyle = '#c09300'; g.fillRect(w * .44, h * .38, w * .12, h * .24); },
+      TN: function () { g.fillStyle = '#e70013'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.beginPath(); g.arc(w / 2, h / 2, h * .32, 0, 7); g.fill(); g.fillStyle = '#e70013'; g.beginPath(); g.arc(w / 2 - h * .03, h / 2, h * .22, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(w / 2 + h * .03, h / 2, h * .17, 0, 7); g.fill(); g.fillStyle = '#e70013'; g.beginPath(); g.arc(w / 2 + h * .05, h / 2, h * .09, 0, 7); g.fill(); },
+      GB: function () { g.fillStyle = '#012169'; g.fillRect(0, 0, w, h); g.lineCap = 'butt'; g.strokeStyle = '#fff'; g.lineWidth = h * .22; g.beginPath(); g.moveTo(0, 0); g.lineTo(w, h); g.moveTo(w, 0); g.lineTo(0, h); g.stroke(); g.strokeStyle = '#c8102e'; g.lineWidth = h * .09; g.stroke(); g.fillStyle = '#fff'; g.fillRect(w * .4, 0, w * .2, h); g.fillRect(0, h * .35, w, h * .3); g.fillStyle = '#c8102e'; g.fillRect(w * .44, 0, w * .12, h); g.fillRect(0, h * .41, w, h * .18); },
+      CV: function () { g.fillStyle = '#003893'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.fillRect(0, h * .56, w, h * .22); g.fillStyle = '#cf2027'; g.fillRect(0, h * .62, w, h * .1); g.fillStyle = '#f7d116'; for (var i = 0; i < 10; i++) { g.beginPath(); g.arc(w * .4 + Math.cos(i * .628) * h * .32, h * .5 + Math.sin(i * .628) * h * .32, h * .045, 0, 7); g.fill(); } },
       JP: function () { g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.fillStyle = '#bc002d'; g.beginPath(); g.arc(w / 2, h / 2, h * .3, 0, 7); g.fill(); }
     };
     if (F[code]) F[code](); else { g.fillStyle = '#3a2f14'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffe9b8'; g.font = '700 ' + Math.round(h * .45) + 'px ui-monospace,monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(country.slice(0, 2).toUpperCase(), w / 2, h / 2 + 1); }
@@ -736,7 +742,7 @@
     if (c.transport) tags += '<span>' + icon(c.transport) + esc(c.transport.toUpperCase()) + '</span>';
     if (!c.wish && c.nv > 1) tags += '<span>' + c.nv + ' VISITS</span>';
     if (c.nights) tags += '<span>' + String(c.nights).padStart(2, '0') + ' NIGHTS</span>';
-    else if (!c.wish && c.visits.length) tags += '<span>DAY TRIP</span>';
+    else if (!c.wish && c.visits.length && !c.yearOnly) tags += '<span>DAY TRIP</span>';
     tags += '<span>' + Math.abs(c.lat).toFixed(2) + (c.lat >= 0 ? 'N ' : 'S ') + Math.abs(c.lon).toFixed(2) + (c.lon >= 0 ? 'E' : 'W') + '</span>';
     h += '<div class="tags">' + tags + '</div>';
     if (c.wish) {
@@ -852,7 +858,7 @@
     var facts = [];
     if (cs.length) {
       var most = cs.slice().sort(function (a, b) { return b.nv - a.nv || b.nights - a.nights; })[0];
-      facts.push(most.nv > 1 ? 'Most visited: ' + most.name + ' (' + most.nv + '×)' : 'Longest stay: ' + most.name + ' (' + most.nights + ' nights)');
+      facts.push(most.nv > 1 ? 'Most visited: ' + most.name + ' (' + most.nv + '×)' : most.nights ? 'Longest stay: ' + most.name + ' (' + most.nights + ' nights)' : 'Visited: ' + most.name);
       var far = cs.slice().sort(function (a, b) { return dist(D.home, b) - dist(D.home, a); })[0];
       if (dist(D.home, far) > 100) facts.push('Farthest from ' + D.home.name + ': ' + far.name + ', ' + fmt(dist(D.home, far)) + ' km');
       if (cs.length > 2) {
@@ -870,7 +876,7 @@
       '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="#f2c24d" stroke-width="8" stroke-dasharray="' + (C2 * st.pct / 100).toFixed(1) + ' ' + C2.toFixed(1) + '" transform="rotate(-90 50 50)"/>' +
       '<text x="50" y="57" text-anchor="middle" fill="#fff" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="22">' + st.pct + '%</text></svg>' +
       '<div><b>' + st.nC + ' / ' + st.tot + '</b><small>COUNTRIES VISITED</small></div></div>';
-    h += '<div class="gr"><div><b>' + st.cs.length + '</b><small>CITIES</small></div><div><b>' + st.nights + '</b><small>NIGHTS</small></div><div><b>' + st.trips + '</b><small>TRIPS</small></div></div>';
+    h += '<div class="gr"><div><b>' + st.cs.length + '</b><small>CITIES</small></div><div><b>' + (st.nights || '–') + '</b><small>NIGHTS</small></div><div><b>' + st.trips + '</b><small>TRIPS</small></div></div>';
     if (st.facts.length) h += '<div class="h">DID YOU KNOW</div>' + st.facts.map(function (f) { return '<div class="t"><b>›</b>' + esc(f) + '</div>'; }).join('');
     else h += '<div class="note">NOT VISITED YET.<br>The lights here are still off.</div>';
     if (st.co.length) h += '<div class="h">COUNTRIES</div><div class="fls" id="fls"></div>';

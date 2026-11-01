@@ -89,6 +89,9 @@ window.OUTINGS = {
     { id: 'alicante', name: 'Alicante', country: 'Spain', cont: 'EU', lon: -0.4907, lat: 38.3452,
       visits: [{ from: '2023-09-18', to: '2023-09-24' }] },
 
+    { id: 'valencia', name: 'Valencia', country: 'Spain', cont: 'EU', lon: -0.3763, lat: 39.4699,
+      visits: [{ from: '2023-09-21', to: '2023-09-21' }] },
+
     { id: 'dubai', name: 'Dubai', country: 'United Arab Emirates', cont: 'AS', lon: 55.2708, lat: 25.2048,
       visits: [{ from: '2023-11-16', to: '2023-11-23' }] },
 
