@@ -333,6 +333,10 @@
     function add(src, cb) { var s = document.createElement('script'); s.src = src; s.onload = cb; s.onerror = function () {}; document.head.appendChild(s); }
     function get(res, done) {
       fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-' + res + '.json').then(function (r) { return r.json(); }).then(function (t) {
+        try {
+          var cg = t.objects.countries.geometries.filter(function (g) { return g.id === '203' || g.id === 203 || (g.properties && g.properties.name === 'Czechia'); })[0];
+          if (cg) { var f = topojson.feature(t, cg).geometry; var co = f.type === 'Polygon' ? [f.coordinates] : f.coordinates; setCZ(co.map(function (p) { return p[0]; })); }
+        } catch (e) {}
         var m = topojson.mesh(t, t.objects.countries, function (a, b) { return a !== b; });
         done(lines(m.type === 'MultiLineString' ? m.coordinates : [m.coordinates]));
       }).catch(function () {});
@@ -367,9 +371,54 @@
   function list() { return showWish ? ALL : V; }
   function clusterR() { var m = innerWidth <= 720 ? 15 : 17, k = clamp((z - 1.2) / 2, 0, 1); return m * (1 - .9 * k); }
   function inCont(c) { return !selC || c.cont === CKEY[selC]; }
+
+  /* ---------- Domov: Česko (zlatý okraj) a Praha (paprsek) ---------- */
+  var CZU = null, HU = unit(D.home.lon, D.home.lat), homeVis = false, lastOT = 0;
+  function setCZ(rings) { CZU = rings.map(function (rg) { return rg.map(function (p) { return unit(p[0], p[1]); }); }); }
+  setCZ([[[12.09,50.25],[12.4,50.39],[12.97,50.42],[13.4,50.6],[14.3,50.9],[14.8,50.86],[15.0,51.05],[15.5,50.78],[16.0,50.65],[16.4,50.5],[16.9,50.2],[17.0,50.15],[17.7,50.1],[18.0,50.0],[18.45,49.95],[18.85,49.5],[18.55,49.45],[17.9,49.0],[17.2,48.85],[16.95,48.6],[16.5,48.8],[15.9,48.8],[15.2,49.0],[14.7,48.6],[14.0,48.65],[13.8,48.8],[13.2,49.1],[12.5,49.5],[12.4,49.75],[12.1,50.1]]]);
+  function czPath(r) {
+    cx.beginPath();
+    CZU.forEach(function (rg) {
+      for (var i = 0; i < rg.length; i++) { var q = rot(rg[i]), x = lay.cx + r * q[0], y = lay.cy - r * q[1]; if (i) cx.lineTo(x, y); else cx.moveTo(x, y); }
+      cx.closePath();
+    });
+  }
+  function drawHome(t, big) {
+    homeVis = false;
+    var hq = rot(HU); if (hq[2] < .12) return null;
+    var a = clamp((hq[2] - .12) / .25, 0, 1), r = R(), sz = r * .157, k = clamp(sz / 300, .25, 1);
+    var px = lay.cx + r * hq[0], py = lay.cy - r * hq[1];
+    if (px < -80 || px > W + 80 || py < -160 || py > H + 80) return null;
+    homeVis = true; cx.save(); cx.globalAlpha = a;
+    /* Česko: zlatý okraj + jemná záře dovnitř */
+    czPath(r); cx.save(); cx.clip(); czPath(r); cx.lineWidth = clamp(sz * .075, 2.5, 46); cx.strokeStyle = 'rgba(242,194,77,.2)'; cx.stroke(); cx.restore();
+    czPath(r); cx.fillStyle = 'rgba(242,194,77,.06)'; cx.fill();
+    cx.save(); cx.shadowColor = '#f2c24d'; cx.shadowBlur = clamp(sz * .026, 3, 16); czPath(r); cx.lineWidth = clamp(sz * .004 + 1, 1.2, 2.4); cx.strokeStyle = 'rgba(255,224,138,.95)'; cx.stroke(); cx.restore();
+    /* Praha: vlnky, paprsek, bod */
+    var ph = (t % 2600) / 2600;
+    for (var i = 0; i < 3; i++) {
+      var f = (ph + i / 3) % 1, rr = (6 + f * 36) * k;
+      cx.strokeStyle = 'rgba(255,224,138,' + ((1 - f) * .6).toFixed(2) + ')'; cx.lineWidth = 1.5; cx.beginPath(); cx.ellipse(px, py, rr, rr * .45, 0, 0, TAU); cx.stroke();
+    }
+    var h = clamp(sz * .155, 18, 95), w = clamp(k * 9, 3, 9), g = cx.createLinearGradient(px, py - h, px, py);
+    g.addColorStop(0, 'rgba(255,224,138,0)'); g.addColorStop(1, 'rgba(255,224,138,.85)');
+    cx.fillStyle = g; cx.beginPath(); cx.moveTo(px - 2.5 * k - 1, py); cx.lineTo(px - w, py - h); cx.lineTo(px + w, py - h); cx.lineTo(px + 2.5 * k + 1, py); cx.closePath(); cx.fill();
+    cx.save(); cx.shadowColor = '#f2c24d'; cx.shadowBlur = 22; cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(px, py, clamp(6 * k, 3.2, 6), 0, TAU); cx.fill(); cx.restore();
+    var box = null;
+    if (sz > 80) {
+      var fs = big ? 20 : 16; cx.textAlign = 'center'; cx.textBaseline = 'alphabetic'; cx.lineJoin = 'round';
+      cx.font = '800 ' + fs + 'px Inter,system-ui,sans-serif'; cx.lineWidth = 5; cx.strokeStyle = 'rgba(3,3,12,.9)'; cx.strokeText('PRAGUE', px, py - h - 18); cx.fillStyle = '#ffe9b8'; cx.fillText('PRAGUE', px, py - h - 18);
+      cx.font = '700 11px ui-monospace,Menlo,Consolas,monospace'; cx.fillStyle = '#f2c24d'; cx.fillText('HOME', px, py - h - 3);
+      var tw = cx.measureText('PRAGUE').width + 14; box = { l: px - tw / 2 - 8, r: px + tw / 2 + 8, t: py - h - 18 - fs, b: py + 4 };
+    }
+    cx.restore(); cx.textAlign = 'left'; cx.textBaseline = 'middle';
+    return box;
+  }
   function drawOverlay(t) {
     cx.clearRect(0, 0, W, H); setRot();
     drawBorders(isMoving());
+    var dtO = clamp((t - lastOT) / 1000, .001, .1); lastOT = t; var needAnim = false;
+    var homeBox = drawHome(t, innerWidth > 720);
     var r = R(), L = list(), vis = [];
     L.forEach(function (c) {
       var q = rot(c.u); if (q[2] < .06) return;
@@ -415,28 +464,55 @@
           cx.beginPath(); cx.arc(p.x, p.y, isSel ? 5.6 : (isH ? 5 : 3.6), 0, TAU); cx.fill(); cx.restore();
           cx.strokeStyle = isSel ? '#fff' : 'rgba(255,224,138,.85)'; cx.lineWidth = 1.3; cx.beginPath(); cx.arc(p.x, p.y, isSel ? 12 : (isH ? 10 : 8), 0, TAU); cx.stroke();
         }
+        if (isH && !isSel) { var rp = (t % 1100) / 1100; cx.strokeStyle = 'rgba(255,224,138,' + ((1 - rp) * .75).toFixed(2) + ')'; cx.lineWidth = 1.6; cx.beginPath(); cx.arc(p.x, p.y, 9 + rp * 20, 0, TAU); cx.stroke(); }
         if (isSel) { cx.strokeStyle = 'rgba(242,194,77,' + (1 - pulse).toFixed(2) + ')'; cx.lineWidth = 2; cx.beginPath(); cx.arc(p.x, p.y, 12 + pulse * 22, 0, TAU); cx.stroke(); }
       }
     });
-    /* popisky: chamtivě, aby se nepřekrývaly */
-    var fs = big ? 14 : 13, used = [];
+    /* popisky: chamtivě, aby se nepřekrývaly; poloha NEZÁVISÍ na tom, co je pod myší (nic se nehýbe) */
+    var fs = big ? 14 : 13, used = homeBox ? [homeBox] : [], recs = [];
     cx.font = '700 ' + fs + 'px Inter,system-ui,sans-serif'; cx.textBaseline = 'middle'; cx.lineJoin = 'round';
-    var cand = out.filter(function (p) { return !p.k && !p.dim; }).sort(function (a, b) { return (b.c === sel) - (a.c === sel) || (b.c === hov) - (a.c === hov) || b.z - a.z; });
+    var spots = [[12, 0, 'l'], [-12, 0, 'r'], [0, -18, 'c'], [0, 19, 'c'], [12, -15, 'l'], [-12, -15, 'r'], [12, 15, 'l'], [-12, 15, 'r']];
+    var cand = out.filter(function (p) { return !p.k && !p.dim; }).sort(function (a, b) { return (b.c === sel) - (a.c === sel) || b.z - a.z; });
+    function boxOf(p, s2, w, h) {
+      var px = p.x + s2[0], py = p.y + s2[1], l = s2[2] === 'l' ? px : s2[2] === 'r' ? px - w : px - w / 2;
+      return { px: px, py: py, B: { l: l - 1, r: l + w + 1, t: py - h / 2, b: py + h / 2 } };
+    }
     cand.forEach(function (p) {
-      var c = p.c, w = cx.measureText(c.name).width + 4, h = fs + 5, force = c === sel || c === hov;
-      var spots = [[12, 0, 'l'], [-12, 0, 'r'], [0, -18, 'c'], [0, 19, 'c'], [12, -15, 'l'], [-12, -15, 'r'], [12, 15, 'l'], [-12, 15, 'r']];
+      var c = p.c, w = cx.measureText(c.name).width + 4, h = fs + 5, force = c === sel, placed = false;
       for (var i = 0; i < spots.length; i++) {
-        var s2 = spots[i], px = p.x + s2[0], py = p.y + s2[1], l = s2[2] === 'l' ? px : s2[2] === 'r' ? px - w : px - w / 2;
-        var B = { l: l - 1, r: l + w + 1, t: py - h / 2, b: py + h / 2 };
+        var s2 = spots[i], bx = boxOf(p, s2, w, h), B = bx.B;
         if (!force && used.some(function (u) { return !(B.r < u.l || B.l > u.r || B.b < u.t || B.t > u.b); })) continue;
         if (!force && out.some(function (m) { return m !== p && m.x > B.l - 6 && m.x < B.r + 6 && m.y > B.t - 5 && m.y < B.b + 5; })) continue;
-        used.push(B); cx.globalAlpha = clamp((p.z - .06) / .22, 0, 1);
-        cx.textAlign = s2[2] === 'l' ? 'left' : s2[2] === 'r' ? 'right' : 'center';
-        cx.lineWidth = 4; cx.strokeStyle = 'rgba(3,3,12,.85)'; cx.strokeText(c.name, px, py);
-        cx.fillStyle = c === sel ? '#ffe9b8' : c.wish ? 'rgba(255,255,255,.7)' : '#fff'; cx.fillText(c.name, px, py);
-        break;
+        used.push(B); recs.push({ p: p, px: bx.px, py: bx.py, al: s2[2], w: w }); placed = true; break;
       }
+      /* popisek, na který se najelo, ale pro který nebylo místo, se ukáže na prvním místě (ostatní se kvůli tomu nehýbou) */
+      if (!placed && c === hov) { var b0 = boxOf(p, spots[0], w, h); recs.push({ p: p, px: b0.px, py: b0.py, al: 'l', w: w }); }
     });
+    var hovRec = null;
+    recs.forEach(function (rc) {
+      var c = rc.p.c, tg = c === hov ? 1 : (c === sel ? .55 : 0), h0 = c._h || 0;
+      h0 += (tg - h0) * (1 - Math.exp(-dtO * 16)); if (Math.abs(tg - h0) < .01) h0 = tg; else needAnim = true; c._h = h0;
+      if (h0 > .01 || c === hov) { rc.h = h0; if (c === hov) hovRec = rc; }
+    });
+    function drawRec(rc) {
+      var p = rc.p, c = p.c, h0 = rc.h || c._h || 0, s1 = 1 + .2 * h0;
+      cx.globalAlpha = clamp((p.z - .06) / .22, 0, 1);
+      cx.save(); cx.translate(rc.px, rc.py); cx.scale(s1, s1);
+      cx.textAlign = rc.al === 'l' ? 'left' : rc.al === 'r' ? 'right' : 'center';
+      cx.lineWidth = 4; cx.strokeStyle = 'rgba(3,3,12,.85)'; cx.strokeText(c.name, 0, 0);
+      if (h0 > .01) { cx.shadowColor = 'rgba(242,194,77,' + (.95 * h0).toFixed(2) + ')'; cx.shadowBlur = 14 * h0; }
+      cx.fillStyle = h0 > .01 ? 'rgb(255,' + Math.round(255 - 14 * h0) + ',' + Math.round(255 - 70 * h0) + ')' : c === sel ? '#ffe9b8' : c.wish ? 'rgba(255,255,255,.7)' : '#fff';
+      cx.fillText(c.name, 0, 0); cx.shadowBlur = 0;
+      if (h0 > .01) {                                                     /* zlatá linka se rozjede pod textem */
+        var lw = rc.w * h0, x0 = rc.al === 'l' ? 0 : rc.al === 'r' ? -lw : -lw / 2;
+        if (rc.al === 'r') x0 = 0 - lw; if (rc.al === 'c') x0 = -lw / 2;
+        cx.fillStyle = 'rgba(255,224,138,' + (.9 * h0).toFixed(2) + ')'; cx.fillRect(x0, fs * .62, lw, 1.6);
+      }
+      cx.restore();
+    }
+    recs.forEach(function (rc) { if (rc !== hovRec) drawRec(rc); });
+    if (hovRec) drawRec(hovRec);
+    if (needAnim || hov) ovDirty = true;
     cx.globalAlpha = 1; cx.textAlign = 'left';
   }
 
@@ -489,7 +565,7 @@
     if (t - lastPatch > (moving ? 350 : 120)) { lastPatch = t; patchUpdate(); }
     var drew = false;
     if (dirty) { drawGlobe(); dirty = false; drew = true; }
-    if (drew || ovDirty || sel) { setRot(); drawOverlay(t); ovDirty = false; }
+    if (drew || ovDirty || sel || (homeVis && t - lastOT > 50)) { setRot(); ovDirty = false; drawOverlay(t); }
     requestAnimationFrame(frame);
   }
 
