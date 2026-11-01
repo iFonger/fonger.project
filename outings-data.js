@@ -68,6 +68,9 @@ window.OUTINGS = {
     { id: 'washingtondc', name: 'Washington D.C.', country: 'USA', cont: 'NA', lon: -77.0369, lat: 38.9072,
       visits: [{ from: '2022-08-02', to: '2022-08-03' }] },
 
+    { id: 'margaretville', name: 'Margaretville', country: 'USA', cont: 'NA', lon: -74.6532, lat: 42.1459,
+      visits: [{ from: '2022' }] },
+
     { id: 'vodice', name: 'Vodice', country: 'Croatia', cont: 'EU', lon: 15.7778, lat: 43.7608,
       visits: [{ from: '2022-08-20', to: '2022-08-28' }] },
 
