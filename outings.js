@@ -490,24 +490,36 @@
     });
     var hovRec = null;
     recs.forEach(function (rc) {
-      var c = rc.p.c, tg = c === hov ? 1 : (c === sel ? .55 : 0), h0 = c._h || 0;
+      var c = rc.p.c, tg = c === hov ? 1 : 0, h0 = c._h || 0;
       h0 += (tg - h0) * (1 - Math.exp(-dtO * 16)); if (Math.abs(tg - h0) < .01) h0 = tg; else needAnim = true; c._h = h0;
       if (h0 > .01 || c === hov) { rc.h = h0; if (c === hov) hovRec = rc; }
     });
+    var FLC = {};
+    function flagC(country) { if (!FLC[country]) { var c2 = document.createElement('canvas'); c2.width = 48; c2.height = 32; drawFlag(c2, country); FLC[country] = c2; } return FLC[country]; }
     function drawRec(rc) {
-      var p = rc.p, c = p.c, h0 = rc.h || c._h || 0, s1 = 1 + .2 * h0;
-      cx.globalAlpha = clamp((p.z - .06) / .22, 0, 1);
-      cx.save(); cx.translate(rc.px, rc.py); cx.scale(s1, s1);
-      cx.textAlign = rc.al === 'l' ? 'left' : rc.al === 'r' ? 'right' : 'center';
-      cx.lineWidth = 4; cx.strokeStyle = 'rgba(3,3,12,.85)'; cx.strokeText(c.name, 0, 0);
-      if (h0 > .01) { cx.shadowColor = 'rgba(242,194,77,' + (.95 * h0).toFixed(2) + ')'; cx.shadowBlur = 14 * h0; }
-      cx.fillStyle = h0 > .01 ? 'rgb(255,' + Math.round(255 - 14 * h0) + ',' + Math.round(255 - 70 * h0) + ')' : c === sel ? '#ffe9b8' : c.wish ? 'rgba(255,255,255,.7)' : '#fff';
-      cx.fillText(c.name, 0, 0); cx.shadowBlur = 0;
-      if (h0 > .01) {                                                     /* zlatá linka se rozjede pod textem */
-        var lw = rc.w * h0, x0 = rc.al === 'l' ? 0 : rc.al === 'r' ? -lw : -lw / 2;
-        if (rc.al === 'r') x0 = 0 - lw; if (rc.al === 'c') x0 = -lw / 2;
-        cx.fillStyle = 'rgba(255,224,138,' + (.9 * h0).toFixed(2) + ')'; cx.fillRect(x0, fs * .62, lw, 1.6);
+      var p = rc.p, c = p.c, h0 = rc.h || c._h || 0, al0 = clamp((p.z - .06) / .22, 0, 1);
+      /* běžný popisek (při najetí plynule zhasne a nahradí ho skleněný štítek) */
+      if (h0 < .98) {
+        cx.globalAlpha = al0 * (1 - h0); cx.save(); cx.translate(rc.px, rc.py);
+        cx.textAlign = rc.al === 'l' ? 'left' : rc.al === 'r' ? 'right' : 'center';
+        cx.lineWidth = 4; cx.strokeStyle = 'rgba(3,3,12,.85)'; cx.strokeText(c.name, 0, 0);
+        cx.fillStyle = c === sel ? '#ffe9b8' : c.wish ? 'rgba(255,255,255,.7)' : '#fff'; cx.fillText(c.name, 0, 0); cx.restore();
       }
+      if (h0 < .02) return;
+      /* skleněný štítek s vlajkou: kreslí se přes ostatní, nic neposouvá */
+      var tw = cx.measureText(c.name).width, pw = tw + 50, ph = 30, gap = 14, X, Y;
+      if (rc.al === 'l') { X = p.x + gap + 4; Y = p.y + (rc.py - p.y) - ph / 2; }
+      else if (rc.al === 'r') { X = p.x - gap - 4 - pw; Y = p.y + (rc.py - p.y) - ph / 2; }
+      else { X = p.x - pw / 2; Y = p.y + (rc.py - p.y) + (rc.py < p.y ? -12 : 12) - ph / 2; }
+      var ax = rc.al === 'r' ? X + pw : rc.al === 'l' ? X : X + pw / 2, ay = Y + ph / 2, sc = .88 + .12 * h0;
+      cx.globalAlpha = al0 * h0; cx.save(); cx.translate(ax, ay); cx.scale(sc, sc); cx.translate(-ax, -ay);
+      cx.shadowColor = 'rgba(0,0,0,.55)'; cx.shadowBlur = 16; cx.fillStyle = 'rgba(8,8,20,.8)'; cx.beginPath(); cx.roundRect(X, Y, pw, ph, 15); cx.fill(); cx.shadowBlur = 0;
+      var gr = cx.createLinearGradient(X, Y, X, Y + ph); gr.addColorStop(0, 'rgba(255,255,255,.15)'); gr.addColorStop(.5, 'rgba(255,255,255,0)');
+      cx.fillStyle = gr; cx.beginPath(); cx.roundRect(X, Y, pw, ph, 15); cx.fill();
+      cx.strokeStyle = 'rgba(255,216,115,.85)'; cx.lineWidth = 1.2; cx.beginPath(); cx.roundRect(X, Y, pw, ph, 15); cx.stroke();
+      cx.save(); cx.beginPath(); cx.arc(X + 16, Y + ph / 2, 9, 0, TAU); cx.clip(); cx.drawImage(flagC(c.country), X + 16 - 12, Y + ph / 2 - 8, 24, 16); cx.restore();
+      cx.strokeStyle = 'rgba(255,255,255,.55)'; cx.lineWidth = 1; cx.beginPath(); cx.arc(X + 16, Y + ph / 2, 9, 0, TAU); cx.stroke();
+      cx.textAlign = 'left'; cx.fillStyle = '#fff'; cx.fillText(c.name, X + 32, Y + ph / 2 + .5);
       cx.restore();
     }
     recs.forEach(function (rc) { if (rc !== hovRec) drawRec(rc); });
