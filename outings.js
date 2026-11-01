@@ -462,9 +462,14 @@
         if (w) {
           cx.strokeStyle = 'rgba(255,224,138,.9)'; cx.setLineDash([3, 3]); cx.lineWidth = 1.4; cx.beginPath(); cx.arc(p.x, p.y, 6, 0, TAU); cx.stroke(); cx.setLineDash([]);
         } else {
+          var pr = isSel ? 12 : (isH ? 10 : 8);
+          /* tmavý podklad, aby pin nezmizel ve světlech měst na noční straně */
+          var bgG = cx.createRadialGradient(p.x, p.y, pr * .5, p.x, p.y, pr + 9); bgG.addColorStop(0, 'rgba(3,3,12,.78)'); bgG.addColorStop(.65, 'rgba(3,3,12,.5)'); bgG.addColorStop(1, 'rgba(3,3,12,0)');
+          cx.fillStyle = bgG; cx.beginPath(); cx.arc(p.x, p.y, pr + 9, 0, TAU); cx.fill();
+          cx.strokeStyle = 'rgba(3,3,12,.9)'; cx.lineWidth = 3.8; cx.beginPath(); cx.arc(p.x, p.y, pr, 0, TAU); cx.stroke();
           cx.save(); cx.shadowColor = '#f2c24d'; cx.shadowBlur = isSel ? 22 : 14; cx.fillStyle = isSel ? '#fff' : '#ffe08a';
           cx.beginPath(); cx.arc(p.x, p.y, isSel ? 5.6 : (isH ? 5 : 3.6), 0, TAU); cx.fill(); cx.restore();
-          cx.strokeStyle = isSel ? '#fff' : 'rgba(255,224,138,.85)'; cx.lineWidth = 1.3; cx.beginPath(); cx.arc(p.x, p.y, isSel ? 12 : (isH ? 10 : 8), 0, TAU); cx.stroke();
+          cx.strokeStyle = isSel ? '#fff' : 'rgba(255,224,138,.95)'; cx.lineWidth = 1.5; cx.beginPath(); cx.arc(p.x, p.y, pr, 0, TAU); cx.stroke();
         }
         if (isH && !isSel) { var rp = (t % 1100) / 1100; cx.strokeStyle = 'rgba(255,224,138,' + ((1 - rp) * .75).toFixed(2) + ')'; cx.lineWidth = 1.6; cx.beginPath(); cx.arc(p.x, p.y, 9 + rp * 20, 0, TAU); cx.stroke(); }
         if (isSel) { cx.strokeStyle = 'rgba(242,194,77,' + (1 - pulse).toFixed(2) + ')'; cx.lineWidth = 2; cx.beginPath(); cx.arc(p.x, p.y, 12 + pulse * 22, 0, TAU); cx.stroke(); }
