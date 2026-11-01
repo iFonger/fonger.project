@@ -22,54 +22,66 @@
     ul { padding-left: 1.2em; } li { margin: 4px 0; }
     b { color: var(--ink); font-weight: 600; }
     a { color: var(--a); text-underline-offset: 3px; }
-    .tl { background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; color: var(--ink); margin: 0 0 8px; }
-    .en { margin-top: 56px; padding-top: 28px; border-top: 2px solid var(--line); }
-    small { color: rgba(233,230,228,.45); }
+        .en { margin-top: 56px; padding-top: 28px; border-top: 2px solid var(--line); }
+    .en h1 { font-size: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; margin: 6px 0 14px; font-size: .95rem; }
+    th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--mute); }
+    th { color: #fff; font: 600 11px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .12em; text-transform: uppercase; }
+    td:first-child { color: var(--ink); width: 34%; }
+    @media (max-width:560px){ td:first-child{width:auto} }
   </style>
 </head>
 <body>
 <main>
   <a class="back" href="index.html">← Fonger</a>
-  <h1>Zásady soukromí</h1>
-  <p class="sub">Platí od 1. 11. 2026 pro web Fonger. Stručně a lidsky.</p>
+  <h1>Zásady ochrany osobních údajů</h1>
+  <p class="sub">Web Fonger · poslední aktualizace 1. listopadu 2026</p>
 
-  <div class="tl"><b>Zkráceně:</b> žádné cookies, žádné reklamy, žádná analytika, žádný prodej dat. Ukládá se jen přezdívka a skóre, pokud hraješ hru Drippy, a anonymní počítadla návštěv.</div>
+  <h2>1. Správce</h2>
+  <p>Správcem osobních údajů je Adam Vávra, Praha. Kontaktní údaje najdete na stránce <a href="reach.html">Reach me</a>.</p>
 
-  <h2>Kdo web provozuje</h2>
-  <p>Adam Vávra, Praha. Je to osobní portfolio, ne firma ani obchod. Kontakt najdeš na stránce <a href="reach.html">Reach me</a>.</p>
+  <h2>2. Jaké údaje zpracovávám</h2>
+  <table>
+    <thead><tr><th>Údaj</th><th>Kdy a proč</th></tr></thead>
+    <tbody>
+      <tr><td>Přezdívka a skóre</td><td>Pouze pokud je ve hře Drippy sami odešlete do žebříčku. Žebříček je veřejný.</td></tr>
+      <tr><td>Anonymní identifikátor hráče</td><td>Náhodný kód vytvořený při první hře. Slouží k přiřazení výsledku v žebříčku a nelze podle něj určit, kdo jste.</td></tr>
+      <tr><td>Anonymní počítadla</td><td>Celkový počet otevření webu, odemčení CV a odehraných her. Nejde o údaje o konkrétní osobě.</td></tr>
+      <tr><td>Technické údaje (IP adresa)</td><td>Krátkodobě v provozních záznamech hostingu, jako u každého webu.</td></tr>
+    </tbody>
+  </table>
+  <p>Web neobsahuje registraci, přihlášení ani kontaktní formulář. Nepoužívá analytické ani reklamní nástroje.</p>
 
-  <h2>Co se ukládá, když hraješ Drippy</h2>
+  <h2>3. Účel a právní základ</h2>
+  <p>Přezdívka, skóre a anonymní identifikátor se zpracovávají kvůli fungování žebříčku ve hře. Právním základem je oprávněný zájem správce na provozu hry (čl. 6 odst. 1 písm. f) GDPR). Počítadla a provozní záznamy slouží výhradně k zajištění chodu a bezpečnosti webu.</p>
+
+  <h2>4. Doba uložení</h2>
+  <p>Přezdívka a skóre se uchovávají, dokud je hra v provozu nebo dokud nepožádáte o jejich smazání. Anonymní identifikátor zůstává ve vašem zařízení, dokud nesmažete data webu v prohlížeči.</p>
+
+  <h2>5. Příjemci a služby třetích stran</h2>
   <ul>
-    <li><b>Přezdívka a skóre</b>, pokud je odešleš do žebříčku. Žebříček je veřejný, takže je uvidí každý, kdo ho otevře. Nepiš do přezdívky skutečné jméno, e-mail ani nic, co nechceš zveřejnit.</li>
-    <li><b>Náhodné anonymní ID hráče</b>, které se vytvoří při první hře a zůstane jen ve tvém zařízení. Slouží k tomu, aby žebříček poznal tvůj výsledek. Nelze podle něj zjistit, kdo jsi.</li>
-    <li>Data se ukládají přes skript Google Apps Script, tedy službu společnosti Google.</li>
+    <li><b>Vercel</b> – hosting webu.</li>
+    <li><b>Google Apps Script</b> – uložení žebříčku a počítadel.</li>
+    <li><b>jsDelivr</b> a <b>NASA GIBS</b> – na stránce Outings se z nich načítají hranice států a snímky Země. Při tom mohou zaznamenat IP adresu návštěvníka.</li>
+    <li>Odkazy na LinkedIn a Instagram vedou na weby třetích stran, na které se vztahují jejich vlastní zásady.</li>
   </ul>
+  <p>Údaje neprodávám ani je nepředávám k marketingovým účelům.</p>
 
-  <h2>Anonymní počítadla</h2>
-  <p>Web si počítá, kolikrát byl otevřen, kolikrát se odemklo CV a kolikrát se hrála hra. Jsou to jen celková čísla, žádné údaje o tobě.</p>
+  <h2>6. Cookies a úložiště prohlížeče</h2>
+  <p>Web nepoužívá cookies. V úložišti prohlížeče (localStorage) se uchovává nejlepší výsledek ve hře, naposledy zadaná přezdívka, potvrzení přečtení pravidel, zvolený jazyk a anonymní identifikátor hráče. Tyto údaje zůstávají ve vašem zařízení a odstraníte je smazáním dat webu v nastavení prohlížeče.</p>
 
-  <h2>Co zůstává ve tvém prohlížeči</h2>
-  <p>Web nepoužívá cookies. Používá úložiště prohlížeče (localStorage) pro tvůj nejlepší čas ve hře, naposledy zadanou přezdívku, to, že sis přečetl pravidla, a zvolený jazyk. Smažeš to v nastavení prohlížeče (smazání dat webu) a stránka funguje dál.</p>
+  <h2>7. Vaše práva</h2>
+  <p>Máte právo na přístup k údajům, jejich opravu nebo výmaz, na omezení zpracování, na přenositelnost a právo vznést námitku proti zpracování. O smazání přezdívky a skóre z žebříčku mě požádejte prostřednictvím stránky <a href="reach.html">Reach me</a> a uveďte svoji přezdívku. Máte rovněž právo podat stížnost u Úřadu pro ochranu osobních údajů (<a href="https://uoou.gov.cz" rel="noopener">uoou.gov.cz</a>).</p>
 
-  <h2>Služby třetích stran</h2>
-  <ul>
-    <li><b>Vercel</b> – hosting. Jako každý server může krátkodobě zaznamenat IP adresu při otevření stránky.</li>
-    <li><b>Google Apps Script</b> – žebříček a počítadla (viz výše).</li>
-    <li><b>Stránka Outings</b> načítá hranice států z <b>jsDelivr</b> a detailní snímky Země z <b>NASA GIBS</b>. Tyto služby při tom uvidí tvoji IP adresu, stejně jako při jakémkoliv jiném webu.</li>
-    <li>Odkazy na LinkedIn a Instagram vedou na jejich weby a tam platí jejich pravidla.</li>
-  </ul>
+  <h2>8. Autorská práva a zdroje</h2>
+  <p>Texty, vzhled, zdrojový kód a fotografie na tomto webu jsou © Adam Vávra, pokud není uvedeno jinak. Textury Země na stránce Outings pocházejí z projektu three.js (licence MIT) a ze snímků NASA Blue Marble. Hranice států jsou z projektu world-atlas / Natural Earth.</p>
 
-  <h2>Tvoje práva</h2>
-  <p>Můžeš chtít smazání svojí přezdívky a skóre z žebříčku. Napiš mi přes <a href="reach.html">Reach me</a> a uveď přezdívku, smažu ji. Máš také právo podat stížnost u Úřadu pro ochranu osobních údajů (uoou.cz).</p>
-
-  <h2>Autorská práva a zdroje</h2>
-  <p>Texty, vzhled, kód a fotky na tomto webu jsou © Adam Vávra, pokud není uvedeno jinak. Bez dohody je prosím nekopíruj. Textury Země na stránce Outings pocházejí z projektu three.js (licence MIT) a ze snímků NASA (Blue Marble). Mapy států jsou z projektu world-atlas / Natural Earth.</p>
-
-  <p><small>Tyto zásady jsou informativní a nejsou právním poradenstvím. Pokud se na webu něco změní (například přibude analytika), upravím je.</small></p>
+  <h2>9. Změny zásad</h2>
+  <p>Tyto zásady mohou být aktualizovány, například při přidání nové funkce webu. Aktuální znění je vždy na této stránce a datum poslední změny je uvedeno nahoře.</p>
 
   <div class="en">
-    <h1 style="font-size:1.6rem">Privacy (short, English)</h1>
-    <p>No cookies, no ads, no analytics, no data selling. If you play Drippy and submit a score, your <b>nickname and score</b> go to a public leaderboard, together with a random anonymous player ID that lives on your device. Data is stored via Google Apps Script, a Google service. The site keeps a few anonymous totals (visits, CV unlocks, plays). Your browser's local storage keeps your best time, nickname, language and whether you saw the rules. Hosting is by Vercel; the Outings page loads country borders from jsDelivr and map imagery from NASA GIBS, which see your IP address like any website would. To remove your leaderboard entry, use the <a href="reach.html">Reach me</a> page. Text, design, code and photos are © Adam Vávra; Earth textures come from three.js (MIT) and NASA.</p>
+    <h1>Privacy Policy (English summary)</h1>
+    <p><b>Controller:</b> Adam Vávra, Prague (contact via <a href="reach.html">Reach me</a>). <b>Data processed:</b> a nickname and score if you submit them to the public leaderboard of the game Drippy, a random anonymous player ID, anonymous site totals (visits, CV unlocks, plays) and short-lived hosting logs (IP address). <b>Legal basis:</b> legitimate interest in running the game (Art. 6(1)(f) GDPR). <b>Retention:</b> nickname and score are kept while the game is online or until you ask for deletion. <b>Recipients:</b> Vercel (hosting), Google Apps Script (leaderboard and counters), jsDelivr and NASA GIBS (map data on the Outings page). No cookies, advertising or analytics; local storage keeps game settings and your language. <b>Your rights:</b> access, rectification, erasure, restriction, portability and objection; to remove a leaderboard entry use <a href="reach.html">Reach me</a>. You may complain to the Czech Office for Personal Data Protection (uoou.gov.cz). Text, design, code and photos are © Adam Vávra; Earth textures come from three.js (MIT) and NASA.</p>
   </div>
 </main>
 
