@@ -382,6 +382,15 @@
         linear-gradient(var(--c), var(--c)) 100% 100% / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) 100% 100% / 2px 18px no-repeat;
       filter: drop-shadow(0 0 5px rgba(60, 255, 130, .9));
     }
+    .readout {
+      position: absolute; left: 50%; top: calc(38% + var(--icon) / 2 + 22px); transform: translateX(-50%); z-index: 200; pointer-events: none; opacity: 0; text-align: center; white-space: nowrap;
+      padding: 12px 20px 14px; font-family: ui-monospace, Menlo, Consolas, monospace; text-transform: uppercase; letter-spacing: .18em;
+      border: 1px solid #5dff9a; background: rgba(1, 10, 5, .88); border-radius: 3px; box-shadow: 0 0 14px rgba(60, 255, 130, .35);
+    }
+    .readout .pop-label { display: block; font-size: .72rem; }
+    .readout .pop-value { display: block; margin-top: 2px; font-size: clamp(.9rem, 1.5vw, 1.1rem); font-weight: 700; }
+    .lock { transform: scale(1.3); transition: opacity .35s ease, transform .35s ease; }
+    .item.aim .lock { opacity: 1; transform: scale(1); }
     .item.show .lock { animation: lockon .6s cubic-bezier(.2, 1.35, .3, 1) both; }
     @keyframes lockon { from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: scale(1); } }
 
@@ -415,29 +424,26 @@
     .chips a { padding: 5px 10px; font-size: .62rem; letter-spacing: .12em; color: #b9ffd0; border-color: rgba(93, 255, 154, .5); }
     .chips-l { display: block; margin-top: 10px; font-size: .6rem; letter-spacing: .2em; color: #7dffb0; opacity: .8; }
 
-    /* Tlačítko bez textu: svítící zdroj, který láká ke kliknutí a podržení */
+    /* Malé klikací tečky po stránce (podrž = vyšle se signál z té tečky) */
     .tx {
-      --p: 0; --s: 1; position: fixed; bottom: 60px; z-index: 6; width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%;
-      transform: translateX(-50%) scale(var(--s)); cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
-      background: radial-gradient(circle, rgba(60, 255, 130, .38), rgba(1, 20, 9, .88) 68%);
-      box-shadow: 0 0 0 1.5px #5dff9a, 0 0 22px rgba(60, 255, 130, .5); transition: transform .15s ease, box-shadow .2s ease;
+      --p: 0; --s: 1; position: fixed; z-index: 6; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: transparent;
+      transform: translate(-50%, -50%) scale(var(--s)); cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+      transition: transform .15s ease;
     }
-    .tx.c { left: 50%; }
-    .tx.l, .tx.r { width: 44px; height: 44px; bottom: 70px; }
-    .tx.l { left: 20%; } .tx.r { left: 80%; }
-    .tx svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; }
-    .tx .tp { fill: none; stroke: #d8ffe6; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 182.2; stroke-dashoffset: calc(182.2 * (1 - var(--p))); filter: drop-shadow(0 0 4px #5dff9a); }
-    .tx-core { position: absolute; left: 50%; top: 50%; width: 30%; height: 30%; margin: -15% 0 0 -15%; border-radius: 50%; background: #b9ffd0; box-shadow: 0 0 12px #5dff9a; animation: txcore 2.4s ease-in-out infinite; pointer-events: none; }
-    .tx::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid #5dff9a; opacity: 0; pointer-events: none; animation: txlure 2.8s ease-out infinite; }
-    .tx.l::after { animation-delay: .9s; } .tx.r::after { animation-delay: 1.8s; }
-    @keyframes txlure { 0% { transform: scale(1); opacity: .85; } 70%, 100% { transform: scale(2.2); opacity: 0; } }
-    @keyframes txcore { 0%, 100% { transform: scale(.8); opacity: .75; } 50% { transform: scale(1.15); opacity: 1; } }
-    .tx.hold { --s: .92; box-shadow: 0 0 0 1.5px #fff, 0 0 34px rgba(60, 255, 130, .9); }
-    .tx.hold::after { animation: none; }
-    .tx.sent .tx-core { animation: none; background: #fff; }
+    .tx::before { content: ""; position: absolute; inset: -9px; }   /* větší oblast pro prst */
+    .tx .p1, .tx .p2 { position: absolute; background: #5dff9a; box-shadow: 0 0 6px #5dff9a; pointer-events: none; opacity: .85; }
+    .tx .p1 { left: 50%; top: 3px; bottom: 3px; width: 1.4px; margin-left: -.7px; }
+    .tx .p2 { top: 50%; left: 3px; right: 3px; height: 1.4px; margin-top: -.7px; }
+    .tx .tx-core { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #010a05; border: 1.4px solid #5dff9a; animation: txcore 2.6s ease-in-out infinite; animation-delay: var(--dl, 0s); pointer-events: none; }
+    .tx svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; opacity: 0; transition: opacity .2s; }
+    .tx .tp { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 75.4; stroke-dashoffset: calc(75.4 * (1 - var(--p))); filter: drop-shadow(0 0 3px #5dff9a); }
+    @keyframes txcore { 0%, 100% { transform: scale(.85); opacity: .65; } 50% { transform: scale(1.15); opacity: 1; } }
+    .tx.hold { --s: 1.25; }
+    .tx.hold svg { opacity: 1; }
+    .tx.hold .tx-core, .tx.sent .tx-core { animation: none; background: #fff; box-shadow: 0 0 10px #5dff9a; }
     .tx:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
-    @media (max-width: 700px) { .tx { bottom: 56px; width: 56px; height: 56px; } .tx.l, .tx.r { width: 40px; height: 40px; bottom: 64px; } .tx.l { left: 17%; } .tx.r { left: 83%; } .acts .copy, .act { padding: 7px 12px; } .chips a { padding: 5px 8px; } }
-    @media (prefers-reduced-motion: reduce) { .tx-core, .tx::after, .item.show .lock, .item.swept::after, .item.swept .tag { animation: none; } .item.show .lock { opacity: 1; } }
+    @media (max-width: 700px) { .acts .copy, .act { padding: 7px 12px; } .chips a { padding: 5px 8px; } }
+    @media (prefers-reduced-motion: reduce) { .tx .tx-core, .item.show .lock, .item.swept::after, .item.swept .tag { animation: none; } .item.show .lock { opacity: 1; } }
   </style>
 </head>
 <body>
@@ -530,9 +536,7 @@
 
   <div class="hint" id="hint">Drag to spin, pause on an icon</div>
 
-  <button class="tx c" type="button" aria-label="Hold to send a signal to all channels"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="tp" cx="32" cy="32" r="29"/></svg><i class="tx-core" aria-hidden="true"></i></button>
-  <button class="tx l" type="button" aria-label="Hold to send a signal to all channels"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="tp" cx="32" cy="32" r="29"/></svg><i class="tx-core" aria-hidden="true"></i></button>
-  <button class="tx r" type="button" aria-label="Hold to send a signal to all channels"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="tp" cx="32" cy="32" r="29"/></svg><i class="tx-core" aria-hidden="true"></i></button>
+  
 
   <script>
     /* E-mail se skládá až tady, aby ho v HTML nenašly roboty sbírající adresy */
@@ -964,7 +968,7 @@
     requestAnimationFrame(frame);
 
     // Při prvním otevření se po chvilce ukáže kontakt u ikony uprostřed
-    setTimeout(() => { if (settled && !dragging && shown === -1) showItem(frontIndex()); }, 1400);
+    setTimeout(() => { if (settled && !dragging && shown === -1 && !window.__am) showItem(frontIndex()); }, 1400);
   </script>
 
   <canvas id="radar" aria-hidden="true"></canvas>
@@ -972,7 +976,7 @@
   /* Radar v pozadí: kruhy, kříž, zametající paprsek a signály, které se rozsvítí, když přes ně paprsek přejede */
   (function () {
     var cv = document.getElementById('radar'), g = cv.getContext('2d'), W, H, dpr, cx, cy, maxR, blips = [], rings = [];
-    window.reachPulse = function (n) { var now = performance.now(); for (var i = 0; i < n; i++) rings.push(now + i * 260); };
+    window.reachPulse = function (n, x, y) { var now = performance.now(); for (var i = 0; i < n; i++) rings.push({ t: now + i * 260, x: x == null ? cx : x, y: y == null ? cy : y }); };
     var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var seed = 4; function R() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
     function size() {
@@ -1004,11 +1008,11 @@
         g.fillStyle = gr; g.beginPath(); g.arc(b.x, b.y, 14, 0, 6.2832); g.fill();
       });
       for (var k = rings.length - 1; k >= 0; k--) {
-        var rr = (t - rings[k]) / 1000 * 620;
+        var rg = rings[k], rr = (t - rg.t) / 1000 * 620;
         if (rr < 0) continue;
-        if (rr > maxR * 0.62) { rings.splice(k, 1); continue; }
-        var al = Math.max(0, 1 - rr / (maxR * 0.62));
-        g.strokeStyle = 'rgba(150,255,190,' + (al * 0.85).toFixed(3) + ')'; g.lineWidth = 2.2; g.beginPath(); g.arc(cx, cy, rr, 0, 6.2832); g.stroke();
+        if (rr > maxR * 0.95) { rings.splice(k, 1); continue; }
+        var al = Math.max(0, 1 - rr / (maxR * 0.95));
+        g.strokeStyle = 'rgba(150,255,190,' + (al * 0.85).toFixed(3) + ')'; g.lineWidth = 2.2; g.beginPath(); g.arc(rg.x, rg.y, rr, 0, 6.2832); g.stroke();
       }
       var vg = g.createRadialGradient(cx, cy, H * 0.3, cx, cy, H); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.7)');
       g.fillStyle = vg; g.fillRect(0, 0, W, H);
@@ -1041,7 +1045,7 @@
       });
     }
     /* zkopírování = vyslaný signál */
-    copy.addEventListener('click', function () { setTimeout(function () { if (window.reachPulse) window.reachPulse(1); flash(el); }, 30); });
+    copy.addEventListener('click', function () { setTimeout(function () { var r = el.getBoundingClientRect(); if (window.reachPulse) window.reachPulse(1, r.left + r.width / 2, r.top + r.height / 2); flash(el); }, 30); });
   });
 
   function flash(el) {
@@ -1060,6 +1064,17 @@
     });
   };
 
+  /* tečky po stránce: větší počet, různě rozmístěné (procenta okna) */
+  var SPOTS = matchMedia('(max-width: 700px)').matches
+    ? [[92, 10], [9, 78], [91, 80], [26, 90], [74, 91], [50, 84]]
+    : [[8, 24], [93, 20], [4, 70], [96, 72], [16, 86], [84, 88], [34, 93], [66, 92], [22, 12], [78, 11]];
+  SPOTS.forEach(function (p, i) {
+    var b = document.createElement('button'); b.className = 'tx'; b.type = 'button'; b.setAttribute('aria-label', 'Hold to send a signal to all channels');
+    b.style.left = p[0] + '%'; b.style.top = p[1] + '%'; b.style.setProperty('--dl', (i * 0.37 % 2.6).toFixed(2) + 's');
+    b.innerHTML = '<i class="p1"></i><i class="p2"></i><i class="tx-core"></i><svg viewBox="0 0 26 26" aria-hidden="true"><circle class="tp" cx="13" cy="13" r="12"/></svg>';
+    document.body.appendChild(b);
+  });
+
   /* podrž svítící zdroj: z radaru se rozběhnou vlny a kontakty se jeden po druhém ozvou */
   var txs = [].slice.call(document.querySelectorAll('.tx')), cur = null, HOLD = 900, t0 = 0, raf = 0, holding = false, busy = false;
   var hintEl = document.getElementById('hint'), hintTxt = hintEl.textContent;
@@ -1075,12 +1090,17 @@
   function fire() {
     holding = false; busy = true; cur.classList.remove('hold'); txs.forEach(function (b) { b.classList.add('sent'); });
     if (navigator.vibrate) { try { navigator.vibrate([14, 50, 14]); } catch (e) {} }
-    if (window.reachPulse) window.reachPulse(3);
+    var rc = cur.getBoundingClientRect(), ox = rc.left + rc.width / 2, oy = rc.top + rc.height / 2;
+    if (window.reachPulse) window.reachPulse(3, ox, oy);
     hintEl.classList.remove('gone'); hintEl.textContent = 'Transmitting\u2026';
-    var n = items.length;
-    items.forEach(function (el, i) { setTimeout(function () { flash(el); if (navigator.vibrate && i % 2 === 0) { try { navigator.vibrate(8); } catch (e) {} } }, (still ? 0 : 450 + i * 230)); });
-    setTimeout(function () { hintEl.textContent = n + ' channels answered. Tap one to connect.'; }, (still ? 0 : 450 + n * 230));
-    setTimeout(function () { hintEl.classList.add('gone'); hintEl.textContent = hintTxt; txs.forEach(function (b) { b.classList.remove('sent'); }); setP(0); busy = false; }, 450 + n * 230 + 3600);
+    var n = items.length, last = 0;
+    items.forEach(function (el) {
+      var r = el.getBoundingClientRect(), d = Math.hypot(r.left + r.width / 2 - ox, r.top + r.height / 2 - oy) / 620 * 1000 + 80;   /* kontakt se ozve, až k němu vlna dorazí */
+      if (still) d = 0; last = Math.max(last, d);
+      setTimeout(function () { flash(el); if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) {} } }, d);
+    });
+    setTimeout(function () { hintEl.textContent = n + ' channels answered. Tap one to connect.'; }, last + 200);
+    setTimeout(function () { hintEl.classList.add('gone'); hintEl.textContent = hintTxt; txs.forEach(function (b) { b.classList.remove('sent'); }); setP(0); busy = false; }, last + 3800);
   }
   txs.forEach(function (tx) {
     tx.addEventListener('pointerdown', function (e) { try { tx.setPointerCapture(e.pointerId); } catch (_) {} start(e, tx); });
@@ -1089,16 +1109,33 @@
     tx.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { e.preventDefault(); if (!busy) { cur = tx; fire(); } } });
   });
 
-  /* samo se točí: každých pár vteřin přeskočí na další kontakt, dokud se stránky někdo nedotkne */
-  var lastTouch = performance.now(), AUTO = 5200, IDLE = 6500;
+  /* plynulé, stálé točení: kolotoč se otáčí sám, jméno a kontakt pod ikonou se plynule objeví, když se blíží ke středu, a zmizí, když ho opouští */
+  var lastTouch = -1e9, IDLE = 4500, AUTO_V = 0.2, autoV = 0, tPrev = performance.now(), lastK = null;
   ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) { addEventListener(ev, function () { lastTouch = performance.now(); }, { passive: true }); });
-  if (!still) setInterval(function () {
-    var now = performance.now();
-    if (document.hidden || busy || holding || dragging || !settled) return;
-    if (now - lastTouch < IDLE) return;
-    if (carousel.matches(':hover') || carousel.contains(document.activeElement)) return;
-    rotateTo((frontIndex() + 1) % n);
-  }, AUTO);
+  var ro = document.createElement('div'); ro.className = 'readout'; ro.setAttribute('aria-hidden', 'true');
+  ro.innerHTML = '<span class="pop-label"></span><span class="pop-value"></span>'; carousel.appendChild(ro);
+  var roL = ro.firstChild, roV = ro.lastChild;
+  function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+  function autoLoop(now) {
+    var dt = Math.min((now - tPrev) / 1000, 0.05); tPrev = now;
+    var hover = items.some(function (el) { return el.matches(':hover'); });
+    var want = !still && !document.hidden && settled && !dragging && !hover && !carousel.contains(document.activeElement) && now - lastTouch > IDLE;
+    autoV += ((want ? AUTO_V : 0) - autoV) * Math.min(1, dt * 2.5);
+    if (autoV < 0.003) autoV = 0;
+    window.__am = autoV > 0.02;
+    if (autoV > 0 && settled && !dragging) {
+      angle += autoV * dt;
+      if (shown !== -1 && autoV > 0.02) hidePop();
+    }
+    /* odečet u středu: průhlednost podle toho, jak blízko středu ikona je */
+    var k = Math.round(angle / step), off = angle - k * step, idx = ((-k % n) + n) % n;
+    var vis = window.__am ? clamp01(1.15 - Math.abs(off) / 0.3) : 0;
+    if (k !== lastK && vis < 0.05) { roL.textContent = items[idx].dataset.label; roV.textContent = items[idx].dataset.show || items[idx].dataset.value; lastK = k; }
+    ro.style.opacity = vis.toFixed(3);
+    items.forEach(function (el, j) { el.classList.toggle('aim', window.__am && j === idx && Math.abs(off) < 0.2); });
+    requestAnimationFrame(autoLoop);
+  }
+  if (!still) requestAnimationFrame(autoLoop);
 })();
 </script>
 <script src="legal.js" defer></script>
