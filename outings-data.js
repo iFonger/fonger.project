@@ -60,16 +60,51 @@ window.OUTINGS = {
       visits: [{ from: '2020-08-14', to: '2020-08-17' }] },
 
     { id: 'newyork', name: 'New York', country: 'USA', cont: 'NA', lon: -74.006, lat: 40.7128,
-      visits: [{ from: '2022-07-20', to: '2022-08-11' }] },
+      visits: [{ from: '2022-07-20', to: '2022-08-11' }],
+      photos: [
+        'outings/newyork-1.jpg',
+        'outings/newyork-2.jpg',
+        'outings/newyork-3.jpg',
+        'outings/newyork-4.jpg',
+        'outings/newyork-5.jpg',
+        'outings/newyork-6.jpg',
+        'outings/newyork-7.jpg',
+        'outings/newyork-8.jpg',
+        'outings/newyork-9.jpg',
+        'outings/newyork-10.jpg',
+        'outings/newyork-11.jpg'
+      ] },
 
     { id: 'niagarafalls', name: 'Niagara Falls', country: 'USA', cont: 'NA', lon: -79.0377, lat: 43.0962,
-      visits: [{ from: '2022-07-29', to: '2022-07-30' }] },
+      visits: [{ from: '2022-07-29', to: '2022-07-30' }],
+      photos: [
+        'outings/niagarafalls-1.jpg',
+        'outings/niagarafalls-2.jpg',
+        'outings/niagarafalls-3.jpg',
+        'outings/niagarafalls-4.jpg',
+        'outings/niagarafalls-5.jpg',
+        'outings/niagarafalls-6.jpg'
+      ] },
 
     { id: 'washingtondc', name: 'Washington D.C.', country: 'USA', cont: 'NA', lon: -77.0369, lat: 38.9072,
-      visits: [{ from: '2022-08-02', to: '2022-08-03' }] },
+      visits: [{ from: '2022-08-02', to: '2022-08-03' }],
+      photos: [
+        'outings/washingtondc-1.jpg',
+        'outings/washingtondc-2.jpg',
+        'outings/washingtondc-3.jpg',
+        'outings/washingtondc-4.jpg',
+        'outings/washingtondc-5.jpg'
+      ] },
 
     { id: 'margaretville', name: 'Margaretville', country: 'USA', cont: 'NA', lon: -74.6532, lat: 42.1459,
-      visits: [{ from: '2022' }] },
+      visits: [{ from: '2022-07-22', to: '2022-07-23' }],
+      photos: [
+        'outings/margaretville-1.jpg',
+        'outings/margaretville-2.jpg',
+        'outings/margaretville-3.jpg',
+        'outings/margaretville-4.jpg',
+        'outings/margaretville-5.jpg'
+      ] },
 
     { id: 'vodice', name: 'Vodice', country: 'Croatia', cont: 'EU', lon: 15.7778, lat: 43.7608,
       visits: [{ from: '2022-08-20', to: '2022-08-28' }] },
