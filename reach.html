@@ -374,7 +374,7 @@
 
     /* Zaměřovač: když se ikona otevře, rohy se k ní sevřou */
     .lock {
-      --c: #8dffbb; position: absolute; inset: -16%; pointer-events: none; opacity: 0;
+      --c: #8dffbb; position: absolute; inset: -8%; pointer-events: none; opacity: 0;
       background:
         linear-gradient(var(--c), var(--c)) 0 0 / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) 0 0 / 2px 18px no-repeat,
         linear-gradient(var(--c), var(--c)) 100% 0 / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) 100% 0 / 2px 18px no-repeat,
@@ -383,7 +383,7 @@
       filter: drop-shadow(0 0 5px rgba(60, 255, 130, .9));
     }
     .item.show .lock { animation: lockon .6s cubic-bezier(.2, 1.35, .3, 1) both; }
-    @keyframes lockon { from { opacity: 0; transform: scale(1.9) rotate(35deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+    @keyframes lockon { from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: scale(1); } }
 
     /* Paprsek radaru přejede přes ikonu: krátce se rozsvítí a ukáže jméno */
     .item::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid #b9ffd0; opacity: 0; pointer-events: none; }
@@ -400,7 +400,10 @@
 
     /* Akce v okénku */
     .acts, .chips { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: nowrap; }
-    .acts .copy { margin-top: 0; }
+    .acts .copy {
+      margin-top: 0; padding: 7px 16px; border: 1px solid #5dff9a; border-radius: 3px; background: rgba(255, 255, 255, .04);
+      color: #5dff9a; font: 600 .7rem ui-monospace, Menlo, Consolas, monospace; letter-spacing: .16em; text-transform: uppercase;
+    }
     .act, .chips a {
       display: inline-block; padding: 7px 16px; border: 1px solid #5dff9a; border-radius: 3px; background: rgba(255, 255, 255, .04);
       color: #5dff9a; font: 600 .7rem ui-monospace, Menlo, Consolas, monospace; letter-spacing: .16em; text-transform: uppercase;
@@ -1028,7 +1031,7 @@
       link('Write \u2197', 'mailto:' + MAIL);
       var l = document.createElement('span'); l.className = 'chips-l'; l.textContent = 'Or pick a topic'; box.appendChild(l);
       var chips = document.createElement('div'); chips.className = 'chips'; box.appendChild(chips);
-      [['Hiring', 'Hiring: an opportunity for you'], ['Project', 'Project inquiry'], ['Say hi', 'Hi Adam']].forEach(function (c) {
+      [['Hiring', 'Hiring: an opportunity for you'], ['Project', 'Project inquiry']].forEach(function (c) {
         var a = document.createElement('a'); a.textContent = c[0]; a.href = 'mailto:' + MAIL + '?subject=' + encodeURIComponent(c[1]); chips.appendChild(a);
       });
     }
