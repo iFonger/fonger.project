@@ -415,24 +415,29 @@
     .chips a { padding: 5px 10px; font-size: .62rem; letter-spacing: .12em; color: #b9ffd0; border-color: rgba(93, 255, 154, .5); }
     .chips-l { display: block; margin-top: 10px; font-size: .6rem; letter-spacing: .2em; color: #7dffb0; opacity: .8; }
 
-    /* Tlačítko: podrž pro vyslání signálu */
+    /* Tlačítko bez textu: svítící zdroj, který láká ke kliknutí a podržení */
     .tx {
-      position: fixed; left: 50%; bottom: 66px; transform: translateX(-50%); z-index: 6; --p: 0;
-      display: flex; align-items: center; gap: 10px; padding: 11px 22px 11px 14px; border-radius: 999px; overflow: hidden;
-      border: 1.5px solid #5dff9a; background: rgba(1, 14, 7, .85); color: #d8ffe6; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
-      font: 600 .72rem ui-monospace, Menlo, Consolas, monospace; letter-spacing: .22em; text-transform: uppercase;
-      box-shadow: 0 0 18px rgba(60, 255, 130, .35); transition: box-shadow .2s, transform .15s;
+      --p: 0; --s: 1; position: fixed; bottom: 60px; z-index: 6; width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%;
+      transform: translateX(-50%) scale(var(--s)); cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+      background: radial-gradient(circle, rgba(60, 255, 130, .38), rgba(1, 20, 9, .88) 68%);
+      box-shadow: 0 0 0 1.5px #5dff9a, 0 0 22px rgba(60, 255, 130, .5); transition: transform .15s ease, box-shadow .2s ease;
     }
-    .tx::before { content: ""; position: absolute; inset: 0; width: calc(var(--p) * 100%); background: linear-gradient(90deg, rgba(60, 255, 130, .15), rgba(93, 255, 154, .55)); z-index: 0; }
-    .tx { white-space: nowrap; }
-    .tx > * { position: relative; z-index: 1; }
-    .tx-ring { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #5dff9a; box-shadow: 0 0 8px #5dff9a, inset 0 0 6px rgba(93, 255, 154, .6); animation: txidle 2.2s ease-out infinite; }
-    @keyframes txidle { 0% { box-shadow: 0 0 0 0 rgba(93, 255, 154, .7); } 100% { box-shadow: 0 0 0 14px rgba(93, 255, 154, 0); } }
-    .tx.hold { transform: translateX(-50%) scale(.96); box-shadow: 0 0 30px rgba(60, 255, 130, .75); }
-    .tx.sent .tx-ring { animation: none; background: #5dff9a; }
-    .tx:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-    @media (max-width: 700px) { .tx { bottom: 64px; white-space: nowrap; letter-spacing: .14em; padding: 10px 18px 10px 12px; } .acts .copy, .act { padding: 7px 12px; } .chips a { padding: 5px 8px; } }
-    @media (prefers-reduced-motion: reduce) { .tx-ring, .item.show .lock, .item.swept::after, .item.swept .tag { animation: none; } .item.show .lock { opacity: 1; } }
+    .tx.c { left: 50%; }
+    .tx.l, .tx.r { width: 44px; height: 44px; bottom: 70px; }
+    .tx.l { left: 20%; } .tx.r { left: 80%; }
+    .tx svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; }
+    .tx .tp { fill: none; stroke: #d8ffe6; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 182.2; stroke-dashoffset: calc(182.2 * (1 - var(--p))); filter: drop-shadow(0 0 4px #5dff9a); }
+    .tx-core { position: absolute; left: 50%; top: 50%; width: 30%; height: 30%; margin: -15% 0 0 -15%; border-radius: 50%; background: #b9ffd0; box-shadow: 0 0 12px #5dff9a; animation: txcore 2.4s ease-in-out infinite; pointer-events: none; }
+    .tx::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid #5dff9a; opacity: 0; pointer-events: none; animation: txlure 2.8s ease-out infinite; }
+    .tx.l::after { animation-delay: .9s; } .tx.r::after { animation-delay: 1.8s; }
+    @keyframes txlure { 0% { transform: scale(1); opacity: .85; } 70%, 100% { transform: scale(2.2); opacity: 0; } }
+    @keyframes txcore { 0%, 100% { transform: scale(.8); opacity: .75; } 50% { transform: scale(1.15); opacity: 1; } }
+    .tx.hold { --s: .92; box-shadow: 0 0 0 1.5px #fff, 0 0 34px rgba(60, 255, 130, .9); }
+    .tx.hold::after { animation: none; }
+    .tx.sent .tx-core { animation: none; background: #fff; }
+    .tx:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+    @media (max-width: 700px) { .tx { bottom: 56px; width: 56px; height: 56px; } .tx.l, .tx.r { width: 40px; height: 40px; bottom: 64px; } .tx.l { left: 17%; } .tx.r { left: 83%; } .acts .copy, .act { padding: 7px 12px; } .chips a { padding: 5px 8px; } }
+    @media (prefers-reduced-motion: reduce) { .tx-core, .tx::after, .item.show .lock, .item.swept::after, .item.swept .tag { animation: none; } .item.show .lock { opacity: 1; } }
   </style>
 </head>
 <body>
@@ -525,9 +530,9 @@
 
   <div class="hint" id="hint">Drag to spin, pause on an icon</div>
 
-  <button class="tx" id="tx" type="button" aria-label="Hold to transmit a signal to all channels">
-    <i class="tx-ring" aria-hidden="true"></i><span>Hold to transmit</span>
-  </button>
+  <button class="tx c" type="button" aria-label="Hold to send a signal to all channels"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="tp" cx="32" cy="32" r="29"/></svg><i class="tx-core" aria-hidden="true"></i></button>
+  <button class="tx l" type="button" aria-label="Hold to send a signal to all channels"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="tp" cx="32" cy="32" r="29"/></svg><i class="tx-core" aria-hidden="true"></i></button>
+  <button class="tx r" type="button" aria-label="Hold to send a signal to all channels"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="tp" cx="32" cy="32" r="29"/></svg><i class="tx-core" aria-hidden="true"></i></button>
 
   <script>
     /* E-mail se skládá až tady, aby ho v HTML nenašly roboty sbírající adresy */
@@ -1055,32 +1060,45 @@
     });
   };
 
-  /* podrž tlačítko: z radaru se rozběhnou vlny a kontakty se jeden po druhém ozvou */
-  var tx = document.getElementById('tx'), HOLD = 900, t0 = 0, raf = 0, holding = false, busy = false;
+  /* podrž svítící zdroj: z radaru se rozběhnou vlny a kontakty se jeden po druhém ozvou */
+  var txs = [].slice.call(document.querySelectorAll('.tx')), cur = null, HOLD = 900, t0 = 0, raf = 0, holding = false, busy = false;
   var hintEl = document.getElementById('hint'), hintTxt = hintEl.textContent;
-  function setP(p) { tx.style.setProperty('--p', p.toFixed(3)); }
+  function setP(p) { if (cur) cur.style.setProperty('--p', p.toFixed(3)); }
   function tick() {
     if (!holding) return;
     var p = Math.min(1, (performance.now() - t0) / HOLD); setP(p);
     if (p >= 1) { fire(); return; }
     raf = requestAnimationFrame(tick);
   }
-  function start(e) { if (busy) return; if (e && e.cancelable) e.preventDefault(); holding = true; t0 = performance.now(); tx.classList.add('hold'); cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); }
-  function stop() { if (!holding) return; holding = false; cancelAnimationFrame(raf); tx.classList.remove('hold'); setP(0); }
+  function start(e, el) { if (busy) return; if (e && e.cancelable) e.preventDefault(); cur = el; holding = true; t0 = performance.now(); el.classList.add('hold'); cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); }
+  function stop() { if (!holding) return; holding = false; cancelAnimationFrame(raf); cur.classList.remove('hold'); setP(0); }
   function fire() {
-    holding = false; busy = true; tx.classList.remove('hold'); tx.classList.add('sent'); setP(1);
+    holding = false; busy = true; cur.classList.remove('hold'); txs.forEach(function (b) { b.classList.add('sent'); });
     if (navigator.vibrate) { try { navigator.vibrate([14, 50, 14]); } catch (e) {} }
     if (window.reachPulse) window.reachPulse(3);
     hintEl.classList.remove('gone'); hintEl.textContent = 'Transmitting\u2026';
     var n = items.length;
     items.forEach(function (el, i) { setTimeout(function () { flash(el); if (navigator.vibrate && i % 2 === 0) { try { navigator.vibrate(8); } catch (e) {} } }, (still ? 0 : 450 + i * 230)); });
     setTimeout(function () { hintEl.textContent = n + ' channels answered. Tap one to connect.'; }, (still ? 0 : 450 + n * 230));
-    setTimeout(function () { hintEl.classList.add('gone'); hintEl.textContent = hintTxt; tx.classList.remove('sent'); setP(0); busy = false; }, 450 + n * 230 + 3600);
+    setTimeout(function () { hintEl.classList.add('gone'); hintEl.textContent = hintTxt; txs.forEach(function (b) { b.classList.remove('sent'); }); setP(0); busy = false; }, 450 + n * 230 + 3600);
   }
-  tx.addEventListener('pointerdown', function (e) { try { tx.setPointerCapture(e.pointerId); } catch (_) {} start(e); });
-  ['pointerup', 'pointercancel', 'lostpointercapture', 'pointerleave'].forEach(function (ev) { tx.addEventListener(ev, stop); });
-  tx.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-  tx.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { e.preventDefault(); if (!busy) fire(); } });
+  txs.forEach(function (tx) {
+    tx.addEventListener('pointerdown', function (e) { try { tx.setPointerCapture(e.pointerId); } catch (_) {} start(e, tx); });
+    ['pointerup', 'pointercancel', 'lostpointercapture', 'pointerleave'].forEach(function (ev) { tx.addEventListener(ev, stop); });
+    tx.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    tx.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { e.preventDefault(); if (!busy) { cur = tx; fire(); } } });
+  });
+
+  /* samo se točí: každých pár vteřin přeskočí na další kontakt, dokud se stránky někdo nedotkne */
+  var lastTouch = performance.now(), AUTO = 5200, IDLE = 6500;
+  ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) { addEventListener(ev, function () { lastTouch = performance.now(); }, { passive: true }); });
+  if (!still) setInterval(function () {
+    var now = performance.now();
+    if (document.hidden || busy || holding || dragging || !settled) return;
+    if (now - lastTouch < IDLE) return;
+    if (carousel.matches(':hover') || carousel.contains(document.activeElement)) return;
+    rotateTo((frontIndex() + 1) % n);
+  }, AUTO);
 })();
 </script>
 <script src="legal.js" defer></script>
