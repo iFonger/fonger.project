@@ -21,10 +21,13 @@
   el.className = 'lg'; el.setAttribute('role', 'contentinfo');
   document.body.appendChild(el);
   function render() {
-    var l = (document.documentElement.lang || 'cs').slice(0, 2) === 'en' ? 'en' : 'cs', t = T[l];
+    var l = document.documentElement.getAttribute('data-lang'), st = '';
+    try { st = localStorage.getItem('fonger-lang') || ''; } catch (e) {}
+    l = (l || st) === 'cs' ? 'cs' : 'en';                       /* výchozí je angličtina; čeština jen když si ji někdo zvolil */
+    var t = T[l];
     el.innerHTML = '© ' + new Date().getFullYear() + ' Adam Vávra<i>·</i><a href="privacy.html">' + t.priv + '</a>' +
       (path === 'outings.html' ? '<i>·</i>' + t.img : '');
   }
   render();
-  new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['lang', 'data-lang'] });
 })();
