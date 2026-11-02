@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FUN · Fonger</title>
+<link rel="stylesheet" href="style.css">
+<link rel="expect" href="#mark" blocking="render">
+<script src="transition.js"></script>
+<meta name="theme-color" content="#05071a">
+<style>
+:root{--mark-fill:url(#fx-green);--mark-glow:60,255,130;--mark-edge:#021a0a}
+.home{color:#fff;filter:drop-shadow(0 0 8px rgba(60,255,130,.8))}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;margin:0;background:#05071a;overflow:hidden;font-family:Inter,system-ui,"Segoe UI",Arial,sans-serif;color:#e8ecff}
+svg{position:absolute;inset:0}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+#world{transition:filter .3s}
+body.detail #world{filter:blur(3px) brightness(.5)}
+.top{position:absolute;top:30px;left:44px;right:44px;display:flex;justify-content:space-between;font-size:13px;letter-spacing:.2em;color:#8a96c4;z-index:5}
+.card{position:absolute;background:rgba(10,15,42,.72);backdrop-filter:blur(6px);border:1px solid #27366f;border-radius:16px;padding:16px 18px;z-index:4}
+.card h4{font-size:11px;letter-spacing:.22em;color:#3dff9a;margin-bottom:10px}
+.dock{position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(transparent,#05071aee 55%);z-index:3;text-align:center;padding-top:40px}
+.dock .nm{font-size:44px;font-weight:900;letter-spacing:.06em;color:#06130d;-webkit-text-stroke:2px #3dff9a;text-shadow:0 0 16px #3dff9a}
+.dock .sb{font-size:14px;color:#9fb0d8;margin-top:4px;letter-spacing:.08em}
+.arr{position:absolute;bottom:60px;font-size:26px;font-weight:800;letter-spacing:.12em;color:#8a96c4;z-index:4}
+.arr small{display:block;font-size:11px;letter-spacing:.2em;font-weight:500;color:#5e6b9c}
+.pips{position:absolute;bottom:14px;left:0;right:0;display:flex;gap:9px;justify-content:center;z-index:4}
+.pips i{width:9px;height:9px;border-radius:9px;background:#2a3566}.pips i.on{background:#3dff9a;box-shadow:0 0 10px #3dff9a;width:26px}
+.row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-top:1px solid #1d2a55;color:#cfd8ff}
+.row.me{color:#3dff9a;font-weight:700}
+.form{display:flex;gap:6px}.form b{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:12px}
+.W{background:#0f3d2b;color:#3dff9a}.L{background:#3d1424;color:#ff6a80}
+#panel{position:absolute;right:44px;top:70px;width:560px;bottom:70px;z-index:8;background:linear-gradient(#0c1330f2,#080d24f2);border:1px solid #2a3b80;border-radius:22px;padding:30px 32px;display:none;box-shadow:0 0 60px #3dff9a22}
+body.detail #panel{display:block}
+body.detail .card,body.detail .dock,body.detail .arr,body.detail .pips{display:none}
+#panel .x{position:absolute;right:22px;top:18px;color:#8a96c4;font-size:22px}
+#panel h2{font-size:12px;letter-spacing:.24em;color:#3dff9a}
+#panel h1{font-size:46px;font-weight:900;margin:4px 0 18px}
+.board{display:flex;gap:12px;margin-bottom:18px}
+.dig{flex:1;background:#050816;border:1px solid #14503a;border-radius:12px;padding:12px;text-align:center;box-shadow:inset 0 0 22px #0c3a2a}
+.dig b{display:block;font-size:42px;font-weight:800;color:#3dff9a;text-shadow:0 0 14px #3dff9a}.dig i{font-style:normal;font-size:10px;letter-spacing:.2em;color:#6f8f84}
+.m{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #172250;font-size:14px}
+.m span.w{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-weight:800;font-size:12px}
+.m em{margin-left:auto;font-style:normal;font-family:ui-monospace,Menlo,monospace;color:#cfe}
+.sec{font-size:11px;letter-spacing:.22em;color:#6f7da8;margin:16px 0 8px}
+
+#bp{position:absolute;left:905px;top:622px;width:450px;z-index:2}
+body.beer #world{filter:blur(3px) brightness(.5)}
+body.beer .card,body.beer .dock,body.beer .arr,body.beer .pips,body.beer #panel{display:none}
+#bpanel{position:absolute;left:150px;right:150px;top:70px;bottom:200px;z-index:8;background:linear-gradient(#0c1330f2,#080d24f2);border:1px solid #2a3b80;border-radius:22px;padding:30px 36px;display:none;box-shadow:0 0 60px #ff6a8033}
+body.beer #bpanel{display:block}
+#bpanel h2{font-size:12px;letter-spacing:.24em;color:#ff6a80}#bpanel h1{font-size:44px;font-weight:900;margin:4px 0 16px}
+.tbl{width:100%;border-radius:10px;border:3px solid #cfe0ff;box-shadow:0 0 50px #4fa0ff44,0 10px 0 #0b1233;display:block;margin-bottom:26px}
+.cols3{display:grid;grid-template-columns:1fr 1.4fr;gap:30px}
+.big3{display:flex;gap:12px}.big3 .dig{border-color:#5a2a3a;box-shadow:inset 0 0 22px #3a0c1a}.big3 .dig b{color:#ff6a80;text-shadow:0 0 14px #ff6a80}
+.hc{position:absolute;display:none;width:330px;background:rgba(9,14,40,.92);backdrop-filter:blur(8px);border:1px solid #2d3d8c;border-radius:18px;padding:20px 22px;box-shadow:0 0 50px #3a5cff44;z-index:5}
+.hc h5{font-size:11px;letter-spacing:.24em;color:#3dff9a;margin-bottom:4px}
+.hc h3{font-size:20px;font-weight:800;margin-bottom:14px}
+.r{display:flex;gap:12px;align-items:center;padding:8px 0;border-top:1px solid #1b2a66;font-size:13px}
+.r i{font-style:normal;width:64px;font-size:10px;letter-spacing:.16em;color:#7d8bc4;flex:none}
+.r b{font-weight:600;color:#eaf0ff;line-height:1.25}
+.r .d{width:8px;height:8px;border-radius:50%;flex:none;box-shadow:0 0 8px currentColor;background:currentColor}
+.foot{margin-top:12px;font-size:11px;letter-spacing:.14em;color:#6f7da8}
+body.pc #c-pc,body.hp #c-hp,body.kb #c-kb,body.ms #c-ms{display:block}
+.pulse{fill:none;stroke:#fff;stroke-width:2;animation:pu 2s infinite}
+@keyframes pu{0%{r:6;opacity:1}100%{r:20;opacity:0}}
+body.pc .p-pc,body.hp .p-hp,body.kb .p-kb,body.ms .p-ms{display:none}
+.ring{display:none;fill:none;stroke-width:2.5}
+body.pc .rg-pc,body.hp .rg-hp,body.kb .rg-kb,body.ms .rg-ms{display:block}
+.ln{display:none}body.pc .l-pc,body.hp .l-hp,body.kb .l-kb,body.ms .l-ms{display:block}
+#gv{position:absolute;inset:0;z-index:9;display:none}
+body.games #gv{display:block}
+body.games #world,body.games #bp,body.games .card,body.games .dock,body.games .arr,body.games .pips{display:none}
+#gv{background:radial-gradient(900px 500px at 35% 50%,#14206a 0,#070a1c 70%)}
+.mon{position:absolute;left:90px;top:130px;width:760px;height:470px;border-radius:16px;background:#04050d;border:4px solid #2c3678;padding:14px;box-shadow:0 0 70px #3a5cff55}
+.mon .scr{position:relative;width:100%;height:100%;border-radius:6px;background:linear-gradient(135deg,#10163f,#2a1a6e 55%,#5a1f78);overflow:hidden}
+.mon .tb{position:absolute;left:0;right:0;bottom:0;height:30px;background:#0a0e26ee;display:flex;align-items:center;padding:0 14px;justify-content:space-between;font-size:12px;color:#9fb0d8}
+.mon .tb i{width:16px;height:16px;border-radius:4px;background:#38e8ff;display:block}
+.stand{position:absolute;left:400px;top:600px;width:90px;height:70px;background:#161d44}.base{position:absolute;left:330px;top:668px;width:230px;height:12px;border-radius:6px;background:#161d44}
+.ic{position:absolute;width:150px;text-align:center;font-size:13px;color:#e8ecff}
+.ic b{display:grid;place-items:center;width:96px;height:96px;margin:0 auto 8px;border-radius:24px;font-size:30px;font-weight:900;box-shadow:0 8px 24px #0008}
+.gp{position:absolute;right:70px;top:130px;bottom:170px;width:440px;border:1px solid #2a3b80;border-radius:22px;padding:30px 32px;background:linear-gradient(#0c1330f2,#080d24f2);box-shadow:0 0 60px #3a5cff33}
+.gp h2{font-size:12px;letter-spacing:.24em;color:#3dff9a}.gp h1{font-size:44px;font-weight:900;margin:4px 0 18px}
+.g{display:flex;align-items:center;gap:16px;padding:13px 0;border-top:1px solid #172250;font-size:16px;font-weight:600}
+.g b{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:15px;font-weight:900}
+.g em{margin-left:auto;font-style:normal;font-size:11px;letter-spacing:.16em;color:#6f7da8}
+.gtop{position:absolute;top:30px;left:44px;right:44px;display:flex;justify-content:space-between;font-size:13px;letter-spacing:.2em;color:#8a96c4}
+.lb{position:absolute;display:none;z-index:6;align-items:center;gap:10px;padding:8px 14px;border-radius:12px;border:1px solid;background:rgba(9,14,40,.92);backdrop-filter:blur(6px);white-space:nowrap;box-shadow:0 0 24px #0008}
+.lb .br{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding-right:10px;border-right:1px solid #ffffff44}
+.lb .nm{font-size:13px;font-weight:600;color:#cfd8ff}
+body.hp #c-hp,body.kb #c-kb,body.ms #c-ms{display:flex}
+.lit{display:none}body.hp .lit-hp,body.kb .lit-kb,body.ms .lit-ms{display:block}
+.nb{opacity:.38;animation:br 3.2s ease-in-out infinite}
+.nb-kb{animation-delay:.6s}.nb-ms{animation-delay:1.2s}.nb-hp{animation-delay:1.8s}
+@keyframes br{0%,100%{opacity:.25}50%{opacity:.55}}
+body.pc .nb-pc,body.kb .nb-kb,body.ms .nb-ms,body.hp .nb-hp{animation:none;opacity:1;stroke-width:1.8}
+
+#stage{position:absolute;left:0;top:0;width:1440px;height:900px;transform-origin:0 0;overflow:hidden;background:#05071a}
+#world{position:absolute;inset:0;transform-origin:0 0;transition:transform .9s cubic-bezier(.3,.1,.2,1),filter .3s}
+.hit{cursor:pointer}
+.arr{cursor:pointer;user-select:none}.arr:hover{color:#fff}.pips i{cursor:pointer}
+.top a{color:inherit;text-decoration:none}
+body.bh #stage>.card,body.bh .dock,body.bh .arr,body.bh .pips,body.bh #panel,body.bh #bpanel{display:none}
+body.bh #world{visibility:hidden}
+#bh svg{position:static;display:block}
+#bh{display:none;position:absolute;inset:0;z-index:30;background:radial-gradient(900px 500px at 50% -10%,#1b2450,#0a0d1c 60%);color:#e8ecff;overflow:hidden}
+body.bh #bh{display:block}
+#bh .top{display:flex;justify-content:space-between;align-items:center;padding:26px 48px}
+#bh .back{color:#8b95c9;font-size:13px;letter-spacing:.12em}
+#bh h1{font-size:13px;letter-spacing:.3em;color:#7ef0ff;font-weight:600}
+#bh .sub{color:#8b95c9;font-size:12px}
+#bh .strip{display:flex;gap:14px;padding:0 48px}
+#bh .k{flex:1;background:#101633;border:1px solid #232c5c;border-radius:14px;padding:14px 18px}
+#bh .k b{font-size:30px;display:block;font-weight:700}
+#bh .k span{color:#8b95c9;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+#bh .cards{display:flex;gap:20px;padding:20px 48px}
+#bh .card{flex:1;background:linear-gradient(#111838,#0d1230);border:1px solid #2a3470;border-radius:20px;padding:24px;position:relative;height:610px}
+#bh .card.gr{box-shadow:0 0 0 1px #3ddc8433 inset}
+#bh .card.rd{box-shadow:0 0 0 1px #ff4d6d33 inset}
+#bh .tag{font-size:11px;letter-spacing:.24em;font-weight:700}
+#bh .gr .tag{color:#45e08a}
+#bh .rd .tag{color:#ff6b86}
+#bh .h2{font-size:26px;font-weight:700;margin:6px 0 14px}
+#bh .row{display:flex;gap:10px;margin-bottom:14px}
+#bh .m{flex:1;background:#0b1029;border-radius:12px;padding:10px 12px}
+#bh .m b{font-size:22px;display:block}
+#bh .m span{font-size:10px;color:#8b95c9;letter-spacing:.12em;text-transform:uppercase}
+#bh .tabs{display:flex;gap:6px;margin-bottom:12px}
+#bh .tb{padding:6px 14px;border-radius:99px;border:1px solid #2a3470;font-size:12px;color:#8b95c9}
+#bh .tb.on{background:#45e08a22;color:#45e08a;border-color:#45e08a66}
+#bh .rd .tb.on{background:#ff4d6d22;color:#ff6b86;border-color:#ff4d6d66}
+#bh .cta{position:absolute;left:24px;right:24px;bottom:20px;text-align:center;padding:12px;border-radius:12px;border:1px solid #3a4590;color:#cdd4ff;font-size:12px;letter-spacing:.2em}
+#bh .chip{display:inline-block;min-width:34px;text-align:center;padding:3px 6px;border-radius:7px;margin:2px;font-size:12px;font-weight:600}
+#bh .w{background:#45e08a22;color:#45e08a}
+#bh .l{background:#ff4d6d22;color:#ff6b86}
+#bh .d{background:#ffffff18;color:#cdd4ff}
+#bh .n{background:#ffffff0c;color:#6e78a8}
+#bh table{border-collapse:collapse;width:100%}
+#bh td,#bh th{padding:7px 8px;text-align:left;font-size:13px;border-bottom:1px solid #1d2556}
+#bh th{font-size:10px;color:#8b95c9;letter-spacing:.14em;font-weight:600;text-transform:uppercase}
+#bh .sec{font-size:11px;letter-spacing:.2em;color:#8b95c9;margin:14px 0 6px}
+#bh .top{position:static;display:flex;z-index:auto}#bh .back{cursor:pointer;color:#cdd4ff}#bh .back:hover{color:#fff}
+#bh .row{border:0;padding:0;justify-content:flex-start;color:inherit}
+#bh .m{border:0;padding:10px 12px;display:block;gap:0}
+#bh .sec{color:#8b95c9;margin:14px 0 6px;font-size:11px;letter-spacing:.2em}
+#bh .card{position:relative;backdrop-filter:none;z-index:auto}
+#bh .card.go{cursor:pointer;transition:transform .2s,box-shadow .2s}#bh .card.go:hover{transform:translateY(-3px)}
+#bh .tb{cursor:pointer}#bh .tb.on{cursor:default}
+
+</style></head><body>
+<a class="home" id="mark" href="index.html" aria-label="Zpět na hlavní stránku">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+</a>
+<div id="stage">
+<div id="world">
+<svg id=scene width=1440 height=900 viewBox="0 0 1440 900">
+<defs>
+<linearGradient id=wall x1=0 y1=0 x2=0 y2=1><stop offset=0 stop-color="#0a0f2c"/><stop offset=1 stop-color="#141b46"/></linearGradient>
+<linearGradient id=floor x1=0 y1=0 x2=0 y2=1><stop offset=0 stop-color="#1b1633"/><stop offset=1 stop-color="#0b0a1c"/></linearGradient>
+<radialGradient id=gl><stop offset=0 stop-color="#fff" stop-opacity=".22"/><stop offset=1 stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id=cone x1=0 y1=0 x2=0 y2=1><stop offset=0 stop-color="#bff" stop-opacity=".16"/><stop offset=1 stop-color="#bff" stop-opacity=".02"/></linearGradient>
+<radialGradient id=mon><stop offset=0 stop-color="#3a5cff" stop-opacity=".5"/><stop offset=1 stop-color="#3a5cff" stop-opacity="0"/></radialGradient>
+<linearGradient id=scr x1=0 y1=0 x2=1 y2=1><stop offset=0 stop-color="#1d6bff"/><stop offset=.5 stop-color="#b266ff"/><stop offset=1 stop-color="#ff4fa6"/></linearGradient>
+<pattern id=net width=9 height=9 patternUnits=userSpaceOnUse><path d="M0 0H9M0 0V9" stroke="#e8f4ff" stroke-opacity=".55" stroke-width="1"/></pattern>
+<filter id=glow x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5" result=b /><feMerge><feMergeNode in=b /><feMergeNode in=SourceGraphic /></feMerge></filter>
+</defs>
+<rect width=1440 height=520 fill="url(#wall)"/>
+<g stroke="#1f2a62" stroke-width="2" opacity=".6"><line x1=480 y1=0 x2=480 y2=520 /><line x1=960 y1=0 x2=960 y2=520 /><line x1=0 y1=100 x2=1440 y2=100 /></g>
+<!-- floor -->
+<rect y=520 width=1440 height=380 fill="url(#floor)"/>
+<g stroke="#2a2250" stroke-width="1.5" opacity=".7" id=boards></g>
+<rect y=514 width=1440 height=10 fill="#26307a"/>
+<!-- neon sign -->
+<text x=720 y=170 text-anchor=middle font-size=118 font-weight=900 fill="#06130d" stroke="#3dff9a" stroke-width="3" filter="url(#glow)" style="font-family:Inter,Arial">FUN</text>
+<!-- scoreboard -->
+<rect x=600 y=215 width=240 height=88 rx=10 fill="#04060f" stroke="#14503a" stroke-width="2"/>
+<text x=720 y=268 text-anchor=middle font-size=46 font-weight=800 fill="#3dff9a" filter="url(#glow)" font-family="ui-monospace,Menlo,monospace"><tspan id=sbn>0 : 0</tspan></text>
+<text x=720 y=290 text-anchor=middle font-size=11 letter-spacing=3 fill="#5e8f7c"><tspan id=sbl></tspan></text>
+<!-- climbing wall -->
+<rect x=50 y=240 width=370 height=278 rx=8 fill="#1a2250" stroke="#2f3d86" stroke-width="3"/>
+<g id=holds></g>
+<path d="M95 485 L150 430 L130 370 L215 330 L260 365 L330 300 L375 265" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round" fill="none"/>
+<g transform="translate(-80 0)"><!-- strava ring -->
+<g filter="url(#glow)"><circle cx=1040 cy=250 r=62 fill="none" stroke="#2a2250" stroke-width="14"/><circle cx=1040 cy=250 r=62 fill="none" stroke="#fc4c02" stroke-width="14" stroke-linecap="round" stroke-dasharray="235 400" transform="rotate(-90 1040 250)"/></g>
+<text x=1040 y=252 text-anchor=middle font-size=30 font-weight=800 fill="#fff">12<tspan font-size=16 fill="#b8a9c9">/20</tspan></text><text x=1040 y=272 text-anchor=middle font-size=9 letter-spacing=3 fill="#b8a9c9">ACTIVE DAYS</text>
+<g font-size=11 font-weight=700 letter-spacing=1.5><rect x=962 y=332 width=156 height=26 rx=13 fill="#0a0f2ccc" stroke="#3dff9a" stroke-opacity=".6"/><text x=1040 y=349 text-anchor=middle fill="#3dff9a">👣 9 400 STEPS / DAY</text>
+<rect x=962 y=366 width=156 height=22 rx=11 fill="#0a0f2ccc" stroke="#35417f"/><text x=1040 y=381 text-anchor=middle fill="#9fb0d8" font-size=10>GYM 3× · YOGA 2× · WALKS</text></g>
+</g>
+<!-- gaming desk / Fonger setup -->
+<ellipse cx=1290 cy=420 rx=260 ry=170 fill="url(#mon)"/>
+<!-- desk -->
+<rect x=1040 y=466 width=330 height=14 rx=3 fill="#0c1022" stroke="#27306a" stroke-width="1.5"/>
+<rect x=1058 y=480 width=9 height=42 fill="#0c1022"/><rect x=1345 y=480 width=9 height=42 fill="#0c1022"/>
+<rect x=1040 y=479 width=330 height=3 fill="#3a5cff" opacity=".7" filter="url(#glow)"/>
+<!-- left monitor: FONGER -->
+<rect x=1062 y=346 width=140 height=88 rx=5 fill="#05060f" stroke="#2a3370" stroke-width="2.5"/>
+<rect x=1067 y=351 width=130 height=75 rx=2 fill="#12062a"/>
+<g stroke="#ff4fa6" stroke-width="1" fill="none" opacity=".7"><path d="M1072 360 q12 10 6 22 q-6 12 8 20"/><path d="M1190 356 q-12 14 -4 26 q8 10 -4 22"/><path d="M1100 420 q14 -8 26 -2"/><path d="M1150 358 q10 8 20 4"/></g>
+<text x=1132 y=395 text-anchor=middle font-size=22 font-weight=900 fill="#2a0a2e" stroke="#ff4f8a" stroke-width="1.6" filter="url(#glow)" style="font-family:Inter,Arial;letter-spacing:1px">FONGER</text>
+<rect x=1122 y=434 width=20 height=8 fill="#1a2250"/><ellipse cx=1132 cy=466 rx=20 ry=4 fill="#161d44"/>
+<!-- right monitor: Drippy hall -->
+<rect x=1210 y=336 width=156 height=98 rx=5 fill="#05060f" stroke="#2a3370" stroke-width="2.5"/>
+<rect x=1215 y=341 width=146 height=85 rx=2 fill="url(#scr)" opacity=".55"/><rect x=1215 y=341 width=146 height=85 rx=2 fill="#0b1236" opacity=".5"/><rect x=1224 y=348 width=24 height=24 rx=6 fill="#ff4655"/><rect x=1254 y=348 width=24 height=24 rx=6 fill="#1b3a8a"/><rect x=1284 y=348 width=24 height=24 rx=6 fill="#e8793a"/><rect x=1224 y=378 width=24 height=24 rx=6 fill="#1e7bff"/><rect x=1254 y=378 width=24 height=24 rx=6 fill="#1fb89a"/><rect x=1284 y=378 width=24 height=24 rx=6 fill="#6a3ad0"/><rect x=1215 y=416 width=146 height=10 fill="#05060f" opacity=".85"/><rect x=1219 y=419 width=5 height=5 rx=1 fill="#38e8ff"/>
+<rect x=1280 y=434 width=16 height=8 fill="#1a2250"/><ellipse cx=1288 cy=466 rx=22 ry=4 fill="#161d44"/>
+<!-- keyboard, mouse, headphones, mic -->
+<rect x=1196 y=456 width=96 height=9 rx=2 fill="#070a1c" stroke="#3a5cff" stroke-width="1.2" filter="url(#glow)"/><g fill="#6d86ff" opacity=".8"><rect x=1200 y=458 width=86 height=1.4 /><rect x=1200 y=461 width=86 height=1.4 /></g>
+<ellipse cx=1312 cy=461 rx=6 ry=4 fill="#10163a" stroke="#3a5cff"/>
+<path d="M1076 464 q0 -14 14 -14 q14 0 14 14" stroke="#e8924a" stroke-width="3" fill="none"/><rect x=1072 y=460 width=7 height=8 rx=2 fill="#e8924a"/><rect x=1101 y=460 width=7 height=8 rx=2 fill="#e8924a"/>
+<rect x=1340 y=432 width=6 height=34 rx=3 fill="#161d44"/>
+<!-- PC tower with blue fans -->
+<rect x=1372 y=372 width=62 height=150 rx=5 fill="#080a18" stroke="#26306a" stroke-width="2"/>
+<g filter="url(#glow)"><circle cx=1403 cy=406 r=17 fill="#1c3cff" opacity=".85"/><circle cx=1403 cy=446 r=17 fill="#1c3cff" opacity=".85"/><circle cx=1403 cy=486 r=17 fill="#1c3cff" opacity=".85"/></g>
+<g fill="#0a0f3a"><circle cx=1403 cy=406 r=5 /><circle cx=1403 cy=446 r=5 /><circle cx=1403 cy=486 r=5 /></g>
+<path d="M1190 540 q-10 -60 30 -70 q40 0 40 60 l-6 30 h-60z" fill="#10163a" stroke="#2c3a80" stroke-width="2"/>
+<!-- spotlight on court -->
+<polygon points="520,0 640,0 960,640 150,640" fill="url(#cone)"/>
+<!-- court (perspective) -->
+<polygon points="330,585 770,585 900,790 90,790" fill="#16345a" opacity=".92"/>
+<g stroke="#e8f4ff" stroke-width="3" fill="none" stroke-linejoin="round">
+<polygon points="330,585 770,585 900,790 90,790"/>
+<polygon points="318,613 782,613 880,757 110,757" stroke-opacity=".0"/>
+<line x1=550 y1=585 x2=495 y2=790 opacity=".0"/>
+<line x1=550 y1=585 x2=495 y2=790 />
+<line x1=315 y1=610 x2=785 y2=610 /><line x1=102 y1=760 x2=898 y2=760 />
+<line x1=550 y1=585 x2=550 y2=585 />
+</g>
+<ellipse cx=500 cy=730 rx=420 ry=90 fill="url(#gl)"/>
+<!-- net -->
+<polygon points="219,525 830,525 830,601 219,601" fill="url(#net)" stroke="#fff" stroke-width="2" opacity=".85"/>
+<rect x=219 y=523 width=611 height=6 fill="#fff"/>
+<rect x=212 y=523 width=8 height=158 fill="#aab6e8"/><rect x=829 y=523 width=8 height=158 fill="#aab6e8"/>
+<line x1=219 y1=680 x2=830 y2=680 stroke="#fff" stroke-width="2" opacity=".5"/>
+<!-- shuttle + trail -->
+<path d="M300 560 Q420 400 560 470" stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-dasharray="2 9" stroke-linecap="round" fill="none"/>
+<g transform="translate(572 478) rotate(-35)"><circle r=7 fill="#fff"/><path d="M0 -4 L22 -14 L22 14 L0 4z" fill="#fff" opacity=".85"/><path d="M6 -3 L22 -8 M6 0 L22 0 M6 3 L22 8" stroke="#9fb0d8" stroke-width="1"/></g>
+<!-- selection ring on court -->
+<polygon points="330,585 770,585 900,790 90,790" fill="none" stroke="#3dff9a" stroke-width="3" filter="url(#glow)" opacity=".9"/>
+<!-- hotspot pills -->
+<g font-size=12 font-weight=700 letter-spacing=2 id=pills></g>
+<defs><filter id=g2 x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.6" result=b /><feMerge><feMergeNode in=b /><feMergeNode in=SourceGraphic /></feMerge></filter></defs>
+<g fill="none" stroke-width="1.2" filter="url(#g2)" stroke-linejoin="round">
+<rect class="nb nb-pc" x=1371 y=371 width=64 height=152 rx=6 stroke="#6d86ff"/>
+<rect class="nb nb-kb" x=1195 y=455 width=98 height=11 rx=3 stroke="#6d86ff"/>
+<ellipse class="nb nb-ms" cx=1312 cy=461 rx=7.5 ry=5.5 stroke="#3dff9a"/>
+<g class="nb nb-hp" stroke="#ff9a4a"><path d="M1075 464 q0 -15 15 -15 q15 0 15 15"/><rect x=1071 y=459 width=9 height=10 rx=3 /><rect x=1100 y=459 width=9 height=10 rx=3 /></g>
+</g>
+<g id=hits>
+<rect class="hit stn" data-k=climb x=50 y=225 width=370 height=295 fill="transparent"/>
+<polygon class="hit stn" data-k=bad points="219,500 830,500 900,790 90,790" fill="transparent"/>
+<rect class="hit stn" data-k=strava x=880 y=170 width=180 height=230 fill="transparent"/>
+<rect class="hit stn" data-k=games x=1205 y=330 width=170 height=110 fill="transparent"/>
+<rect class="hit stn" data-k=beer x=905 y=622 width=450 height=200 fill="transparent"/>
+<rect class=hit data-h=pc x=1371 y=371 width=64 height=152 fill="transparent"/>
+<rect class=hit data-h=kb x=1195 y=452 width=100 height=16 fill="transparent"/>
+<ellipse class=hit data-h=ms cx=1312 cy=461 rx=12 ry=10 fill="transparent"/>
+<rect class=hit data-h=hp x=1068 y=444 width=44 height=28 fill="transparent"/>
+</g></svg>
+<img id=bp src="fun-table.png" alt="">
+<div class=hc id=c-pc style="left:1020px;top:96px;width:340px"><h5>THE RIG</h5><h3>Custom gaming PC</h3>
+<div class=r><span class=d style="color:#ff4f4f"></span><i>CPU</i><b>AMD Ryzen 9 7900X</b></div>
+<div class=r><span class=d style="color:#38e8ff"></span><i>BOARD</i><b>GIGABYTE X670 AORUS ELITE AX</b></div>
+<div class=r><span class=d style="color:#b266ff"></span><i>RAM</i><b>32 GB DDR5</b></div>
+<div class=r><span class=d style="color:#3dff9a"></span><i>GPU</i><b>GeForce RTX 4070 Ti X3 12G</b></div>
+<div class=r><span class=d style="color:#ff9a4a"></span><i>PSU</i><b>Fractal Design Ion+ 2 Platinum 760W</b></div>
+<div class=r><span class=d style="color:#6d86ff"></span><i>COOLER</i><b>ARCTIC Liquid Freezer II 280 A-RGB</b></div></div>
+<div class=lb id=c-hp style="left:1030px;top:392px;border-color:#ff9a4a"><span class=br>audio-technica</span><span class=nm>ATH-M50x</span></div>
+<div class=lb id=c-kb style="left:1150px;top:400px;border-color:#6d86ff"><span class=br>RAZER</span><span class=nm>DeathStalker V2 Pro TKL</span></div>
+<div class=lb id=c-ms style="left:1150px;top:400px;border-color:#3dff9a"><span class=br>Logitech G</span><span class=nm>PRO X SUPERLIGHT 2c</span></div>
+</div>
+<div class=top><span></span><span class=mono>F · FUN</span></div>
+<div class=card style="left:44px;top:70px;width:270px"><h4>LATEST · HOBBYLIGA</h4><div style="font-size:15px;font-weight:600">🏆 Champion 2026</div><div style="height:10px"></div><h4 style="margin-top:6px">YOUR FORM</h4><div class=form id=lf></div></div>
+<div class=arr id=aL style="left:44px;text-align:left">‹‹‹<small></small></div>
+<div class=arr id=aR style="right:44px;text-align:right">›››<small></small></div>
+<div class=dock><div class=nm id=nm></div><div class=sb id=sb></div></div>
+<div class=pips><i></i><i></i><i></i><i></i><i></i></div>
+<div id=bpanel></div>
+<div id=gv><div class=gtop><span data-close style="cursor:pointer">← FUN</span><span style="font-family:ui-monospace,Menlo,monospace">GAMES</span></div>
+<div class=mon><div class=scr id=desk><div class=tb><i></i><span>21:36</span></div></div></div><div class=stand></div><div class=base></div>
+<div class=gp><h2>LOBBY · PC GAMES</h2><h1>What I play</h1><div id=glist></div></div></div>
+<div id=panel></div>
+<div id=bh></div>
+</div>
+<script src="fun-data.js"></script>
+<script src="fun.js"></script>
+</body></html>

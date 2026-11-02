@@ -312,3 +312,12 @@ body::before {
     transform: translateX(-100vw);
   }
 }
+
+   @media (prefers-reduced-motion: no-preference) {
+     html[data-vt="fun"]::view-transition-old(root),
+     html[data-vt="fun"]::view-transition-new(root) { animation-delay: 0.5s; animation-fill-mode: both; }
+     html[data-vt="fun"]::view-transition-group(letter) { animation-duration: 0.75s; animation-delay: 0.5s; }
+     html[data-vt="fun"]::view-transition-image-pair(letter) { animation: gl-pair 1.25s step-end both; }
+     html[data-vt="fun"]::view-transition-old(letter) { animation: gl-old 1.25s step-end both; mix-blend-mode: normal; }
+     html[data-vt="fun"]::view-transition-new(letter) { animation: gl-new 1.25s step-end both; mix-blend-mode: normal; }
+   }
