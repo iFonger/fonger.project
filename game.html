@@ -1242,7 +1242,7 @@
 
     body.straight .cside, body.straight .cback, body.straight .ctop { visibility: hidden; }
     .left, .hof { transition: opacity .5s ease; }
-    body.straight .left, body.straight .hof { opacity: 0; pointer-events: none; }
+    body.straight .left, body.straight .hof, body.straight .hr, body.straight .hsoon { opacity: 0; pointer-events: none; }
 
     /* ---------- Levý sloupec ---------- */
     .left { justify-self: start; color: #ffd6ec; font-family: ui-monospace, Menlo, monospace; }
@@ -1318,7 +1318,7 @@
     .rm-ok { margin: 8px 28px 22px; min-height: 44px; border: 0; background: #ff4fa6; color: #12030f; font: 800 12px ui-monospace, Menlo, monospace; letter-spacing: .3em; cursor: pointer; }
 
     /* ---------- Celoobrazovkový režim na telefonu: vše kolem se schová ---------- */
-    body.fs .left, body.fs .hof, body.fs .rmodal { display: none; }
+    body.fs .left, body.fs .hof, body.fs .hr, body.fs .hsoon, body.fs .rmodal { display: none; }
     body.fs .machine { perspective: none !important; transform: none !important; animation: none !important; filter: none !important; }
     body.fs .cab { transform: none !important; transform-style: flat !important; transition: none !important; }
     body.fs .machine::after { display: none; }
@@ -1394,6 +1394,146 @@
       html.hallon .left { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(12,4,20,.9); }
     }
   </style>
+<style>
+/* ===== Herna UI v2: karty vlevo, podium na podlaze vpravo, šipky u automatu ===== */
+html.hallon .hof { display: none !important; }
+.hc-stats, .hsoon, .hr, .hall-mid, .hall-pips { display: none; }
+html.hallon .hall-mid, html.hallon .hall-pips { display: block; }
+html.hallon .left, html.hallon .hr, html.hallon .hsoon {
+  display: block; position: fixed; top: 50%; height: 900px; z-index: 3; box-sizing: border-box; padding: 0; margin: 0; border: 0; background: none;
+  clip-path: none; -webkit-backdrop-filter: none; backdrop-filter: none; pointer-events: none; --sx: 0px;
+  transition: opacity .4s ease, transform .55s cubic-bezier(.2,.8,.2,1), visibility .4s;
+}
+html.hallon .left, html.hallon .hsoon.l { left: 0; width: 340px; transform: translateY(-50%) translateX(var(--sx)) scale(var(--k,1)); transform-origin: 0 50%; }
+html.hallon .hr, html.hallon .hsoon.r { right: 0; width: 640px; transform: translateY(-50%) translateX(var(--sx)) scale(var(--k,1)); transform-origin: 100% 50%; }
+html.hallon .hsoon { opacity: 0; visibility: hidden; }
+html.hallon .hsoon.l { --sx: 70px; } html.hallon .hsoon.r { --sx: -70px; }
+body[data-hall="off"] .hsoon { opacity: 1; visibility: visible; --sx: 0px; }
+body[data-hall="off"] .left { opacity: 0; visibility: hidden; --sx: -70px; }
+body[data-hall="off"] .hr { opacity: 0; visibility: hidden; --sx: 70px; }
+
+html.hallon .left, html.hallon .hr, html.hallon .hsoon { text-align: left; }
+html.hallon .hsoon.r { text-align: center; }
+html.hallon .hc {
+  position: absolute; left: 34px; width: 290px; box-sizing: border-box; padding: 18px; border-radius: 18px; pointer-events: auto;
+  background: linear-gradient(160deg, rgba(40,16,70,.62), rgba(12,5,28,.72)); border: 1px solid rgba(255,150,215,.34);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  box-shadow: 0 10px 40px rgba(0,0,0,.5), 0 0 28px rgba(255,79,166,.14), inset 0 1px 0 rgba(255,255,255,.14);
+}
+html.hallon .hc-week { top: 120px; }
+html.hallon .hc-best { top: 372px; }
+html.hallon .hc-menu { top: 586px; padding: 10px; }
+html.hallon .hc-stats { top: 332px; }
+html.hallon .hsoon.l .hc { top: 340px; }
+html.hallon .hsoon.r .hc { left: auto; right: 34px; top: 300px; width: 340px; text-align: center; }
+html.hallon .left .lk2.dim { display: none; }
+html.hallon .lv { font-size: 46px; line-height: 1.05; margin: 10px 0 8px; }
+.lbl { font: 9.5px ui-monospace, Menlo, monospace; letter-spacing: .26em; color: #ff8ec6; }
+html.hallon .best { margin: 0; width: auto; padding: 0; border: 0; background: none; clip-path: none; font: 9.5px ui-monospace, Menlo, monospace; letter-spacing: .26em; color: #ff8ec6; }
+html.hallon .best b { margin-top: 6px; font: 900 34px Inter, system-ui, sans-serif; letter-spacing: 0; color: #fff; }
+.rk-line, .pb { display: none; }
+html.hallon .rk-line { display: flex; justify-content: space-between; margin-top: 10px; font: 11px ui-monospace, Menlo, monospace; color: #ffd6ec; }
+html.hallon .rk-line span:last-child { opacity: .7; }
+html.hallon .pb { display: block; height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; margin-top: 8px; }
+.pb i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #a855ff, #ff4fa6); box-shadow: 0 0 10px #ff4fa6; transition: width .6s ease; }
+.hc-menu { display: none; }
+html.hallon .hc-menu { display: block; }
+html.hallon body.hstats .hc-best, html.hallon body.hstats .hc-menu { display: none; }
+html.hallon body.hstats .hc-stats { display: block; }
+.mi { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; margin-top: 4px; border: 0; border-radius: 12px; background: transparent; color: #ffe3f2; text-align: left; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+.mi:hover, .mi:focus-visible { background: linear-gradient(90deg, rgba(255,79,166,.3), rgba(255,79,166,.05)); outline: 0; box-shadow: inset 0 0 0 1px rgba(255,142,198,.5); }
+.mi .ic { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,142,198,.6); display: grid; place-items: center; font-size: 16px; flex: none; box-shadow: 0 0 12px rgba(255,79,166,.3); }
+.mi .tx { flex: 1; min-width: 0; }
+.mi b { display: block; font: 800 11.5px ui-monospace, Menlo, monospace; letter-spacing: .2em; }
+.mi small { display: block; font: 9px ui-monospace, Menlo, monospace; letter-spacing: .12em; opacity: .6; margin-top: 3px; }
+.mi .ch { color: #ff8ec6; font-size: 20px; }
+.st-back { display: flex; align-items: center; gap: 8px; border: 0; background: none; color: #ffd6ec; font: 700 10px ui-monospace, Menlo, monospace; letter-spacing: .26em; cursor: pointer; padding: 0; }
+.st-back span { color: #ff8ec6; font-size: 20px; line-height: 1; }
+.st-chips { display: flex; gap: 8px; margin: 12px 0; }
+.st-chip { flex: 1; border: 1px solid rgba(255,142,198,.4); background: rgba(255,79,166,.1); border-radius: 12px; padding: 8px 4px; text-align: center; }
+.st-chip small { display: block; font: 8px ui-monospace, Menlo, monospace; letter-spacing: .15em; opacity: .7; }
+.st-chip b { display: block; font: 900 17px Inter, system-ui, sans-serif; margin-top: 3px; color: #fff; }
+.st-run { display: flex; align-items: center; gap: 8px; padding: 5px 4px; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 12px; color: #fff; }
+.st-run em { flex: 1; font: normal 10px ui-monospace, Menlo, monospace; color: #ff8ec6; }
+.st-run i { font: 800 7.5px ui-monospace, Menlo, monospace; letter-spacing: .1em; padding: 3px 7px; border-radius: 999px; color: #06202e; background: linear-gradient(90deg, #d8f6ff, #b7e8ff, #e4d4ff); font-style: normal; }
+.st-run b { font: 700 12px ui-monospace, Menlo, monospace; }
+.st-note, .st-empty { margin: 8px 0 0; font: 9px/1.5 ui-monospace, Menlo, monospace; letter-spacing: .08em; color: rgba(255,214,236,.5); }
+.soon123 { font: 900 54px Inter, system-ui, sans-serif; opacity: .18; margin: 14px 0 10px; letter-spacing: .1em; }
+
+/* pravý sloupec */
+html.hallon .hr-king { position: absolute; left: 120px; top: 110px; width: 420px; pointer-events: auto; }
+.hk { position: relative; overflow: hidden; display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 14px; border: 1px solid rgba(190,240,255,.55); background: linear-gradient(100deg, rgba(150,225,255,.2), rgba(190,160,255,.14)); box-shadow: 0 0 20px rgba(150,225,255,.22); }
+.hk:after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%); animation: hksweep 3.2s ease-in-out infinite; pointer-events: none; }
+@keyframes hksweep { 0% { transform: translateX(-120%); } 55%, 100% { transform: translateX(160%); } }
+.hk small { display: block; font: 8.5px ui-monospace, Menlo, monospace; letter-spacing: .2em; color: #9fe2ff; }
+.hk .nm { font: 700 14px Inter, system-ui, sans-serif; color: #fff; display: block; }
+.hk .t { margin-left: auto; font: 700 14px ui-monospace, Menlo, monospace; color: #fff; }
+.hk .av { width: 52px; height: 52px; margin: -8px -2px -8px -2px; filter: drop-shadow(0 0 8px #bfe6ff); }
+html.hallon .hr-pod { position: absolute; left: 0; top: 0; width: 640px; height: 900px; pointer-events: none; }
+.fc { position: absolute; width: 150px; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
+.fc.c2 { left: 70px; top: 330px; } .fc.c1 { left: 195px; top: 205px; } .fc.c3 { left: 320px; top: 360px; }
+.fc .pnm { font: 800 14px Inter, system-ui, sans-serif; color: #fff; text-shadow: 0 2px 8px #000; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; gap: 5px; align-items: center; justify-content: center; }
+.fc .pnm .you { font-size: 8px; }
+.fc .ptm { font: 700 12px ui-monospace, Menlo, monospace; color: #fff; text-shadow: 0 0 10px var(--c); margin: 2px 0 4px; }
+.fc .av { width: 202px; height: 202px; margin: -4px 0 -29px; filter: drop-shadow(0 0 12px var(--c)); image-rendering: pixelated; }
+.fc.c1 .av { width: 259px; height: 259px; margin: -6px 0 -38px; }
+.fstep { position: relative; width: 112px; height: 34px; display: grid; place-items: center; border-radius: 6px; font: 900 18px Inter, system-ui, sans-serif; color: rgba(255,255,255,.55);
+  border: 1px solid color-mix(in srgb, var(--c) 80%, transparent); background: linear-gradient(color-mix(in srgb, var(--c) 55%, transparent), color-mix(in srgb, var(--c) 8%, transparent));
+  box-shadow: 0 0 24px color-mix(in srgb, var(--c) 55%, transparent), 0 12px 24px color-mix(in srgb, var(--c) 40%, transparent);
+  transform: perspective(500px) rotateX(38deg); transform-origin: bottom; }
+.fc.c1 .fstep { height: 60px; } .fc.c3 .fstep { height: 26px; }
+.fc.c1 .fstep { animation: stepglow 3s ease-in-out infinite; }
+@keyframes stepglow { 50% { box-shadow: 0 0 36px color-mix(in srgb, var(--c) 80%, transparent), 0 12px 24px color-mix(in srgb, var(--c) 50%, transparent); } }
+.fc.g-red { --c: #ff2d4f; } .fc.g-purple { --c: #a855ff; } .fc.g-green { --c: #2dff8a; } .fc.g-diamond { --c: #bfe6ff; }
+html.hallon .hr-empty { position: absolute; left: 120px; top: 380px; width: 420px; text-align: center; }
+html.hallon .hr-rk { position: absolute; left: 120px; top: 610px; width: 440px; pointer-events: auto; }
+.hr-rh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding: 0 6px; }
+.hr-rh button { font: 800 10px ui-monospace, Menlo, monospace; letter-spacing: .24em; padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255,142,198,.7); color: #ffe3f2; background: rgba(255,79,166,.18); box-shadow: 0 0 18px rgba(255,79,166,.35); cursor: pointer; }
+.hr-rh button:hover { background: rgba(255,79,166,.34); }
+.mr { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.09); font-size: 13.5px; color: #fff; position: relative; }
+.mr .rk { width: 20px; text-align: center; font: 12px ui-monospace, Menlo, monospace; color: #ff8ec6; }
+.mr .nm { flex: 1; min-width: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; }
+.mr .sc { font: 700 13px ui-monospace, Menlo, monospace; }
+.mr.me { background: linear-gradient(90deg, rgba(255,79,166,.22), transparent); border-radius: 8px; }
+.mr.ch { background: linear-gradient(90deg, rgba(190,240,255,.16), transparent); border-radius: 8px; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font: 800 8.5px ui-monospace, Menlo, monospace; letter-spacing: .12em; padding: 3px 7px; border-radius: 999px; color: #06202e; background: linear-gradient(90deg, #d8f6ff, #b7e8ff, #e4d4ff); box-shadow: 0 0 10px rgba(180,235,255,.7); white-space: nowrap; flex: none; }
+
+/* šipky u automatu a tečky her */
+html.hallon .hall-mid { position: absolute; left: 50%; top: 46%; width: 0; height: 0; z-index: 3; }
+.trail { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; border: 0; background: none; padding: 12px 10px; cursor: pointer; font-family: ui-monospace, Menlo, monospace; color: #ff8ec6; -webkit-tap-highlight-color: transparent; }
+.trail[hidden] { display: none; }
+.trail.l { left: calc(-330px * var(--kh,1)); transform: translate(-50%, -50%); }
+.trail.r { left: calc(215px * var(--kh,1)); transform: translate(-50%, -50%); }
+.trail .chv { font: 900 44px/1 Inter, system-ui, sans-serif; letter-spacing: -6px; text-shadow: 0 0 18px #ff4fa6; white-space: nowrap; }
+.trail .chv i { font-style: normal; display: inline-block; animation: trfl 1.4s infinite; }
+.trail .chv i:nth-child(2) { animation-delay: .2s; } .trail .chv i:nth-child(3) { animation-delay: .4s; }
+.trail.l .chv i:nth-child(1) { animation-delay: .4s; } .trail.l .chv i:nth-child(3) { animation-delay: 0s; }
+@keyframes trfl { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+.trail small { font-size: 10px; letter-spacing: .3em; opacity: .8; padding-left: .3em; white-space: nowrap; }
+.trail:hover .chv { text-shadow: 0 0 26px #ff4fa6, 0 0 6px #fff; }
+html.hallon .hall-pips { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); display: flex; gap: 8px; z-index: 3; pointer-events: none; }
+.hall-pips i { width: 22px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.22); transition: width .3s, background .3s; }
+.hall-pips i.on { width: 38px; background: #ff8ec6; box-shadow: 0 0 10px #ff4fa6; }
+
+@media (max-width: 1100px), (pointer: coarse) {
+  html.hallon .left, html.hallon .hr, html.hallon .hsoon { position: static; height: auto; width: auto; transform: none !important; opacity: 1; visibility: visible; padding: 0 14px; --sx: 0px; transition: none; }
+  html.hallon .left { order: 2; } html.hallon .hr { order: 3; padding-bottom: 28px; } html.hallon .hsoon { display: none; order: 2; }
+  body[data-hall="off"] .hsoon { display: block; } body[data-hall="off"] .left, body[data-hall="off"] .hr { display: none; }
+  html.hallon .hc, html.hallon .hsoon .hc { position: static; width: auto; margin: 0 0 12px; left: auto; right: auto; top: auto; }
+  html.hallon .hsoon.r .hc { text-align: center; }
+  html.hallon .lv { font-size: 40px; }
+  html.hallon .hr-king { position: static; width: auto; margin-bottom: 10px; }
+  html.hallon .hr-pod { position: relative; width: auto; height: auto; display: flex; justify-content: center; align-items: flex-end; gap: 4px; margin: 6px 0 4px; }
+  .fc { position: static !important; width: 33%; max-width: 130px; }
+  .fc .av { width: 108px; height: 108px; margin: -2px 0 -15px; } .fc.c1 .av { width: 138px; height: 138px; margin: -3px 0 -19px; }
+  .fstep { width: 86%; }
+  html.hallon .hr-rk { position: static; width: auto; margin-top: 8px; }
+  html.hallon .hr-empty { position: static; width: auto; }
+  .trail.l { left: calc(-50vw + 38px); } .trail.r { left: calc(50vw - 38px); }
+  .trail .chv { font-size: 34px; } .trail small { font-size: 8px; letter-spacing: .2em; }
+}
+
+</style>
 </head>
 <body>
   <div class="arcade-bg" aria-hidden="true"><canvas id="floorCv"></canvas></div>
@@ -1453,25 +1593,42 @@
 
   <main class="stage">
   <aside class="left" id="side">
-    <div class="lk">THIS WEEK</div>
-    <div class="lv" id="weekBig">WEEK</div>
-    <div class="lk2" id="resetIn"></div>
-    <div class="best">YOUR BEST<b id="yourBest">--.-- s</b></div>
+    <div class="hc hc-week">
+      <div class="lk">THIS WEEK</div>
+      <div class="lv" id="weekBig">WEEK</div>
+      <div class="lk2" id="resetIn"></div>
+    </div>
+    <div class="hc hc-best">
+      <div class="best">YOUR BEST<b id="yourBest">--.-- s</b></div>
+      <div class="rk-line"><span id="myRank"></span><span id="myNext"></span></div>
+      <div class="pb"><i id="myBar"></i></div>
+    </div>
     <div class="lk2 dim">NEW LEVEL<br>EVERY MONDAY<br>00:00 PRAGUE</div>
+    <div class="hc hc-menu" id="hMenu">
+      <div class="lbl">MENU</div>
+      <button type="button" class="mi" data-act="rules"><span class="ic">&#9730;</span><span class="tx"><b>HOW TO PLAY</b><small>DRAG · DODGE · SURVIVE</small></span><span class="ch">&#8250;</span></button>
+      <button type="button" class="mi" data-act="score"><span class="ic">&#9733;</span><span class="tx"><b>SCORES</b><small>HALL OF FAME · PAST WEEKS</small></span><span class="ch">&#8250;</span></button>
+      <button type="button" class="mi" data-act="stats"><span class="ic">&#9673;</span><span class="tx"><b>MY STATS</b><small>RUNS · BEST · PROGRESS</small></span><span class="ch">&#8250;</span></button>
+    </div>
+    <div class="hc hc-stats" id="hStats">
+      <button type="button" class="st-back" id="stBack"><span>&#8249;</span> MY STATS</button>
+      <div class="st-chips" id="stChips"></div>
+      <div class="lbl">BEST PER WEEK</div>
+      <div id="stSpark"></div>
+      <div class="lbl" style="margin-top:10px">LAST RUNS</div>
+      <div id="stRuns"></div>
+      <p class="st-note">Saved on this device only.</p>
+    </div>
   </aside>
 
   <section class="hall" id="hall" aria-label="Game hall">
     <canvas id="hallCv" aria-hidden="true"></canvas>
     <button class="hall-start" id="hallStart" type="button" aria-label="Start Drippy" hidden></button>
-    <div class="hall-cap">
-      <div class="row">
-        <button class="arr" id="hallPrev" type="button" aria-label="Previous game">&#8249;</button>
-        <div><b id="hallName">DRIPPY</b><small id="hallSub">Survive the rain</small></div>
-        <button class="arr" id="hallNext" type="button" aria-label="Next game">&#8250;</button>
-      </div>
-      <small class="idx" id="hallIdx" aria-hidden="true">03 / 05</small>
-      <div class="links"><button type="button" id="hallScore">SCORES</button><button type="button" id="hallRules">HOW TO PLAY</button></div>
+    <div class="hall-mid">
+      <button class="trail l" id="hallPrev" type="button" aria-label="Previous game" hidden><span class="chv"><i>&#8249;</i><i>&#8249;</i><i>&#8249;</i></span><small id="hallPrevN">GAME 02</small></button>
+      <button class="trail r" id="hallNext" type="button" aria-label="Next game"><span class="chv"><i>&#8250;</i><i>&#8250;</i><i>&#8250;</i></span><small id="hallNextN">GAME 03</small></button>
     </div>
+    <div class="hall-pips" id="hallPips" aria-hidden="true"><i></i><i></i><i class="on"></i><i></i><i></i></div>
   </section>
 
   <div class="machine" id="machine">
@@ -1560,6 +1717,18 @@
     </div>
     <p class="h-note" id="boardNote"></p>
   </aside>
+  <aside class="hr" id="hr" aria-label="Hall of fame">
+    <div class="hr-king" id="hrKing"></div>
+    <div class="hr-pod" id="hrPod"></div>
+    <p class="empty-note hr-empty" id="hrEmpty" hidden>No scores yet. Be the first!</p>
+    <div class="hr-rk" id="hrRk">
+      <div class="hr-rh"><span class="lbl">RANKS 4–8</span><button type="button" id="hrAll">SEE ALL &#8250;</button></div>
+      <div id="hrList"></div>
+    </div>
+  </aside>
+  <aside class="hsoon l" id="soonL" aria-hidden="true"><div class="hc"><div class="lk" id="soonName">GAME 02</div><div class="lv">COMING<br>SOON</div><div class="lk2">UNLOCKS SOON</div></div></aside>
+  <aside class="hsoon r" id="soonR" aria-hidden="true"><div class="hc"><div class="lbl">HALL OF FAME</div><div class="soon123">1 2 3</div><div class="lk2">NO SCORES YET</div></div></aside>
+
 
   <div class="rmodal" id="smodal" hidden>
     <div class="rm-card" role="dialog" aria-modal="true" aria-label="Hall of fame">
@@ -2766,6 +2935,7 @@
       bestMs = parseInt(localStorage.getItem(bestKey()) || '0', 10) || 0;
       $('bestEl').textContent = bestMs ? 'BEST ' + (bestMs / 1000).toFixed(2) : '';
       if ($('yourBest')) $('yourBest').textContent = bestMs ? (bestMs / 1000).toFixed(2) + ' s' : '--.-- s';
+      try { updateMe(); } catch (err) {}
     }
 
     function startCountdown() {
@@ -2824,6 +2994,7 @@
       } else {
         note = 'Your best: ' + (bestMs / 1000).toFixed(2) + ' s';
       }
+      if (!START_T) { try { logRun(ms); } catch (err) {} }
 
       setTimeout(() => {
         if (state !== 'over') return;
@@ -3434,6 +3605,7 @@
         try { myName = localStorage.getItem('fonger-name') || 'You'; } catch (err) {}
         you.appendChild(hRow('#' + data.me.rank, { name: myName, time_ms: data.me.time_ms, me: true }, maxMs));
       }
+      try { renderHall(data); } catch (err) { console.warn('hall ui', err); }
     }
 
     // Minulé týdny (top 3 z každého týdne), načítá se až při otevření záložky ALL TIME
@@ -3488,7 +3660,7 @@
     // Levý sloupec: číslo týdne a odpočet do dalšího levelu
     function updateSide() {
       const wk = currentWeek();
-      $('weekBig').textContent = 'WEEK ' + wk.split('-W')[1];
+      $('weekBig').innerHTML = 'WEEK<br>' + wk.split('-W')[1];
       try {
         const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Prague', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
         const get = t => (parts.find(p => p.type === t) || {}).value;
@@ -4266,6 +4438,185 @@
           apply();
         }
       };
+    })();
+
+    /* ================= HERNA UI v2 (panely, podium, menu, moje statistiky) ================= */
+    const rootEl = document.documentElement;
+    let lastData = null;
+
+    function fitHallUI() {
+      const w = innerWidth, h = innerHeight, kh = h / 900;
+      const k = Math.max(0.5, Math.min(1.35, Math.min(w / 1600, kh)));
+      rootEl.style.setProperty('--k', k.toFixed(3));
+      rootEl.style.setProperty('--kh', kh.toFixed(3));
+    }
+    fitHallUI();
+    addEventListener('resize', fitHallUI);
+
+    // Moje pokusy se ukládají jen v tomhle prohlížeči: [čas v ms, týden, kdy]
+    const RUNS_KEY = 'fonger-runs';
+    function readRuns() {
+      try { const a = JSON.parse(localStorage.getItem(RUNS_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (err) { return []; }
+    }
+    function logRun(ms) {
+      const a = readRuns();
+      a.push([ms, week, Date.now()]);
+      while (a.length > 300) a.shift();
+      try { localStorage.setItem(RUNS_KEY, JSON.stringify(a)); } catch (err) {}
+    }
+
+    function updateMe() {
+      const cur = (lastData && lastData.cur) || [];
+      let rank = 0;
+      if (lastData) {
+        if (lastData.me && lastData.me.rank) rank = lastData.me.rank;
+        else { const idx = cur.findIndex(isMine); if (idx >= 0) rank = idx + 1; }
+      }
+      $('myRank').textContent = rank ? 'RANK #' + rank : (bestMs ? 'NOT RANKED YET' : 'PLAY TO GET RANKED');
+      let nx = '';
+      if (rank === 1) nx = 'YOU ARE #1';
+      else if (rank > 1 && cur[rank - 2] && bestMs) nx = 'NEXT #' + (rank - 1) + ' · +' + ((cur[rank - 2].time_ms - bestMs) / 1000).toFixed(1) + ' s';
+      else if (cur[0]) nx = 'TOP · ' + fmtTime(cur[0].time_ms);
+      $('myNext').textContent = nx;
+      const top = cur[0] ? cur[0].time_ms : 0;
+      $('myBar').style.width = (top && bestMs) ? Math.min(100, Math.round(bestMs / top * 100)) + '%' : '0%';
+    }
+
+    function renderHall(data) {
+      lastData = data;
+      const cur = data.cur || [];
+
+      const king = $('hrKing');
+      king.textContent = '';
+      const bb = (data.best || [])[0];
+      king.hidden = !bb;
+      if (bb) {
+        const k = el('div', 'hk g-diamond');
+        k.appendChild(makeMini('diamond'));
+        const info = el('div');
+        info.appendChild(el('small', null, 'ALL-TIME BEST'));
+        info.appendChild(hName(bb, 'nm'));
+        k.appendChild(info);
+        k.appendChild(el('span', 't', fmtTime(bb.time_ms)));
+        king.appendChild(k);
+      }
+
+      const pod = $('hrPod');
+      pod.textContent = '';
+      [[1, 'c2'], [0, 'c1'], [2, 'c3']].forEach(function (d) {
+        const e = cur[d[0]];
+        if (!e) return;
+        const g = e.champ ? 'diamond' : PODIUM_GEARS[d[0]];
+        const col = el('div', 'fc ' + d[1] + ' ' + GCLS[g]);
+        const nm = el('div', 'pnm');
+        nm.appendChild(el('span', 'pn', e.name));
+        if (isMine(e)) nm.appendChild(el('span', 'you', 'YOU'));
+        col.appendChild(nm);
+        col.appendChild(el('div', 'ptm', fmtTime(e.time_ms)));
+        col.appendChild(makeMini(g));
+        col.appendChild(el('div', 'fstep', String(d[0] + 1)));
+        pod.appendChild(col);
+      });
+      $('hrEmpty').hidden = cur.length > 0;
+
+      const list = $('hrList');
+      list.textContent = '';
+      for (let i = 3; i < Math.min(cur.length, 8); i++) {
+        const e = cur[i];
+        const r = el('div', 'mr' + (isMine(e) ? ' me' : '') + (e.champ ? ' ch' : ''));
+        r.appendChild(el('span', 'rk', String(i + 1)));
+        const nm = el('span', 'nm');
+        nm.appendChild(el('span', 'pn', e.name));
+        if (e.champ) nm.appendChild(el('span', 'badge', '♛ ALL-TIME #1'));
+        if (isMine(e)) nm.appendChild(el('span', 'you', 'YOU'));
+        r.appendChild(nm);
+        r.appendChild(el('span', 'sc', fmtTime(e.time_ms)));
+        list.appendChild(r);
+      }
+      $('hrRk').hidden = cur.length <= 3;
+      updateMe();
+    }
+
+    function sparkSvg(vals, labels) {
+      const w = 240, h = 54;
+      const mx = Math.max.apply(null, vals) * 1.1 || 1;
+      const pts = vals.map(function (v, i) { return [6 + i * (w - 12) / Math.max(1, vals.length - 1), h - 4 - (v / mx) * (h - 10)]; });
+      const line = pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+      let svg = '<svg width="' + w + '" height="' + (h + 14) + '" viewBox="0 0 ' + w + ' ' + (h + 14) + '"><defs><linearGradient id="stg" x1="0" x2="1"><stop offset="0" stop-color="#a855ff"/><stop offset="1" stop-color="#ff4fa6"/></linearGradient></defs>';
+      svg += '<polyline points="' + line + '" fill="none" stroke="url(#stg)" stroke-width="2.5" stroke-linejoin="round" style="filter:drop-shadow(0 0 5px #ff4fa6)"/>';
+      pts.forEach(function (p, i) {
+        const last = i === pts.length - 1;
+        svg += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (last ? 4 : 2.5) + '" fill="' + (last ? '#fff' : '#ffb0c0') + '"/>';
+        svg += '<text x="' + p[0].toFixed(1) + '" y="' + (h + 12) + '" fill="#ff8ec6" font-size="8" text-anchor="middle" font-family="monospace">' + labels[i] + '</text>';
+      });
+      return svg + '</svg>';
+    }
+
+    function renderStats() {
+      const runs = readRuns();
+      const best = runs.length ? Math.max.apply(null, runs.map(function (r) { return r[0]; })) : bestMs;
+      const avg = runs.length ? runs.reduce(function (a, r) { return a + r[0]; }, 0) / runs.length : 0;
+      const chips = $('stChips');
+      chips.textContent = '';
+      [['BEST', best ? (best / 1000).toFixed(2) : '--'], ['RUNS', String(runs.length)], ['AVG', avg ? (avg / 1000).toFixed(1) : '--']].forEach(function (c) {
+        const d = el('div', 'st-chip');
+        d.appendChild(el('small', null, c[0]));
+        d.appendChild(el('b', null, c[1]));
+        chips.appendChild(d);
+      });
+      const spark = $('stSpark');
+      spark.textContent = '';
+      const byW = {};
+      runs.forEach(function (r) { byW[r[1]] = Math.max(byW[r[1]] || 0, r[0]); });
+      const keys = Object.keys(byW).sort().slice(-6);
+      if (keys.length >= 2) spark.innerHTML = sparkSvg(keys.map(function (k) { return byW[k] / 1000; }), keys.map(function (k) { return 'W' + k.split('-W')[1]; }));
+      else spark.appendChild(el('p', 'st-empty', 'Play a few weeks to see your progress.'));
+      const box = $('stRuns');
+      box.textContent = '';
+      if (!runs.length) box.appendChild(el('p', 'st-empty', 'No runs yet. Hit START!'));
+      const today = new Date().toDateString(), yest = new Date(Date.now() - 864e5).toDateString();
+      let pbDone = false;
+      runs.slice().sort(function (a, b) { return b[2] - a[2]; }).slice(0, 4).forEach(function (r) {
+        const ds = new Date(r[2]).toDateString();
+        const row = el('div', 'st-run');
+        row.appendChild(el('em', null, ds === today ? 'TODAY' : ds === yest ? 'YESTERDAY' : 'W' + String(r[1]).split('-W')[1]));
+        if (!pbDone && r[0] === best) { row.appendChild(el('i', null, 'PERSONAL BEST')); pbDone = true; }
+        row.appendChild(el('b', null, (r[0] / 1000).toFixed(2) + ' s'));
+        box.appendChild(row);
+      });
+    }
+
+    $('hMenu').addEventListener('click', function (e) {
+      const b = e.target.closest('.mi');
+      if (!b) return;
+      const a = b.dataset.act;
+      if (a === 'stats') { document.body.classList.add('hstats'); renderStats(); return; }
+      const m = document.querySelector('#switch [data-mode="' + a + '"]');
+      if (m) m.click();
+    });
+    $('stBack').addEventListener('click', function () { document.body.classList.remove('hstats'); });
+    $('hrAll').addEventListener('click', function () {
+      const m = document.querySelector('#switch [data-mode="score"]');
+      if (m) m.click();
+    });
+    addEventListener('hallchange', function (e) {
+      const d = e.detail || {};
+      if ($('soonName')) $('soonName').textContent = d.name || '';
+    });
+
+    // Panáčci v herně se překreslují sami (hlavní smyčka hry se v herně přeskakuje)
+    let hallMiniT = 0;
+    (function hallMiniLoop() {
+      requestAnimationFrame(function tick(now) {
+        requestAnimationFrame(tick);
+        if (!rootEl.classList.contains('hallon') || document.hidden) return;
+        if (state !== 'menu' || document.body.classList.contains('fs') || document.body.classList.contains('big')) return;
+        if (now - hallMiniT < 66) return;
+        hallMiniT = now;
+        if (document.body.dataset.hall === 'off' && !document.querySelector('.rmodal:not([hidden])')) return;
+        frameCount++; frameDt = 0.066;
+        minis.forEach(function (m) { if (m.ctx.canvas.getClientRects().length) drawMini(m); });
+      });
     })();
 
     /* ================= START ================= */
