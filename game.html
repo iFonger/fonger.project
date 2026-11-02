@@ -1129,8 +1129,9 @@
 
     .machine.grabbing { cursor: grabbing; }
     .cab { transform-style: preserve-3d; transform: rotateY(-30deg) rotateX(3deg); transform-origin: 50% 60%; }
-    .cab { opacity: 0; }
-    body.cabvis .cab { opacity: 1; transition: opacity .6s ease-out; }
+    /* Zprůhledňuje se obal, ne 3D skříň: průhlednost na skříni by ji při náběhu zploštila */
+    .machine { opacity: 0; }
+    body.cabvis .machine { opacity: 1; transition: opacity .5s ease-out; }
     
     .cab > * { position: absolute; }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -3496,12 +3497,18 @@
       };
       let done = false;
       const go = () => { if (!done) { done = true; reveal(); } };
+      // ukázat až když je stránka i písmo načtené, ať se nic nedoskládává před očima
+      const ready = () => {
+        const f = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+        return f.then(() => new Promise(r => document.readyState === 'complete' ? r() : window.addEventListener('load', r, { once: true })));
+      };
       window.addEventListener('pagereveal', e => {
-        if (e.viewTransition) e.viewTransition.finished.then(() => setTimeout(go, 250), go);
-        else go();
+        const after = () => ready().then(go, go);
+        if (e.viewTransition) e.viewTransition.finished.then(() => setTimeout(after, 150), after);
+        else after();
       });
-      setTimeout(go, 1800);
-      if (!document.querySelector('html[data-vt]') && !('onpagereveal' in window)) setTimeout(go, 50);
+      setTimeout(go, 3000);
+      if (!('onpagereveal' in window)) ready().then(go, go);
     })();
 
     /* ================= PRAVIDLA (RULES) V ANGLIČTINĚ A ČEŠTINĚ ================= */
