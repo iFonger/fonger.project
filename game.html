@@ -4,25 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Drippy | Fonger</title>
-  <meta name="description" content="Drippy: a neon arcade game with a weekly leaderboard. Beat the top score.">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="alternate icon" href="favicon-32.png" type="image/png" sizes="32x32">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Fonger">
-  <meta property="og:title" content="Drippy | Fonger">
-  <meta property="og:description" content="Drippy: a neon arcade game with a weekly leaderboard. Beat the top score.">
-  <meta property="og:url" content="https://fongerproject.vercel.app/game.html">
-  <meta property="og:image" content="https://fongerproject.vercel.app/og-image.jpg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://fongerproject.vercel.app/og-image.jpg">
   <link rel="stylesheet" href="style.css">
   <link rel="expect" href="#mark" blocking="render">
   <script src="transition.js"></script>
   <script src="stats.js"></script>
-  <script src="legal.js" defer></script>
   <style>
     /* Úhel pro točící se rámečky v tabuli */
     @property --ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
@@ -3182,8 +3167,13 @@
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'rejected');
-      return { rank: data.rank, champ: !!data.champ };
+      if (!data.ok) {
+        const er = new Error(data.error || 'rejected');
+        er.code = data.error;
+        er.name2 = data.name;
+        throw er;
+      }
+      return { rank: data.rank, champ: !!data.champ, name: data.name };
     }
 
     function el(tag, cls, text) {
@@ -3315,13 +3305,11 @@
         } else if (!REMOTE) {
           results = keys.map(k => ({ k: k, top: localAll().filter(r => r.week === k).sort((a, b) => b.time_ms - a.time_ms).slice(0, 3) }));
         } else {
-          results = await Promise.all(keys.map(async k => {
-            try {
-              const res = await fetch(API_URL + '?week=' + encodeURIComponent(k) + '&prev=' + encodeURIComponent(k) + '&pid=' + encodeURIComponent(PLAYER_ID));
-              const d = await res.json();
-              return { k: k, top: (d.cur || []).slice(0, 3) };
-            } catch (err) { return { k: k, top: [] }; }
-          }));
+          // Jeden dotaz na všech 8 týdnů (server čte jen listy minulých týdnů a drží je v paměti)
+          const res = await fetch(API_URL + '?history=8&pid=' + encodeURIComponent(PLAYER_ID));
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const d = await res.json();
+          results = d.weeks || [];
         }
       } catch (err) { results = []; }
       box.textContent = '';
@@ -3401,13 +3389,23 @@
       try {
         const saved = await saveScore(res.name, sim.finalMs, week);
         const rank = saved.rank;
-        localStorage.setItem('fonger-name', res.name);
-        lastSubmitted = { name: res.name, ms: sim.finalMs };
+        const finalName = saved.name || res.name;
+        localStorage.setItem('fonger-name', finalName);
+        lastSubmitted = { name: finalName, ms: sim.finalMs };
         $('submitMsg').textContent = rank ? 'Saved! You are #' + rank + ' this week.' : 'Saved!';
         $('nameForm').style.display = 'none';
         refreshBoards();
       } catch (err) {
-        $('submitMsg').textContent = 'Could not save. Try again.';
+        if (err.code === 'taken') {
+          $('submitMsg').textContent = 'That name is already taken. Pick another one.';
+        } else if (err.code === 'locked' && err.name2) {
+          // tenhle hráč už jméno má, předvyplníme mu ho
+          try { localStorage.setItem('fonger-name', err.name2); } catch (x) {}
+          $('nameInput').value = err.name2;
+          $('submitMsg').textContent = 'Your name is ' + err.name2 + '. Hit save again.';
+        } else {
+          $('submitMsg').textContent = 'Could not save. Try again.';
+        }
         $('btnSubmit').disabled = false;
         $('nameInput').disabled = false;
       }
@@ -3908,5 +3906,6 @@
     requestAnimationFrame(frame);
   })();
   </script>
+<script src="legal.js" defer></script>
 </body>
 </html>
