@@ -2985,6 +2985,10 @@
     let last = performance.now();
 
     function frame(now) {
+      // v herně se hra v menu nekreslí (je schovaná), šetří to výkon
+      if (state === 'menu' && document.documentElement.classList.contains('hallon') && !document.body.classList.contains('big') && !document.body.classList.contains('fs')) {
+        last = now; requestAnimationFrame(frame); return;
+      }
       const dtMs = Math.min(100, now - last);
       last = now;
       frameDt = dtMs / 1000;
@@ -3585,6 +3589,7 @@
       apply();
 
       function loop(now) {
+        if (document.documentElement.classList.contains('hallon')) { requestAnimationFrame(loop); return; }
         if (document.body.classList.contains('straight') || document.body.classList.contains('fs')) {
           if (y || x || hy || hx || vy || vx) { y = x = hy = hx = vy = vx = 0; drag = null; apply(); }
         } else if (!document.hidden) {
@@ -3857,7 +3862,7 @@
       let last = 0;
       function loop(now) {
         requestAnimationFrame(loop);
-        if (document.hidden) return;
+        if (document.hidden || document.documentElement.classList.contains('hallon')) return;
         const b = document.body.classList;
         if (b.contains('big') || b.contains('fs')) return;      // hra běží přes celou obrazovku, podlaha stojí
         if (now - last < 15) return;
