@@ -1387,7 +1387,7 @@
     @media (max-width: 1100px), (pointer: coarse) {
       html.hallon body { place-items: start center; padding: 0; }
       html.hallon .stage { display: flex; flex-direction: column; align-items: stretch; gap: 18px; width: 100%; }
-      html.hallon .hall { position: relative; inset: auto; order: 0; width: 100%; height: min(86svh, 780px); }
+      html.hallon .hall { position: relative; inset: auto; order: 0; width: 100%; height: min(78svh, 700px); }
       html.hallon .left { position: static; transform: none; width: auto; order: 2; padding: 0 20px; }
       html.hallon .hof { position: static; transform: none; width: auto; max-height: none; order: 3; margin: 0 14px 24px; }
       html.hallon .lv { font-size: 40px; }
@@ -1518,6 +1518,9 @@ html.hallon .hall-pips { position: absolute; left: 50%; bottom: 46px; transform:
 .hall-pips i.on { width: 38px; background: #ff8ec6; box-shadow: 0 0 10px #ff4fa6; }
 
 @media (max-width: 1100px), (pointer: coarse) {
+html.hallon .lg { position: relative !important; left: auto !important; bottom: auto !important; transform: none !important; width: auto !important; max-width: none !important; margin: 0 auto 26px; display: block; z-index: 1; }
+html.hallon .home { position: absolute !important; }
+@media (orientation: landscape) and (max-height: 520px) { html.hallon .hall { height: max(100svh, 300px); } }
   html.hallon .left, html.hallon .hr, html.hallon .hsoon { position: static; height: auto; width: auto; transform: none !important; opacity: 1; visibility: visible; padding: 0 14px; --sx: 0px; transition: none; }
   html.hallon .left { order: 2; } html.hallon .hr { order: 3; padding-bottom: 28px; } html.hallon .hsoon { display: none; order: 2; }
   body[data-hall="off"] .hsoon { display: block; } body[data-hall="off"] .left, body[data-hall="off"] .hr { display: none; }
