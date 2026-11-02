@@ -1409,7 +1409,10 @@ html.hallon .hr, html.hallon .hsoon.r { right: 0; width: 640px; transform: trans
 html.hallon .hsoon { opacity: 0; visibility: hidden; }
 html.hallon .hsoon.l { --sx: 70px; } html.hallon .hsoon.r { --sx: -70px; }
 body[data-hall="off"] .hsoon { opacity: 1; visibility: visible; --sx: 0px; }
-body[data-hall="off"] .left { opacity: 0; visibility: hidden; --sx: -70px; }
+body[data-hall="off"] .hc-best, body[data-hall="off"] .hc-menu, body[data-hall="off"] .hc-stats { opacity: 0; visibility: hidden; pointer-events: none; }
+html.hallon .hc { transition: opacity .35s, visibility .35s; }
+html.hallon #weekBig { font-size: 40px; white-space: nowrap; }
+.wn { color: var(--wk, #ff4fa6); -webkit-text-stroke: 1.4px var(--wk, #ff4fa6); text-shadow: 0 0 22px var(--wk, #ff4fa6); transition: color .45s, text-shadow .45s, -webkit-text-stroke-color .45s; }
 body[data-hall="off"] .hr { opacity: 0; visibility: hidden; --sx: 70px; }
 
 html.hallon .left, html.hallon .hr, html.hallon .hsoon { text-align: left; }
@@ -1523,7 +1526,7 @@ html.hallon .home { position: absolute !important; }
 @media (orientation: landscape) and (max-height: 520px) { html.hallon .hall { height: max(100svh, 300px); } }
   html.hallon .left, html.hallon .hr, html.hallon .hsoon { position: static; height: auto; width: auto; transform: none !important; opacity: 1; visibility: visible; padding: 0 14px; --sx: 0px; transition: none; }
   html.hallon .left { order: 2; } html.hallon .hr { order: 3; padding-bottom: 28px; } html.hallon .hsoon { display: none; order: 2; }
-  body[data-hall="off"] .hsoon { display: block; } body[data-hall="off"] .left, body[data-hall="off"] .hr { display: none; }
+  body[data-hall="off"] .hsoon { display: block; } body[data-hall="off"] .hr, body[data-hall="off"] .hc-best, body[data-hall="off"] .hc-menu, body[data-hall="off"] .hc-stats, body[data-hall="off"] .left .lk2.dim { display: none; }
   html.hallon .hc, html.hallon .hsoon .hc { position: static; width: auto; margin: 0 0 12px; left: auto; right: auto; top: auto; }
   html.hallon .hsoon.r .hc { text-align: center; }
   html.hallon .lv { font-size: 40px; }
@@ -3665,7 +3668,7 @@ html.hallon .home { position: absolute !important; }
     // Levý sloupec: číslo týdne a odpočet do dalšího levelu
     function updateSide() {
       const wk = currentWeek();
-      $('weekBig').innerHTML = 'WEEK<br>' + wk.split('-W')[1];
+      $('weekBig').innerHTML = 'WEEK <span class="wn">' + wk.split('-W')[1] + '</span>';
       try {
         const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Prague', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
         const get = t => (parts.find(p => p.type === t) || {}).value;
@@ -4607,6 +4610,7 @@ html.hallon .home { position: absolute !important; }
     addEventListener('hallchange', function (e) {
       const d = e.detail || {};
       if ($('soonName')) $('soonName').textContent = d.name || '';
+      try { document.documentElement.style.setProperty('--wk', ['#38e8ff', '#ff9fd0', '#ff4fa6', '#ff6a3d', '#2bc4a0'][d.index] || '#ff4fa6'); } catch (err) {}
     });
 
     // Panáčci v herně se překreslují sami (hlavní smyčka hry se v herně přeskakuje)
