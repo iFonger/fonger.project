@@ -1026,18 +1026,13 @@
       right: -60%;
       bottom: 0;
       height: 52%;
-      background:
-        repeating-linear-gradient(90deg, rgba(150, 172, 220, 0.42) 0 1px, transparent 1px 70px),
-        repeating-linear-gradient(0deg, rgba(255, 110, 180, 0.38) 0 1px, transparent 1px 52px),
-        linear-gradient(to bottom, transparent, rgba(150, 30, 90, 0.22));
+      background: linear-gradient(to bottom, transparent, rgba(150, 30, 90, 0.22));
       transform: perspective(360px) rotateX(64deg);
       transform-origin: 50% 100%;
       -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 90%);
       mask-image: linear-gradient(to top, #000 10%, transparent 90%);
-      animation: floatFloor 2.6s linear infinite;
     }
-
-    @keyframes floatFloor { to { background-position: 0 0, 0 52px, 0 0; } }
+    .arcade-bg canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
     /* Hvězdy, záře na obzoru a ztmavení okrajů */
     .arcade-bg::after {
@@ -1167,10 +1162,6 @@
       0%, 35% { transform: none; } 38% { transform: translateY(6px); } 42% { transform: translateY(-5px); }
       47% { transform: translateY(3px); } 54% { transform: translateY(-2px); } 62%, 100% { transform: none; }
     }
-    .impact { position: absolute; left: 50%; bottom: 3%; width: calc(var(--cw) * .9); height: calc(var(--cw) * .2); margin-left: calc(var(--cw) * -.45);
-      border: 2px solid #ff8ec6; border-radius: 50%; opacity: 0; pointer-events: none; z-index: 2; }
-    body.cabvis .impact { animation: ring 1.1s .6s both; }
-    @keyframes ring { 0% { opacity: .9; transform: scale(.4); } 100% { opacity: 0; transform: scale(2.6); } }
 
     /* Rozsvícení po dopadu: skříň, ovládání, obrazovka, nakonec nápis zabliká */
     body.cabvis .cab > * { animation: litUp .5s .9s backwards; }
@@ -1183,7 +1174,7 @@
       40% { filter: brightness(1.4); } 52% { filter: brightness(.4); } 70%, 100% { filter: brightness(1); }
     }
     @media (prefers-reduced-motion: reduce) {
-      body.cabvis .machine, body.cabvis .stage, body.cabvis .impact, body.cabvis .cab > * { animation: none !important; }
+      body.cabvis .machine, body.cabvis .stage, body.cabvis .cab > * { animation: none !important; }
     }
     
     .cab > * { position: absolute; }
@@ -1358,7 +1349,7 @@
   <style>html.solo .home, html.solo a[href]:not([href^="#"]) { display: none !important; }</style>
 </head>
 <body>
-  <div class="arcade-bg" aria-hidden="true"></div>
+  <div class="arcade-bg" aria-hidden="true"><canvas id="floorCv"></canvas></div>
 
   <!-- Značka vlevo nahoře: zpočátku domeček, po příchodu z hlavní stránky kliknuté písmeno -->
   <a class="home" id="mark" href="index.html" aria-label="Zpět na hlavní stránku">
@@ -1496,7 +1487,6 @@
       </div>
       <div class="lever" id="lever" aria-hidden="true" style="display:none"><div class="lever-base"></div><div class="lever-rod" id="leverRod"></div><div class="lever-knob" id="leverKnob"></div></div>
     </div>
-    <div class="impact" aria-hidden="true"></div>
   </div>
 
   <aside class="hof" id="hof" aria-label="Hall of fame">
@@ -3606,6 +3596,215 @@
       });
       setTimeout(go, 3000);
       if (!('onpagereveal' in window)) ready().then(go, go);
+    })();
+
+
+    /* ================= PODLAHA: mřížka, vlna po dopadu a praskliny ================= */
+    (function () {
+      const cv = document.getElementById('floorCv');
+      if (!cv) return;
+      const ctx = cv.getContext('2d');
+      const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const ROT = 60 * Math.PI / 180, COS = Math.cos(ROT), SIN = Math.sin(ROT);
+      let PERSP = 700, SX = 70, SY = 52;
+      const IMPACT_MS = 612;                       // 36 % z 1,7 s: tehdy automat dosedne
+      let vw = 0, vh = 0, dpr = 1, Hb = 0, Wb = 0, rest = null;
+      let wave = null, fired = false, cracks = [];
+
+      function size() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        vw = window.innerWidth; vh = window.innerHeight;
+        cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+        // velká podlaha: dosahuje zhruba do čtvrtiny výšky okna
+        PERSP = vh * 0.8; Hb = vh * 1.5; Wb = vw * 2.2;
+        const k = Math.min(1.25, Math.max(0.75, vh / 900));
+        SX = 70 * k; SY = 52 * k;
+        rest = null;
+      }
+      size();
+      window.addEventListener('resize', () => { size(); if (RM) draw(0); });
+
+      // Místo, kde automat stojí (bez ohledu na to, kde je zrovna v animaci)
+      function restPos() {
+        if (rest) return rest;
+        const m = document.getElementById('machine');
+        let x = 0, y = 0, el = m;
+        while (el) { x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; }
+        const w = m.offsetWidth, h = m.offsetHeight;
+        rest = { x: x + w / 2 - window.scrollX, y: Math.max(vh * 0.5, y + h * 0.97 - window.scrollY), w: w };
+        return rest;
+      }
+
+      function proj(dx, h) {
+        const s = PERSP / (PERSP + h * SIN);
+        return [vw / 2 + dx * s, vh - h * COS * s];
+      }
+      const maskA = h => h <= Hb * 0.1 ? 1 : Math.max(0, 1 - (h - Hb * 0.1) / (Hb * 0.8));
+
+      function rng(seed) { return () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }
+
+      function fire() {
+        fired = true;
+        const r = restPos(), R = rng(11);
+        wave = { t0: performance.now() };
+        cracks = [];
+        for (let i = 0; i < 10; i++) {
+          const a = (i / 10) * Math.PI * 2 + (R() - 0.5) * 0.4;
+          const len = r.w * (0.28 + R() * 0.42);
+          const pts = [[Math.cos(a) * r.w * 0.2, Math.sin(a) * r.w * 0.2 * 0.38]];
+          let x = pts[0][0], y = pts[0][1], aa = a;
+          for (let j = 0; j < 6; j++) {
+            aa += (R() - 0.5) * 1.1;
+            const st = len / 6 * (0.6 + R() * 0.8);
+            x += Math.cos(aa) * st; y += Math.sin(aa) * st * 0.38;
+            pts.push([x, y]);
+          }
+          cracks.push(pts);
+          if (R() < 0.7) {
+            const m = pts[3], b = [m]; let bx = m[0], by = m[1];
+            const ba = a + (R() < 0.5 ? -0.8 : 0.8);
+            for (let j = 0; j < 3; j++) { bx += Math.cos(ba) * r.w * 0.05; by += Math.sin(ba) * r.w * 0.05 * 0.38; b.push([bx, by]); }
+            cracks.push(b);
+          }
+        }
+      }
+
+      function drawFlat(phase) {
+        // klidový stav: každá čára jedním tahem
+        const vcol = 'rgba(150,172,220,', hcol = 'rgba(255,110,180,';
+        ctx.lineWidth = 1;
+        const k0 = 0, k1 = 0;
+        const p0y = proj(0, 0)[1], pa = proj(0, Hb * 0.1)[1], pb = proj(0, Hb * 0.9)[1], p1y = proj(0, Hb)[1];
+        for (let k = -Math.ceil(Wb / (2 * SX)); k <= Math.ceil(Wb / (2 * SX)); k++) {
+          const dx = k * SX;
+          const a = proj(dx, 0), b = proj(dx, Hb);
+          if ((a[0] < -50 && b[0] < -50) || (a[0] > vw + 50 && b[0] > vw + 50)) continue;
+          const g = ctx.createLinearGradient(a[0], a[1], b[0], b[1]);
+          const f = (y) => (p0y - y) / (p0y - p1y);
+          g.addColorStop(0, vcol + '0.42)'); g.addColorStop(f(pa), vcol + '0.42)'); g.addColorStop(Math.min(1, f(pb)), vcol + '0)'); g.addColorStop(1, vcol + '0)');
+          ctx.strokeStyle = g; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+        }
+        for (let j = 0; j * SY - phase < Hb + SY; j++) {
+          const h = j * SY - phase; if (h < 0 || h > Hb) continue;
+          const al = maskA(h) * 0.38; if (al < 0.01) continue;
+          const y = proj(0, h)[1];
+          if (proj(0, h + SY)[1] > y - 1.2) break;
+          ctx.strokeStyle = hcol + al.toFixed(3) + ')';
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(vw, y); ctx.stroke();
+        }
+      }
+
+      function drawWave(phase, age, r) {
+        // po dopadu: každá čára po kouscích, aby se mohla prohnout a rozsvítit
+        const front = age * 640, decay = Math.exp(-age * 1.4);
+        function pt(dx, h) {
+          const p = proj(dx, h);
+          const d = Math.hypot(p[0] - r.x, (p[1] - r.y) * 2.2);
+          const w = Math.exp(-Math.pow((d - front) / 42, 2)) * decay;
+          return { x: p[0], y: p[1] - 15 * w * Math.sin((d - front) * 0.11), w: w };
+        }
+        function line(pts, base, al) {
+          for (let i = 0; i < pts.length - 1; i++) {
+            const a = pts[i], b = pts[i + 1], w = (a.w + b.w) / 2, aa = (al[i] + al[i + 1]) / 2;
+            if (aa < 0.004 && w < 0.03) continue;
+            const hot = w > 0.04;
+            ctx.strokeStyle = hot ? 'rgba(255,' + Math.round(130 + 90 * Math.min(1, w * 1.4)) + ',210,' + Math.min(1, aa + w * 1.1).toFixed(3) + ')' : base + aa.toFixed(3) + ')';
+            ctx.lineWidth = 1 + 1.8 * w;
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          }
+        }
+        const NV = 16, NH = 40;
+        for (let k = -Math.ceil(Wb / (2 * SX)); k <= Math.ceil(Wb / (2 * SX)); k++) {
+          const dx = k * SX, pts = [], al = [];
+          for (let i = 0; i <= NV; i++) { const h = Hb * i / NV; pts.push(pt(dx, h)); al.push(0.42 * maskA(h)); }
+          if (pts[0].x < -80 && pts[NV].x < -80) continue;
+          if (pts[0].x > vw + 80 && pts[NV].x > vw + 80) continue;
+          line(pts, 'rgba(150,172,220,', al);
+        }
+        for (let j = 0; j * SY - phase < Hb + SY; j++) {
+          const h = j * SY - phase; if (h < 0 || h > Hb) continue;
+          if (proj(0, h + SY)[1] > proj(0, h)[1] - 1.2) break;
+          const pts = [], al = [], a0 = 0.38 * maskA(h);
+          for (let i = 0; i <= NH; i++) {
+            const dx = (i / NH - 0.5) * (Wb * 0.62);
+            const p = pt(dx, h); pts.push(p); al.push(a0);
+          }
+          line(pts, 'rgba(255,110,180,', al);
+        }
+      }
+
+      function drawCracks(age, r) {
+        const p = Math.min(1, age / 0.4);
+        const fade = age < 1.5 ? 1 : Math.max(0, 1 - (age - 1.5) / 1.6);
+        if (fade <= 0) return;
+        const g = ctx.createRadialGradient(r.x, r.y, 2, r.x, r.y, r.w * 0.8);
+        g.addColorStop(0, 'rgba(255,79,166,' + (0.35 * fade * p).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,79,166,0)');
+        ctx.save();
+        ctx.translate(r.x, r.y); ctx.scale(1, 0.38); ctx.translate(-r.x, -r.y);
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(r.x, r.y, r.w * 0.8, 0, 7); ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.shadowColor = '#ff4fa6'; ctx.shadowBlur = 10;
+        ctx.strokeStyle = 'rgba(255,175,218,' + fade.toFixed(3) + ')'; ctx.lineWidth = 1.8;
+        cracks.forEach(pts => {
+          const n = (pts.length - 1) * p;
+          ctx.beginPath(); ctx.moveTo(r.x + pts[0][0], r.y + pts[0][1]);
+          for (let i = 1; i < pts.length; i++) {
+            if (i <= n) ctx.lineTo(r.x + pts[i][0], r.y + pts[i][1]);
+            else if (i - 1 < n) { const f = n - (i - 1); ctx.lineTo(r.x + pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, r.y + pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f); }
+          }
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
+
+      function drawShadow(k, r) {
+        if (k <= 0) return;
+        const s = Math.min(1, k * k);
+        ctx.save();
+        ctx.translate(r.x, r.y); ctx.scale(1, 0.2);
+        const g = ctx.createRadialGradient(0, 0, 2, 0, 0, r.w * 0.62);
+        g.addColorStop(0, 'rgba(0,0,0,' + (0.7 * s).toFixed(3) + ')'); g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r.w * (0.35 + 0.35 * s), 0, 7); ctx.fill();
+        ctx.restore();
+      }
+
+      let machineAnim = null;
+      function draw(now) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, vw, vh);
+        const phase = RM ? 0 : ((now / 2600) % 1) * SY;
+        const r = restPos();
+        const dbg = window.__fxAge;
+        let age = -1;
+        if (!RM && document.body.classList.contains('cabvis')) {
+          if (!machineAnim) machineAnim = document.getElementById('machine').getAnimations().find(a => a.animationName === 'dropIn') || null;
+          const ct = machineAnim ? machineAnim.currentTime : null;
+          if (ct != null && ct < IMPACT_MS + 400) drawShadowK = ct < IMPACT_MS ? ct / IMPACT_MS : Math.max(0, 1 - (ct - IMPACT_MS) / 400);
+          else drawShadowK = 0;
+          if (!fired && ct != null && ct >= IMPACT_MS && ct < 1500) fire();
+        }
+        if (dbg != null) { if (!fired) fire(); wave = { t0: now - dbg * 1000 }; }
+        if (wave) { age = (now - wave.t0) / 1000; if (age > 3.2 && dbg == null) { wave = null; age = -1; } }
+        if (age >= 0 && age < 2.6) drawWave(phase, age, r); else drawFlat(phase);
+        drawShadow(drawShadowK, r);
+        if (age >= 0 && age < 3.2) drawCracks(age, r);
+      }
+      let drawShadowK = 0;
+
+      if (RM) { draw(0); return; }
+      let last = 0;
+      function loop(now) {
+        requestAnimationFrame(loop);
+        if (document.hidden) return;
+        const b = document.body.classList;
+        if (b.contains('big') || b.contains('fs')) return;      // hra běží přes celou obrazovku, podlaha stojí
+        if (now - last < 15) return;
+        last = now;
+        draw(now);
+      }
+      requestAnimationFrame(loop);
     })();
 
     /* ================= PRAVIDLA (RULES) V ANGLIČTINĚ A ČEŠTINĚ ================= */
