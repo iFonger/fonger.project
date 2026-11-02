@@ -355,7 +355,6 @@
       box-shadow: 0 0 14px rgba(60, 255, 130, 0.35);
     }
     .pop-label { color: #2fd070; }
-    .pop-label::after { content: " \00B7  signal locked"; color: #5dff9a; }
     .pop-value { color: #d8ffe6; font-size: clamp(0.9rem, 1.5vw, 1.1rem); }
     .copy { border-radius: 3px; border-color: #5dff9a; color: #5dff9a; text-transform: uppercase; letter-spacing: 0.16em; font-size: 0.7rem; }
     .copy:hover, .copy:focus-visible { background: rgba(93, 255, 154, 0.16); }
@@ -1160,7 +1159,7 @@
     /* odečet u středu: průhlednost podle toho, jak blízko středu ikona je */
     var k = Math.round(angle / step), off = angle - k * step, idx = ((-k % n) + n) % n;
     var vis = window.__am ? clamp01(1.15 - Math.abs(off) / 0.3) : 0;
-    if (k !== lastK && vis < 0.05) { txtL = items[idx].dataset.label + ' \u00b7 signal locked'; txtV = items[idx].dataset.show || items[idx].dataset.value; lastK = k; }
+    if (k !== lastK && vis < 0.05) { txtL = items[idx].dataset.label; txtV = items[idx].dataset.show || items[idx].dataset.value; lastK = k; }
     var rising = vis >= prevVis; prevVis = vis;
     if (now - lastDec > 45) { lastDec = now; roL.textContent = decode(txtL, vis, rising); roV.textContent = decode(txtV, vis, rising); }
     ro.style.opacity = Math.min(1, vis * 3).toFixed(2);
