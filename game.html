@@ -1348,6 +1348,7 @@
     <script>
     if (/[?&]solo=1/.test(location.search)) document.documentElement.classList.add('solo');
   </script>
+  <link rel="modulepreload" href="hall.js">
   <script>
     try { var __c = document.createElement('canvas'); if ((__c.getContext('webgl2') || __c.getContext('webgl')) && !/[?&]nohall=1/.test(location.search)) document.documentElement.classList.add('hallon'); } catch (e) {}
     setTimeout(function () { if (!window.__hall) document.documentElement.classList.remove('hallon'); }, 9000);
@@ -1390,6 +1391,7 @@
       html.hallon .left { position: static; transform: none; width: auto; order: 2; padding: 0 20px; }
       html.hallon .hof { position: static; transform: none; width: auto; max-height: none; order: 3; margin: 0 14px 24px; }
       html.hallon .lv { font-size: 40px; }
+      html.hallon .left { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(12,4,20,.9); }
     }
   </style>
 </head>
