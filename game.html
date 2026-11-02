@@ -934,6 +934,8 @@
     body.fs .fs-exit { display: block; }
     body.fs .fs-only { display: inline-block; }
     body.fs .nofs { display: none; }
+    body.big .fs-only { display: inline-block; }
+    body.big .nofs { display: none; }
 
     /* Automat se schová a obrazovka hry se roztáhne na celý telefon */
     body.fs .home, body.fs .cab-lines, body.fs .marquee,
@@ -1181,21 +1183,21 @@
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
     .gshadow { left: calc(var(--k) * -80); right: calc(var(--k) * -160); top: calc(var(--k) * 545); height: calc(var(--k) * 80); border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.65), transparent 70%); transform: translateZ(-30px); }
-    .cfront { inset: 0; border: 3px solid #ff4fa6; background: linear-gradient(rgba(255,79,166,.06), rgba(60,140,255,.06)); box-shadow: 0 0 30px #ff4fa6, inset 0 0 30px rgba(255,79,166,.35); }
+    .cfront { inset: 0; border: 3px solid #ff4fa6; background: linear-gradient(#1c0b30, #12061f); box-shadow: 0 0 30px #ff4fa6, inset 0 0 30px rgba(255,79,166,.35); }
     .marquee {
       left: 0; top: 0; width: 100%; height: calc(var(--k) * 72); display: grid; place-items: center;
       transform-origin: bottom; transform: rotateX(-6deg) translateZ(2px);
-      border: 3px solid #ffd6ec; background: rgba(10,0,14,.78); border-radius: 0;
+      border: 3px solid #ffd6ec; background: #0d0511; border-radius: 0;
       box-shadow: 0 0 26px #ff4fa6, inset 0 0 26px rgba(255,79,166,.5);
     }
     .mqt { font: 900 calc(var(--k) * 38)/1 Inter, system-ui, sans-serif; letter-spacing: .22em; padding-left: .22em; color: #fff; text-shadow: 0 0 16px #ff4fa6, 0 0 34px #ff4fa6; }
-    .bezel { left: 0; right: 0; top: calc(var(--k) * 70); height: calc(var(--k) * 342); border: 3px solid #3c8cff; background: rgba(5,0,12,.82); box-shadow: 0 0 26px #3c8cff, inset 0 0 26px rgba(60,140,255,.35); }
+    .bezel { left: 0; right: 0; top: calc(var(--k) * 70); height: calc(var(--k) * 342); border: 3px solid #3c8cff; background: #05000c; box-shadow: 0 0 26px #3c8cff, inset 0 0 26px rgba(60,140,255,.35); }
     .screen { left: calc(var(--k) * 24); top: calc(var(--k) * 84); width: calc(var(--k) * 252); height: calc(var(--k) * 334); border-radius: 2px; --u: calc(var(--cw) / 476);
       box-shadow: 0 0 0 2px #000, 0 0 30px rgba(255,79,166,.6); }
     .glass { background: linear-gradient(118deg, rgba(255,255,255,.16) 0, rgba(255,255,255,.03) 28%, transparent 29%), repeating-linear-gradient(to bottom, rgba(0,0,0,.12) 0 1px, transparent 1px 3px); }
 
     .deck { left: calc(var(--k) * -8); right: calc(var(--k) * -8); top: calc(var(--k) * 410); height: calc(var(--k) * 112); transform-origin: top; transform: translateZ(1px) rotateX(72deg);
-      border: 3px solid #ff8ec6; background: rgba(40,8,50,.6); box-shadow: 0 0 26px #ff4fa6, inset 0 0 24px rgba(255,79,166,.4); }
+      border: 3px solid #ff8ec6; background: #2a0a3b; box-shadow: 0 0 26px #ff4fa6, inset 0 0 24px rgba(255,79,166,.4); }
     .deck > * { position: absolute; }
     .js { left: calc(var(--k) * 40); top: calc(var(--k) * 30); width: calc(var(--k) * 48); height: calc(var(--k) * 48); border-radius: 50%; border: 3px solid #ffd6ec; background: #050108; }
     .jb { left: calc(var(--k) * 50); top: calc(var(--k) * 40); width: calc(var(--k) * 28); height: calc(var(--k) * 28); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #ff4fa6 40%, #6a0a40); box-shadow: 0 0 14px #ff4fa6, 0 8px 0 #5a0a34; }
@@ -1203,7 +1205,7 @@
     .dbt { top: calc(var(--k) * 30); width: calc(var(--k) * 28); height: calc(var(--k) * 28); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--c) 40%, #2a0828); box-shadow: 0 0 14px var(--c), 0 6px 0 rgba(0,0,0,.6); }
 
     .apron { left: calc(var(--k) * -8); right: calc(var(--k) * -8); top: calc(var(--k) * 446); height: calc(var(--k) * 122); transform: translateZ(calc(var(--k) * 106));
-      border: 3px solid #b266ff; background: rgba(20,4,34,.78); box-shadow: 0 0 26px #b266ff, inset 0 0 26px rgba(178,102,255,.3); }
+      border: 3px solid #b266ff; background: #160425; box-shadow: 0 0 26px #b266ff, inset 0 0 26px rgba(178,102,255,.3); }
     .apron > * { position: absolute; }
     .start-btn { left: calc(var(--k) * 24); top: calc(var(--k) * 18); width: calc(var(--k) * 96); height: calc(var(--k) * 34);
       border: 1.5px solid #ffd6ec; border-radius: 999px; background: linear-gradient(#3a0c36, #14031a); color: #ffe9f5; font: 800 calc(var(--k) * 12)/1 ui-monospace, Menlo, monospace; letter-spacing: .2em;
@@ -1230,11 +1232,11 @@
     .cside { left: calc(var(--k) * 300); top: 0; width: calc(var(--k) * 206); height: calc(var(--k) * 568); transform-origin: left; transform: translateZ(calc(var(--k) * 98)) rotateY(90deg); }
     .cside.l { left: 0; }
     .cside svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-    .cside polygon { fill: rgba(22, 6, 36, .94); stroke: #ff4fa6; stroke-width: 3; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 8px #ff4fa6); }
+    .cside polygon { fill: #160624; stroke: #ff4fa6; stroke-width: 3; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 8px #ff4fa6); }
     .cside path { fill: none; stroke: rgba(60, 140, 255, .8); stroke-width: 2; vector-effect: non-scaling-stroke; }
     .cback { left: 0; top: 0; width: calc(var(--k) * 300); height: calc(var(--k) * 568); transform: translateZ(calc(var(--k) * -100)); border: 3px solid #b266ff; box-sizing: border-box;
-      background: repeating-linear-gradient(to bottom, rgba(178,102,255,.35) 0 2px, transparent 2px calc(var(--k) * 14)), rgba(16,4,28,.96); box-shadow: 0 0 22px rgba(178,102,255,.7), inset 0 0 30px rgba(178,102,255,.3); }
-    .ctop { left: 0; top: 0; width: calc(var(--k) * 300); height: calc(var(--k) * 100); transform-origin: top; transform: rotateX(-90deg); border: 3px solid #ff8ec6; box-sizing: border-box; background: rgba(22,6,36,.94); box-shadow: 0 0 22px rgba(255,79,166,.6); }
+      background: repeating-linear-gradient(to bottom, rgba(178,102,255,.35) 0 2px, transparent 2px calc(var(--k) * 14)), #10041c; box-shadow: 0 0 22px rgba(178,102,255,.7), inset 0 0 30px rgba(178,102,255,.3); }
+    .ctop { left: 0; top: 0; width: calc(var(--k) * 300); height: calc(var(--k) * 100); transform-origin: top; transform: rotateX(-90deg); border: 3px solid #ff8ec6; box-sizing: border-box; background: #160624; box-shadow: 0 0 22px rgba(255,79,166,.6); }
 
     .machine::after { content: ""; position: absolute; left: 50%; bottom: 12px; width: 120%; height: 70px; transform: translateX(-50%); background: radial-gradient(ellipse, rgba(255,79,166,.45), transparent 70%); pointer-events: none; z-index: -1; }
 
@@ -1346,7 +1348,50 @@
     <script>
     if (/[?&]solo=1/.test(location.search)) document.documentElement.classList.add('solo');
   </script>
+  <script>
+    try { var __c = document.createElement('canvas'); if ((__c.getContext('webgl2') || __c.getContext('webgl')) && !/[?&]nohall=1/.test(location.search)) document.documentElement.classList.add('hallon'); } catch (e) {}
+    setTimeout(function () { if (!window.__hall) document.documentElement.classList.remove('hallon'); }, 9000);
+  </script>
   <style>html.solo .home, html.solo a[href]:not([href^="#"]) { display: none !important; }</style>
+
+  <style>
+    /* ---------- Herna: 3D scéna s automaty (hall.js). Bez WebGL zůstává starý automat ---------- */
+    .hall { display: none; }
+    html.hallon .hall { display: block; position: fixed; inset: 0; z-index: 0; overflow: hidden; touch-action: pan-y; -webkit-user-select: none; user-select: none; background: #05030d; }
+    .hall canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    html.hallon .arcade-bg { display: none; }
+    html.hallon .machine { position: fixed; left: -200vw; top: 0; opacity: 1 !important; animation: none !important; pointer-events: none; visibility: hidden; margin: 0 !important; }
+    html.hallon .stage { display: block; position: static; max-width: none; width: auto; padding: 0; overflow: visible; }
+    html.hallon body.cabvis .stage { animation: none; }
+    html.hallon .left { position: fixed; left: 28px; top: 50%; transform: translateY(-50%); width: 200px; z-index: 3; }
+    html.hallon .hof { position: fixed; right: 28px; top: 50%; transform: translateY(-50%); width: min(270px, 21vw); max-height: min(78vh, 640px); z-index: 3; }
+    html.hallon .home { z-index: 40; }
+    html.hallon .left { padding: 18px 20px; background: linear-gradient(rgba(14,4,22,.78), rgba(8,2,14,.78)); border: 1px solid rgba(255,255,255,.2); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)); box-sizing: border-box; }
+    html.hallon .lv { font-size: clamp(30px, 3.4vw, 46px); }
+    html.hallon .best { margin-top: 18px; }
+    .hall-start { position: absolute; left: 0; top: 0; z-index: 4; border: 0; border-radius: 50%; background: transparent; cursor: pointer; padding: 0; font-size: 0; will-change: transform; -webkit-tap-highlight-color: transparent; }
+    .hall-start:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    .hall-cap { position: absolute; left: 50%; bottom: clamp(40px, 6vh, 56px); transform: translateX(-50%); z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: ui-monospace, Menlo, monospace; color: #ffd6ec; pointer-events: none; text-align: center; }
+    .hall-cap .row { display: flex; align-items: center; gap: 18px; pointer-events: auto; }
+    .hall-cap b { display: block; font: 900 20px Inter, system-ui, sans-serif; letter-spacing: .3em; padding-left: .3em; color: #fff; text-shadow: 0 0 18px #ff4fa6; }
+    .hall-cap small { display: block; white-space: nowrap; margin-top: 4px; font-size: 10px; letter-spacing: .3em; opacity: .75; }
+    .hall-cap .idx { margin: 0; opacity: .45; letter-spacing: .25em; }
+    .hall-cap .arr { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(10,0,20,.55); color: #ffd6ec; font: 400 24px/1 Inter, system-ui, sans-serif; cursor: pointer; padding: 0 0 3px; transition: background .2s, box-shadow .2s; }
+    .hall-cap .arr:hover { background: rgba(255,79,166,.22); box-shadow: 0 0 16px rgba(255,79,166,.5); }
+    .hall-cap .links { display: flex; gap: 10px; pointer-events: auto; }
+    .hall-cap .links button { font: 700 10px ui-monospace, Menlo, monospace; letter-spacing: .22em; color: #ffd6ec; padding: 9px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.28); background: rgba(10,0,20,.55); cursor: pointer; transition: background .2s, box-shadow .2s; }
+    .hall-cap .links button:hover { background: rgba(255,79,166,.22); box-shadow: 0 0 14px rgba(255,79,166,.45); }
+    body.fs .hall { visibility: hidden; }
+    @media (max-width: 1100px), (pointer: coarse) {
+      html.hallon body { place-items: start center; padding: 0; }
+      html.hallon .stage { display: flex; flex-direction: column; align-items: stretch; gap: 18px; width: 100%; }
+      html.hallon .hall { position: relative; inset: auto; order: 0; width: 100%; height: min(86svh, 780px); }
+      html.hallon .left { position: static; transform: none; width: auto; order: 2; padding: 0 20px; }
+      html.hallon .hof { position: static; transform: none; width: auto; max-height: none; order: 3; margin: 0 14px 24px; }
+      html.hallon .lv { font-size: 40px; }
+    }
+  </style>
 </head>
 <body>
   <div class="arcade-bg" aria-hidden="true"><canvas id="floorCv"></canvas></div>
@@ -1412,6 +1457,20 @@
     <div class="best">YOUR BEST<b id="yourBest">--.-- s</b></div>
     <div class="lk2 dim">NEW LEVEL<br>EVERY MONDAY<br>00:00 PRAGUE</div>
   </aside>
+
+  <section class="hall" id="hall" aria-label="Game hall">
+    <canvas id="hallCv" aria-hidden="true"></canvas>
+    <button class="hall-start" id="hallStart" type="button" aria-label="Start Drippy" hidden></button>
+    <div class="hall-cap">
+      <div class="row">
+        <button class="arr" id="hallPrev" type="button" aria-label="Previous game">&#8249;</button>
+        <div><b id="hallName">DRIPPY</b><small id="hallSub">Survive the rain</small></div>
+        <button class="arr" id="hallNext" type="button" aria-label="Next game">&#8250;</button>
+      </div>
+      <small class="idx" id="hallIdx" aria-hidden="true">03 / 05</small>
+      <div class="links"><button type="button" id="hallScore">SCORES</button><button type="button" id="hallRules">HOW TO PLAY</button></div>
+    </div>
+  </section>
 
   <div class="machine" id="machine">
     <div class="cab">
@@ -2823,7 +2882,7 @@
       }
       // počítač: hra vyjede ven a rozšíří se
       cleanBig();
-      const from = scrEl.getBoundingClientRect();
+      const from = (window.__hall && window.__hall.screenRect) ? window.__hall.screenRect() : scrEl.getBoundingClientRect();
       document.body.classList.add('big');
       document.body.appendChild(scrEl);
       if (reduceMotion || !scrEl.animate || !from.width) return;
@@ -2839,7 +2898,7 @@
       if (document.body.classList.contains('big') && !document.body.classList.contains('bigout')) {
         const from = scrEl.getBoundingClientRect();
         const bz = scrHome.parent.querySelector('.bezel');
-        const to = bz ? bz.getBoundingClientRect() : null;
+        const to = (window.__hall && window.__hall.screenRect) ? window.__hall.screenRect() : (bz ? bz.getBoundingClientRect() : null);
         if (!reduceMotion && scrEl.animate && to && to.width) {
           document.body.classList.add('bigout');
           bigAnim = scrEl.animate([
@@ -2868,6 +2927,7 @@
 
     // Společný vstup pro páku, tlačítko START a klávesnici
     function startRound() {
+      if (state === 'menu' && document.body.dataset.hall === 'off') return;
       if (mode !== 'game') setMode('game');
       if (state === 'paused') { resumeGame(); return; }
       if (state === 'count' || state === 'play') return;
@@ -3648,22 +3708,22 @@
         const r = restPos(), R = rng(11);
         wave = { t0: performance.now() };
         cracks = [];
-        for (let i = 0; i < 10; i++) {
-          const a = (i / 10) * Math.PI * 2 + (R() - 0.5) * 0.4;
-          const len = r.w * (0.28 + R() * 0.42);
+        for (let i = 0; i < 16; i++) {
+          const a = (i / 16) * Math.PI * 2 + (R() - 0.5) * 0.45;
+          const len = r.w * (0.7 + R() * 1.0);
           const pts = [[Math.cos(a) * r.w * 0.2, Math.sin(a) * r.w * 0.2 * 0.38]];
           let x = pts[0][0], y = pts[0][1], aa = a;
-          for (let j = 0; j < 6; j++) {
-            aa += (R() - 0.5) * 1.1;
-            const st = len / 6 * (0.6 + R() * 0.8);
+          for (let j = 0; j < 7; j++) {
+            aa += (R() - 0.5) * 1.2;
+            const st = len / 7 * (0.6 + R() * 0.8);
             x += Math.cos(aa) * st; y += Math.sin(aa) * st * 0.38;
             pts.push([x, y]);
           }
           cracks.push(pts);
-          if (R() < 0.7) {
+          if (R() < 0.8) {
             const m = pts[3], b = [m]; let bx = m[0], by = m[1];
             const ba = a + (R() < 0.5 ? -0.8 : 0.8);
-            for (let j = 0; j < 3; j++) { bx += Math.cos(ba) * r.w * 0.05; by += Math.sin(ba) * r.w * 0.05 * 0.38; b.push([bx, by]); }
+            for (let j = 0; j < 4; j++) { bx += Math.cos(ba) * r.w * 0.07; by += Math.sin(ba) * r.w * 0.07 * 0.38; b.push([bx, by]); }
             cracks.push(b);
           }
         }
@@ -3696,12 +3756,12 @@
 
       function drawWave(phase, age, r) {
         // po dopadu: každá čára po kouscích, aby se mohla prohnout a rozsvítit
-        const front = age * 640, decay = Math.exp(-age * 1.4);
+        const front = age * vw * 1.05, decay = Math.exp(-age * 1.1), SG = vw * 0.12, AMP = vh * 0.06, FQ = 48 / vw;
         function pt(dx, h) {
           const p = proj(dx, h);
           const d = Math.hypot(p[0] - r.x, (p[1] - r.y) * 2.2);
-          const w = Math.exp(-Math.pow((d - front) / 42, 2)) * decay;
-          return { x: p[0], y: p[1] - 15 * w * Math.sin((d - front) * 0.11), w: w };
+          const w = Math.exp(-Math.pow((d - front) / SG, 2)) * decay;
+          return { x: p[0], y: p[1] - AMP * w * Math.sin((d - front) * FQ), w: w };
         }
         function line(pts, base, al) {
           for (let i = 0; i < pts.length - 1; i++) {
@@ -3737,16 +3797,16 @@
         const p = Math.min(1, age / 0.4);
         const fade = age < 1.5 ? 1 : Math.max(0, 1 - (age - 1.5) / 1.6);
         if (fade <= 0) return;
-        const g = ctx.createRadialGradient(r.x, r.y, 2, r.x, r.y, r.w * 0.8);
-        g.addColorStop(0, 'rgba(255,79,166,' + (0.35 * fade * p).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,79,166,0)');
+        const g = ctx.createRadialGradient(r.x, r.y, 2, r.x, r.y, r.w * 1.5);
+        g.addColorStop(0, 'rgba(255,79,166,' + (0.42 * fade * p).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,79,166,0)');
         ctx.save();
         ctx.translate(r.x, r.y); ctx.scale(1, 0.38); ctx.translate(-r.x, -r.y);
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(r.x, r.y, r.w * 0.8, 0, 7); ctx.fill();
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(r.x, r.y, r.w * 1.5, 0, 7); ctx.fill();
         ctx.restore();
         ctx.save();
         ctx.lineCap = 'round'; ctx.lineJoin = 'round';
         ctx.shadowColor = '#ff4fa6'; ctx.shadowBlur = 10;
-        ctx.strokeStyle = 'rgba(255,175,218,' + fade.toFixed(3) + ')'; ctx.lineWidth = 1.8;
+        ctx.strokeStyle = 'rgba(255,175,218,' + fade.toFixed(3) + ')'; ctx.lineWidth = 2.2;
         cracks.forEach(pts => {
           const n = (pts.length - 1) * p;
           ctx.beginPath(); ctx.moveTo(r.x + pts[0][0], r.y + pts[0][1]);
@@ -3787,7 +3847,7 @@
         }
         if (dbg != null) { if (!fired) fire(); wave = { t0: now - dbg * 1000 }; }
         if (wave) { age = (now - wave.t0) / 1000; if (age > 3.2 && dbg == null) { wave = null; age = -1; } }
-        if (age >= 0 && age < 2.6) drawWave(phase, age, r); else drawFlat(phase);
+        if (age >= 0 && age < 3.0) drawWave(phase, age, r); else drawFlat(phase);
         drawShadow(drawShadowK, r);
         if (age >= 0 && age < 3.2) drawCracks(age, r);
       }
@@ -4209,6 +4269,7 @@
     requestAnimationFrame(frame);
   })();
   </script>
+<script type="module" src="hall.js"></script>
 <script src="legal.js" defer></script>
 </body>
 </html>
