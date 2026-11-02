@@ -1132,7 +1132,7 @@
   });
 
   /* plynulé, stálé točení: kolotoč se otáčí sám, jméno a kontakt pod ikonou se plynule objeví, když se blíží ke středu, a zmizí, když ho opouští */
-  var lastTouch = -1e9, IDLE = 4500, AUTO_V = 0.2, autoV = 0, tPrev = performance.now(), lastK = null;
+  var lastTouch = -1e9, hoverT = -1e9, IDLE = 3000, AUTO_V = 0.2, autoV = 0, tPrev = performance.now(), lastK = null;
   ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) { addEventListener(ev, function () { lastTouch = performance.now(); }, { passive: true }); });
   var ro = document.createElement('div'); ro.className = 'readout'; ro.setAttribute('aria-hidden', 'true');
   ro.innerHTML = '<span class="pop-label"></span><span class="pop-value"></span>'; carousel.appendChild(ro);
@@ -1153,7 +1153,10 @@
   function autoLoop(now) {
     var dt = Math.min((now - tPrev) / 1000, 0.05); tPrev = now;
     var hover = items.some(function (el) { return el.matches(':hover'); });
-    var want = !still && !document.hidden && settled && !dragging && !hover && !carousel.contains(document.activeElement) && now - lastTouch > IDLE;
+    if (hover) hoverT = now;
+    var kbFocus = !!carousel.querySelector(':focus-visible');   /* jen focus z klávesnice zastavuje točení, klik myší ne */
+    var want = !still && !document.hidden && !dragging && !hover && !kbFocus && now - hoverT > 900 && now - lastTouch > IDLE;
+    if (want && !settled && snapTarget === null) settled = true;
     autoV += ((want ? AUTO_V : 0) - autoV) * Math.min(1, dt * 2.5);
     if (autoV < 0.003) autoV = 0;
     window.__am = autoV > 0.02;
