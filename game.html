@@ -3661,7 +3661,7 @@
         if (e.viewTransition) e.viewTransition.finished.then(() => setTimeout(after, 150), after);
         else after();
       });
-      setTimeout(go, 3000);
+      setTimeout(go, document.documentElement.classList.contains('hallon') ? 1400 : 3000);
       if (!('onpagereveal' in window)) ready().then(go, go);
     })();
 
