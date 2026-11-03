@@ -1,73 +1,12 @@
-// FUN page logic: room, camera, hover, panels, badminton views. Data comes from fun-data.js
+// FUN page UI layer: data, stats, panels, badminton views. The 3D room is in fun3d.js
 (function(){
 const $=s=>document.querySelector(s), B=BADMINTON, X=FUN_EXTRA, V=B.vaseliga.singles, H=B.hobbyliga;
-const NS='http://www.w3.org/2000/svg';
-function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e}
-
-/* ---------- layout: the room fills the whole window ---------- */
-const ui=$('#ui'),world=$('#world');
-const mob=()=>innerWidth<820;
-function fitUi(){ if(mob()){ui.style.transform='';return}
- const k=Math.min(innerWidth/1440,innerHeight/900);
- ui.style.transform=`translate(${(innerWidth-1440*k)/2}px,${(innerHeight-900*k)/2}px) scale(${k})`}
-
-/* ---------- decorative bits ---------- */
-let s=7;const R=()=>(s=(s*16807)%2147483647)/2147483647;
-const hc=['#ff4fa6','#38e8ff','#3dff9a','#ff9f43','#b266ff','#fff'];
-for(let i=0;i<46;i++)el('circle',{cx:70+R()*330,cy:258+R()*245,r:6+R()*5,fill:hc[Math.floor(R()*6)],opacity:.85},$('#holds'));
-for(let i=-8;i<=24;i++)el('line',{x1:720,y1:300,x2:i*90-200,y2:900},$('#boards'));
-
 /* ---------- stats from data ---------- */
 const vl=V.profile, hp=H.profile;
 const totW=vl.wins+hp.wins, totL=vl.losses+hp.losses, totD=hp.draws, totM=vl.matches+hp.matches;
 const totSW=hp.setsW+V.rounds.reduce((a,r)=>a+r.res.reduce((b,m)=>b+(m[3]?0:m[1]),0),0);
 const totSL=hp.setsL+V.rounds.reduce((a,r)=>a+r.res.reduce((b,m)=>b+(m[3]?0:m[2]),0),0);
-$('#sbn').textContent=totW+' : '+totL; $('#sbl').textContent=X.scoreboard.label;
-$('#lf').innerHTML=H.matches.slice(-5).map(m=>`<b class="${m[3]>m[4]?'W':'L'}">${m[3]>m[4]?'W':m[3]==m[4]?'D':'L'}</b>`).join('');
-
-/* ---------- stations + camera ---------- */
-const ST=[
- {k:'climb',mw:420,n:'CLIMBING',sub:'WALL · ROUTES',cx:235,cy:380,w:420,h:330},
- {k:'bad',mw:860,n:'BADMINTON',sub:`TWO LEAGUES · ${totM} MATCHES · ${totW} W – ${totD} D – ${totL} L`,cx:500,cy:650,w:880,h:430},
- {k:'strava',mw:320,n:'STRAVA',sub:'ACTIVE DAYS · STEPS · GYM · YOGA',cx:960,cy:270,w:320,h:320},
- {k:'games',mw:440,n:'GAMES',sub:'PC · THE RIG',cx:1290,cy:420,w:440,h:340},
- {k:'beer',mw:560,n:'BEER PONG',sub:'TOURNAMENTS · TROPHIES',cx:1130,cy:700,w:560,h:300}
-];
-let cur=mob()?1:-1;
-function cam(){
- const W=innerWidth,H=innerHeight,t=ST[cur];let s,tx,ty;
- if(mob()){ // phone: always focused on one station
-  s=Math.min(W*0.98/t.mw,(H-240)/t.h*1.15);tx=W/2-t.cx*s;ty=H*0.40-t.cy*s;
- }else if(cur<0){ // overview of the whole room
-  s=Math.min(W/1440,H/900);tx=(W-1440*s)/2;ty=(H-900*s)/2;
- }else{
-  const k=Math.min(W/1440,H/900);
-  s=Math.min(W*0.8/t.w,H*0.78/t.h,k*1.55);s=Math.max(s,k*1.12);tx=W/2-t.cx*s;ty=H*0.46-t.cy*s;
- }
- world.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;
- world.style.setProperty('--inv',Math.min(2.2,Math.max(1,mob()?1/s*0.9:1)));
- document.body.classList.toggle('focus',cur>=0&&!mob());
- $('#nm').textContent=cur<0?'THE ROOM':t.n;
- $('#sb').textContent=cur<0?'CLICK A STATION · OR USE THE ARROWS':t.sub;
- const nx=ST[(cur+1+ST.length)%ST.length], pv=ST[(cur-1+ST.length*2)%ST.length];
- $('#aL small').textContent=(cur<0?ST[ST.length-1]:pv).n;$('#aR small').textContent=(cur<0?ST[0]:nx).n;
- document.querySelectorAll('.pips i').forEach((i,n)=>i.classList.toggle('on',n==cur));
-}
-function go(d){if(cur<0)cur=d>0?0:ST.length-1;else cur=(cur+d+ST.length)%ST.length;cam()}
-$('#aL').onclick=()=>go(-1);$('#aR').onclick=()=>go(1);
-document.querySelectorAll('.pips i').forEach((i,n)=>i.onclick=()=>{cur=n;cam()});
-addEventListener('resize',()=>{fitUi();cam()});
-// swipe on phones
-{let x0=null;addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
- addEventListener('touchend',e=>{if(x0==null||document.body.className.match(/detail|beer|games|bh/))return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>60)go(dx<0?1:-1)},{passive:true})}
-// tap on empty room (desktop) = back to overview
-world.addEventListener('click',e=>{if(!mob()&&cur>=0&&!e.target.closest('.stn,.hit'))cur=-1,cam()});
-
-/* ---------- hover (PC / headphones / keyboard / mouse) ---------- */
-document.querySelectorAll('.hit[data-h]').forEach(h=>{
- h.addEventListener('click',e=>{if(!matchMedia('(hover:none)').matches)return;const on=document.body.classList.contains(h.dataset.h);['pc','hp','kb','ms'].forEach(c=>document.body.classList.remove(c));if(!on)document.body.classList.add(h.dataset.h);e.stopPropagation()});
- h.addEventListener('mouseenter',()=>document.body.classList.add(h.dataset.h));
- h.addEventListener('mouseleave',()=>document.body.classList.remove(h.dataset.h));});
+if($('#lf'))$('#lf').innerHTML=H.matches.slice(-5).map(m=>`<b class="${m[3]>m[4]?'W':'L'}">${m[3]>m[4]?'W':m[3]==m[4]?'D':'L'}</b>`).join('');
 
 /* ---------- opening / closing views ---------- */
 function mode(m){['detail','beer','games','bh'].forEach(c=>document.body.classList.toggle(c,c==m))}
@@ -80,12 +19,6 @@ const OPEN={
  bad(){mode('bh');bh('hub')}
 };
 function panel(k,h,body){$('#panel').innerHTML=`<span class=x data-close>✕</span><h2>${k}</h2><h1>${h}</h1>${body}`;mode('detail')}
-document.querySelectorAll('.stn').forEach(e=>e.addEventListener('click',()=>{const i=ST.findIndex(t=>t.k==e.dataset.k);e.stopPropagation();if(i!=cur){cur=i;cam()}else OPEN[e.dataset.k]()}));
-document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeAll();if(!e.target.closest('[data-h]'))['pc','hp','kb','ms'].forEach(c=>document.body.classList.remove(c))});
-document.addEventListener('keydown',e=>{if(e.key=='Escape'){if(document.body.classList.contains('bh')&&view!='hub')bh('hub');else if(!document.body.className.match(/detail|beer|games|bh/)&&!mob()&&cur>=0){cur=-1;cam()}else closeAll()}
- if(document.body.className.match(/detail|beer|games|bh/))return;
- if(e.key=='ArrowLeft')go(-1);if(e.key=='ArrowRight')go(1);if(e.key=='Enter'&&cur>=0)OPEN[ST[cur].k]()});
-
 /* ---------- games ---------- */
 const D=$('#desk'),L=$('#glist');
 X.games.forEach((g,i)=>{const d=document.createElement('div');d.className='ic';d.style.left=(50+(i%3)*210)+'px';d.style.top=(50+Math.floor(i/3)*190)+'px';d.innerHTML=`<b style="background:${g[2]};color:${g[3]}">${g[0]}</b>${g[1]}`;D.appendChild(d);
@@ -152,6 +85,20 @@ bhEl.addEventListener('click',e=>{
  if(e.target.closest('[data-back]')){view=='hub'?closeAll():bh('hub');return}
  const g=e.target.closest('[data-go]');if(g)bh(g.dataset.go)});
 
-fitUi();cam();
-if(location.hash=='#badminton'){cur=1;cam();OPEN.bad()}
+
+/* ---------- UI bridge for the 3D room (fun3d.js) ---------- */
+const isOpen=()=>/detail|beer|games|bh/.test(document.body.className);
+let onClose=null;
+function closeAll(){mode(null);if(onClose)onClose()}
+document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeAll()});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'&&isOpen()){if(document.body.classList.contains('bh')&&view!='hub')bh('hub');else closeAll()}});
+const SUM={
+ bad:()=>({t:'BADMINTON',s:'VašeLiga · HobbyLiga',k:[[totW+'–'+totL,'W – L'],[Math.round(totW/totM*100)+'%','WIN RATE'],['🏆','CHAMPION 2026']]}),
+ climb:()=>({t:'CLIMBING',s:X.climbing.note,k:[['—','ROUTES']]}),
+ strava:()=>({t:'STRAVA',s:'This month',k:[[X.strava.active+'/'+X.strava.goal,'ACTIVE DAYS'],[X.strava.steps,'STEPS / DAY']]}),
+ games:()=>({t:'GAMES',s:'PC · The rig',k:[[String(X.games.length),'GAMES']]}),
+ beer:()=>({t:'BEER PONG',s:'Afterparty',k:[[X.beer.won+'/'+X.beer.tournaments,'WON'],['🏆','TROPHIES']]})
+};
+window.FUNUI={games:X.games,isOpen,closeAll,summary:k=>SUM[k](),open:k=>OPEN[k](),setOnClose:f=>{onClose=f}};
+if(location.hash=='#badminton')OPEN.bad();
 })();
