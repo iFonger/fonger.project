@@ -4,10 +4,12 @@ const $=s=>document.querySelector(s), B=BADMINTON, X=FUN_EXTRA, V=B.vaseliga.sin
 const NS='http://www.w3.org/2000/svg';
 function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e}
 
-/* ---------- fit 1440x900 stage to window ---------- */
-const stage=$('#stage');
-function fit(){const k=Math.min(innerWidth/1440,innerHeight/900);stage.style.transform=`translate(${(innerWidth-1440*k)/2}px,${(innerHeight-900*k)/2}px) scale(${k})`}
-addEventListener('resize',fit);fit();
+/* ---------- layout: the room fills the whole window ---------- */
+const ui=$('#ui'),world=$('#world');
+const mob=()=>innerWidth<820;
+function fitUi(){ if(mob()){ui.style.transform='';return}
+ const k=Math.min(innerWidth/1440,innerHeight/900);
+ ui.style.transform=`translate(${(innerWidth-1440*k)/2}px,${(innerHeight-900*k)/2}px) scale(${k})`}
 
 /* ---------- decorative bits ---------- */
 let s=7;const R=()=>(s=(s*16807)%2147483647)/2147483647;
@@ -25,27 +27,45 @@ $('#lf').innerHTML=H.matches.slice(-5).map(m=>`<b class="${m[3]>m[4]?'W':'L'}">$
 
 /* ---------- stations + camera ---------- */
 const ST=[
- {k:'climb',n:'CLIMBING',sub:'WALL · ROUTES',cx:235,cy:380,tag:'#pill-climb'},
- {k:'bad',n:'BADMINTON',sub:`TWO LEAGUES · ${totM} MATCHES · ${totW} W – ${totL+totD} L`,cx:500,cy:660},
- {k:'strava',n:'STRAVA',sub:'ACTIVE DAYS · STEPS · GYM · YOGA',cx:960,cy:270},
- {k:'games',n:'GAMES',sub:'PC · THE RIG',cx:1290,cy:420},
- {k:'beer',n:'BEER PONG',sub:'TOURNAMENTS · TROPHIES',cx:1130,cy:700}
+ {k:'climb',mw:420,n:'CLIMBING',sub:'WALL · ROUTES',cx:235,cy:380,w:420,h:330},
+ {k:'bad',mw:860,n:'BADMINTON',sub:`TWO LEAGUES · ${totM} MATCHES · ${totW} W – ${totD} D – ${totL} L`,cx:500,cy:650,w:880,h:430},
+ {k:'strava',mw:320,n:'STRAVA',sub:'ACTIVE DAYS · STEPS · GYM · YOGA',cx:960,cy:270,w:320,h:320},
+ {k:'games',mw:440,n:'GAMES',sub:'PC · THE RIG',cx:1290,cy:420,w:440,h:340},
+ {k:'beer',mw:560,n:'BEER PONG',sub:'TOURNAMENTS · TROPHIES',cx:1130,cy:700,w:560,h:300}
 ];
-let cur=1;const world=$('#world'),SC=1.1;
-function cam(){const t=ST[cur];
- const tx=Math.min(0,Math.max(1440-1440*SC,720-t.cx*SC)), ty=Math.min(0,Math.max(900-900*SC,450-t.cy*SC));
- world.style.transform=`translate(${tx}px,${ty}px) scale(${SC})`;
- $('#nm').textContent=t.n;$('#sb').textContent=t.sub;
- $('#aL small').textContent=ST[(cur+ST.length-1)%ST.length].n;$('#aR small').textContent=ST[(cur+1)%ST.length].n;
+let cur=mob()?1:-1;
+function cam(){
+ const W=innerWidth,H=innerHeight,t=ST[cur];let s,tx,ty;
+ if(mob()){ // phone: always focused on one station
+  s=Math.min(W*0.98/t.mw,(H-240)/t.h*1.15);tx=W/2-t.cx*s;ty=H*0.40-t.cy*s;
+ }else if(cur<0){ // overview of the whole room
+  s=Math.min(W/1440,H/900);tx=(W-1440*s)/2;ty=(H-900*s)/2;
+ }else{
+  const k=Math.min(W/1440,H/900);
+  s=Math.min(W*0.8/t.w,H*0.78/t.h,k*1.55);s=Math.max(s,k*1.12);tx=W/2-t.cx*s;ty=H*0.46-t.cy*s;
+ }
+ world.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;
+ world.style.setProperty('--inv',Math.min(2.2,Math.max(1,mob()?1/s*0.9:1)));
+ document.body.classList.toggle('focus',cur>=0&&!mob());
+ $('#nm').textContent=cur<0?'THE ROOM':t.n;
+ $('#sb').textContent=cur<0?'CLICK A STATION · OR USE THE ARROWS':t.sub;
+ const nx=ST[(cur+1+ST.length)%ST.length], pv=ST[(cur-1+ST.length*2)%ST.length];
+ $('#aL small').textContent=(cur<0?ST[ST.length-1]:pv).n;$('#aR small').textContent=(cur<0?ST[0]:nx).n;
  document.querySelectorAll('.pips i').forEach((i,n)=>i.classList.toggle('on',n==cur));
- document.querySelectorAll('.stn').forEach(e=>e.classList.toggle('cur',e.dataset.k==t.k));
 }
-function go(d){cur=(cur+d+ST.length)%ST.length;cam()}
+function go(d){if(cur<0)cur=d>0?0:ST.length-1;else cur=(cur+d+ST.length)%ST.length;cam()}
 $('#aL').onclick=()=>go(-1);$('#aR').onclick=()=>go(1);
 document.querySelectorAll('.pips i').forEach((i,n)=>i.onclick=()=>{cur=n;cam()});
+addEventListener('resize',()=>{fitUi();cam()});
+// swipe on phones
+{let x0=null;addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
+ addEventListener('touchend',e=>{if(x0==null||document.body.className.match(/detail|beer|games|bh/))return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>60)go(dx<0?1:-1)},{passive:true})}
+// tap on empty room (desktop) = back to overview
+world.addEventListener('click',e=>{if(!mob()&&cur>=0&&!e.target.closest('.stn,.hit'))cur=-1,cam()});
 
 /* ---------- hover (PC / headphones / keyboard / mouse) ---------- */
 document.querySelectorAll('.hit[data-h]').forEach(h=>{
+ h.addEventListener('click',e=>{if(!matchMedia('(hover:none)').matches)return;const on=document.body.classList.contains(h.dataset.h);['pc','hp','kb','ms'].forEach(c=>document.body.classList.remove(c));if(!on)document.body.classList.add(h.dataset.h);e.stopPropagation()});
  h.addEventListener('mouseenter',()=>document.body.classList.add(h.dataset.h));
  h.addEventListener('mouseleave',()=>document.body.classList.remove(h.dataset.h));});
 
@@ -60,11 +80,11 @@ const OPEN={
  bad(){mode('bh');bh('hub')}
 };
 function panel(k,h,body){$('#panel').innerHTML=`<span class=x data-close>✕</span><h2>${k}</h2><h1>${h}</h1>${body}`;mode('detail')}
-document.querySelectorAll('.stn').forEach(e=>e.addEventListener('click',()=>{const i=ST.findIndex(t=>t.k==e.dataset.k);if(i!=cur){cur=i;cam()}else OPEN[e.dataset.k]()}));
-document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeAll()});
-document.addEventListener('keydown',e=>{if(e.key=='Escape'){if(document.body.classList.contains('bh')&&view!='hub')bh('hub');else closeAll()}
+document.querySelectorAll('.stn').forEach(e=>e.addEventListener('click',()=>{const i=ST.findIndex(t=>t.k==e.dataset.k);e.stopPropagation();if(i!=cur){cur=i;cam()}else OPEN[e.dataset.k]()}));
+document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeAll();if(!e.target.closest('[data-h]'))['pc','hp','kb','ms'].forEach(c=>document.body.classList.remove(c))});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'){if(document.body.classList.contains('bh')&&view!='hub')bh('hub');else if(!document.body.className.match(/detail|beer|games|bh/)&&!mob()&&cur>=0){cur=-1;cam()}else closeAll()}
  if(document.body.className.match(/detail|beer|games|bh/))return;
- if(e.key=='ArrowLeft')go(-1);if(e.key=='ArrowRight')go(1);if(e.key=='Enter')OPEN[ST[cur].k]()});
+ if(e.key=='ArrowLeft')go(-1);if(e.key=='ArrowRight')go(1);if(e.key=='Enter'&&cur>=0)OPEN[ST[cur].k]()});
 
 /* ---------- games ---------- */
 const D=$('#desk'),L=$('#glist');
@@ -85,10 +105,10 @@ const chips=(a)=>a.map(m=>`<span class="chip ${m[3]>m[4]?'w':m[3]==m[4]?'d':'l'}
 function rankChart(w,h){const ps=V.rounds.map(r=>r.rank).concat([+vl.rank.split('/')[0]]);const lo=Math.min(...ps)-14,hi=Math.max(...ps)+10;
  const x=i=>20+i*(w-40)/(ps.length-1),y=v=>10+(v-lo)/(hi-lo)*(h-30);const d=ps.map((v,i)=>(i?'L':'M')+x(i)+','+y(v)).join(' ');
  const lab=V.rounds.map(r=>r.m).concat(['Now']);
- return `<svg width=${w} height=${h}><path d="${d} L${x(ps.length-1)},${h-20} L${x(0)},${h-20}Z" fill="#45e08a14"/><path d="${d}" stroke="#45e08a" stroke-width=3 fill=none stroke-linejoin=round />${ps.map((v,i)=>`<circle cx=${x(i)} cy=${y(v)} r=4 fill="#0d1230" stroke="#45e08a" stroke-width=2 /><text x=${x(i)} y=${y(v)-9} fill="#cdd4ff" font-size=11 text-anchor=middle>${v}</text>`).join('')}${lab.map((t,i)=>`<text x=${x(i)} y=${h-4} fill="#6e78a8" font-size=10 text-anchor=middle>${t}</text>`).join('')}</svg>`}
+ return `<svg viewBox="0 0 ${w} ${h}"><path d="${d} L${x(ps.length-1)},${h-20} L${x(0)},${h-20}Z" fill="#45e08a14"/><path d="${d}" stroke="#45e08a" stroke-width=3 fill=none stroke-linejoin=round />${ps.map((v,i)=>`<circle cx=${x(i)} cy=${y(v)} r=4 fill="#0d1230" stroke="#45e08a" stroke-width=2 /><text x=${x(i)} y=${y(v)-9} fill="#cdd4ff" font-size=11 text-anchor=middle>${v}</text>`).join('')}${lab.map((t,i)=>`<text x=${x(i)} y=${h-4} fill="#6e78a8" font-size=10 text-anchor=middle>${t}</text>`).join('')}</svg>`}
 function elo(w,h){const p=[1216,1208,1190,1188,1174,1155,1142,1155,1165,1174,1186,1198,1210,1226,1238]; // shape read from the HobbyLiga chart
  const x=i=>12+i*(w-24)/(p.length-1),y=v=>h-24-(v-1135)/(1245-1135)*(h-40);const d=p.map((v,i)=>(i?'L':'M')+x(i)+','+y(v)).join(' ');
- return `<svg width=${w} height=${h}><path d="${d} L${x(14)},${h-24} L${x(0)},${h-24}Z" fill="#ff4d6d14"/><path d="${d}" stroke="#ff6b86" stroke-width=3 fill=none stroke-linejoin=round /><circle cx=${x(14)} cy=${y(1238)} r=5 fill="#ff6b86"/><text x=${x(14)-8} y=${y(1238)-10} fill="#fff" font-size=12 text-anchor=end font-weight=700>${hp.elo}</text><text x=12 y=${h-6} fill="#6e78a8" font-size=10>Jan 2026</text><text x=${w-12} y=${h-6} fill="#6e78a8" font-size=10 text-anchor=end>Oct 2026</text></svg>`}
+ return `<svg viewBox="0 0 ${w} ${h}"><path d="${d} L${x(14)},${h-24} L${x(0)},${h-24}Z" fill="#ff4d6d14"/><path d="${d}" stroke="#ff6b86" stroke-width=3 fill=none stroke-linejoin=round /><circle cx=${x(14)} cy=${y(1238)} r=5 fill="#ff6b86"/><text x=${x(14)-8} y=${y(1238)-10} fill="#fff" font-size=12 text-anchor=end font-weight=700>${hp.elo}</text><text x=12 y=${h-6} fill="#6e78a8" font-size=10>Jan 2026</text><text x=${w-12} y=${h-6} fill="#6e78a8" font-size=10 text-anchor=end>Oct 2026</text></svg>`}
 const po=H.matches.filter(m=>/Playoff|FINAL/.test(m[1]));
 const bracket=()=>`<div style="display:flex;gap:8px;margin-top:6px">${po.map((m,i)=>`<div style="flex:1;background:#0b1029;border-radius:10px;padding:8px 10px;${i==po.length-1?'border:1px solid #ffd56b88':''}"><span style="font-size:10px;letter-spacing:.14em;color:${i==po.length-1?'#ffd56b':'#8b95c9'}">${m[1].replace('Playoff ','')}</span><div style="font-weight:700;font-size:18px">${m[3]}:${m[4]} <span class=chip style="min-width:0">W</span></div><div class=sub>vs ${m[2]}</div></div>`).join('')}</div>`;
 const top=(t,s,b)=>`<div class=top><div><h1>${t}</h1><div class=sub>${s}</div></div><div class=back data-back>← ${b}</div></div>`;
@@ -111,10 +131,10 @@ function bh(v){view=v;let h='';
  }
  if(v=='vl'){
   h=top('VAŠELIGA · SINGLES',`Prague badminton · 2026 · ${V.rounds.length} rounds played`,'BADMINTON')+
-  `<div style="display:flex;gap:20px;padding:0 48px"><div style="width:820px"><div class=card style="height:760px;width:820px"><div class=tag style="color:#45e08a">ALL RESULTS</div>
-  <table><tr><th>Round</th><th>Lvl</th><th>Place</th><th>Results</th><th>Sets</th><th>Rank</th></tr>${V.rounds.map(r=>`<tr><td>${r.s} · ${r.m}</td><td style="color:#45e08a">${r.lvl}</td><td>${r.pl==1?'🥇':r.pl==2?'🥈':'#'+r.pl}</td><td>${r.res.map(m=>`<span class="chip ${m[3]?'n':m[1]>m[2]?'w':'l'}">${m[3]=='np'?'–':m[3]=='wo'?'W/O':m[1]+':'+m[2]}</span><span style="font-size:10px;color:#6e78a8">${m[0]}</span>`).join(' ')}</td><td>${roundSum(r)}</td><td>${r.rank}.</td></tr>`).join('')}</table>
+  `<div class=two><div class=colL><div class=card><div class=tag style="color:#45e08a">ALL RESULTS</div>
+  <table><tr><th>Round</th><th>Lvl</th><th>Place</th><th>Results</th><th>Sets</th><th>Rank</th></tr>${V.rounds.map(r=>`<tr><td>${r.s} · ${r.m}</td><td style="color:#45e08a">${r.lvl}</td><td>${r.pl==1?'🥇':r.pl==2?'🥈':'#'+r.pl}</td><td>${r.res.map(m=>`<span class="chip ${m[3]?'n':m[1]>m[2]?'w':'l'}">${m[3]=='np'?'–':m[3]=='wo'?'W/O':m[1]+':'+m[2]}</span><span class=opp style="font-size:10px;color:#6e78a8">${m[0]}</span>`).join(' ')}</td><td>${roundSum(r)}</td><td>${r.rank}.</td></tr>`).join('')}</table>
   <div class=sec style="margin-top:18px">W/O = walkover win (not counted) · – = not played</div></div></div>
-  <div style="flex:1"><div class=card style="height:760px"><div class=tag style="color:#45e08a">RANK</div><div style="font-size:54px;font-weight:800">${vl.rank.split('/')[0]}<small style="font-size:18px;color:#8b95c9"> /${vl.rank.split('/')[1]}</small></div>${rankChart(480,190)}
+  <div class=colR><div class=card><div class=tag style="color:#45e08a">RANK</div><div style="font-size:54px;font-weight:800">${vl.rank.split('/')[0]}<small style="font-size:18px;color:#8b95c9"> /${vl.rank.split('/')[1]}</small></div>${rankChart(480,190)}
   <div class=row style="margin-top:16px"><div class=m><b>${vl.wins}–${vl.losses}</b><span>Matches</span></div><div class=m><b>${V.rounds.reduce((a,r)=>a+r.res.reduce((b,m)=>b+(m[3]?0:m[1]),0),0)}:${V.rounds.reduce((a,r)=>a+r.res.reduce((b,m)=>b+(m[3]?0:m[2]),0),0)}</b><span>Sets</span></div></div>
   <div class=row><div class=m><b>${vl.rate}%</b><span>Win rate</span></div><div class=m><b>${V.rounds.filter(r=>r.pl==1).length} 🥇</b><span>Group wins</span></div></div>
   <div class=sec>NEXT</div><div class=m style="margin-bottom:8px"><b style="font-size:16px">${V.next.m} · Level ${V.next.lvl}</b><span>Starts ${V.next.pts} pts · place ${V.next.pl}</span></div><div class=m><b style="font-size:16px">Doubles from 1 Nov</b><span>Team "${B.vaseliga.doubles.team}" · with ${B.vaseliga.doubles.partner}</span></div></div></div></div>`;
@@ -122,8 +142,8 @@ function bh(v){view=v;let h='';
  if(v=='hl'){
   const hm=H.matches.slice().reverse();
   h=top('HOBBYLIGA · SINGLES','Prague badminton · 2026','BADMINTON')+
-  `<div style="display:flex;gap:20px;padding:0 48px"><div style="flex:1"><div class="card rd" style="height:760px;overflow:auto"><div class=tag>MATCH LOG · ${H.matches.length} OF ${hp.matches} LISTED</div><table><tr><th>Date</th><th>Stage</th><th>Opponent</th><th>Score</th></tr>${hm.map(m=>`<tr><td>${m[0]}</td><td style="color:${m[1]=='FINAL'?'#ffd56b':'#8b95c9'}">${m[1]}</td><td>${m[2]}</td><td><span class="chip ${m[3]>m[4]?'w':m[3]==m[4]?'d':'l'}">${m[3]}:${m[4]}</span></td></tr>`).join('')}</table></div></div>
-  <div style="width:520px"><div class="card rd" style="height:760px"><div class=tag>CHAMPION 2026</div><div style="font-size:40px;font-weight:800;color:#ffd56b;margin:6px 0">🏆 Final 3:0</div><div class=sub>Playoff ${H.playoff.group} · ${H.playoff.seed}rd seed after the group</div><div class=sec>ELO</div><div style="font-size:44px;font-weight:800">${hp.elo}</div>${elo(470,140)}
+  `<div class=two><div class=colA><div class="card rd scroll"><div class=tag>MATCH LOG · ${H.matches.length} OF ${hp.matches} LISTED</div><table><tr><th>Date</th><th>Stage</th><th>Opponent</th><th>Score</th></tr>${hm.map(m=>`<tr><td>${m[0]}</td><td style="color:${m[1]=='FINAL'?'#ffd56b':'#8b95c9'}">${m[1]}</td><td>${m[2]}</td><td><span class="chip ${m[3]>m[4]?'w':m[3]==m[4]?'d':'l'}">${m[3]}:${m[4]}</span></td></tr>`).join('')}</table></div></div>
+  <div class=colB><div class="card rd"><div class=tag>CHAMPION 2026</div><div style="font-size:40px;font-weight:800;color:#ffd56b;margin:6px 0">🏆 Final 3:0</div><div class=sub>Playoff ${H.playoff.group} · ${H.playoff.seed}rd seed after the group</div><div class=sec>ELO</div><div style="font-size:44px;font-weight:800">${hp.elo}</div>${elo(470,140)}
   <div class=row><div class=m><b>${hp.wins}–${hp.draws}–${hp.losses}</b><span>W–D–L</span></div><div class=m><b>${hp.pointsW}:${hp.pointsL}</b><span>Rallies</span></div></div><div class=row><div class=m><b>${hp.hlIndex}</b><span>HL index</span></div><div class=m><b>${hp.achievements}</b><span>Achievements</span></div></div>${bracket()}</div></div></div>`;
  }
  bhEl.innerHTML=h;bhEl.scrollTop=0}
@@ -132,6 +152,6 @@ bhEl.addEventListener('click',e=>{
  if(e.target.closest('[data-back]')){view=='hub'?closeAll():bh('hub');return}
  const g=e.target.closest('[data-go]');if(g)bh(g.dataset.go)});
 
-cam();
-if(location.hash=='#badminton'){cur=1;OPEN.bad()}
+fitUi();cam();
+if(location.hash=='#badminton'){cur=1;cam();OPEN.bad()}
 })();
