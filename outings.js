@@ -4,9 +4,10 @@
   var D = window.OUTINGS, V = D.visited, WL = D.wishlist;
   /* pobyty: spočítat datum, noci a počet návštěv */
   var MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-  function pd(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function pd(s) { var p = String(s).split('-'); return new Date(+p[0], p[1] ? +p[1] - 1 : 0, p[2] ? +p[2] : 1); }   /* stačí i jen rok: '2014' */
   function dd(n) { return (n < 10 ? '0' : '') + n; }
   function fmtVisit(v) {
+    if (String(v.from).length === 4) return String(v.from);
     var a = pd(v.from), b = pd(v.to || v.from), ya = a.getFullYear(), yb = b.getFullYear();
     if (+a === +b) return dd(a.getDate()) + ' ' + MON[a.getMonth()] + ' ' + ya;
     if (ya === yb && a.getMonth() === b.getMonth()) return dd(a.getDate()) + '–' + dd(b.getDate()) + ' ' + MON[a.getMonth()] + ' ' + ya;
@@ -18,6 +19,7 @@
     c.visits.sort(function (x, y) { return pd(x.from) - pd(y.from); });
     var last = c.visits[c.visits.length - 1], n = 0;
     c.visits.forEach(function (v) { n += Math.round((pd(v.to || v.from) - pd(v.from)) / 864e5); });
+    c.yearOnly = c.visits.some(function (v) { return String(v.from).length === 4; });
     c.date = fmtVisit(last); c.nights = n; c.nv = c.visits.length;
     c.years = pd(c.visits[0].from).getFullYear() + (pd(last.from).getFullYear() !== pd(c.visits[0].from).getFullYear() ? '–' + pd(last.from).getFullYear() : '');
   });
@@ -147,8 +149,8 @@
     'uniform vec2 uC;uniform float uR,uLon0,uLat0,uDN,uPOn,uPLon,uPWd,uPx0,uPy0,uPS;uniform vec3 uSun;uniform sampler2D tDay,tNight,tAux,tPatch;out vec4 o;\n' +
     'const float PI=3.14159265359;\n' +
     'vec4 cr(float t){float t2=t*t,t3=t2*t;return vec4(-.5*t3+t2-.5*t,1.5*t3-2.5*t2+1.,-1.5*t3+2.*t2+.5*t,.5*t3-.5*t2);}\n' +
-    'vec3 cubicDay(vec2 uv){vec2 p=uv*vec2(4096.,2048.)-.5;vec2 f=fract(p);ivec2 i=ivec2(floor(p));vec4 wx=cr(f.x),wy=cr(f.y);vec3 s=vec3(0.);\n' +
-    ' for(int j=-1;j<=2;j++){for(int k=-1;k<=2;k++){s+=texelFetch(tDay,ivec2((i.x+k)&4095,clamp(i.y+j,0,2047)),0).rgb*wx[k+1]*wy[j+1];}}\n' +
+    'vec3 cubicTex(sampler2D tx,vec2 uv){vec2 p=uv*vec2(4096.,2048.)-.5;vec2 f=fract(p);ivec2 i=ivec2(floor(p));vec4 wx=cr(f.x),wy=cr(f.y);vec3 s=vec3(0.);\n' +
+    ' for(int j=-1;j<=2;j++){for(int k=-1;k<=2;k++){s+=texelFetch(tx,ivec2((i.x+k)&4095,clamp(i.y+j,0,2047)),0).rgb*wx[k+1]*wy[j+1];}}\n' +
     ' return max(s,0.);}\n' +
     'float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}\n' +
     'float vnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}\n' +
@@ -167,8 +169,8 @@
     ' vec2 uv=vec2(lon/(2.0*PI)+0.5,0.5-lat/PI);\n' +
     ' vec2 dx=dFdx(uv),dy=dFdy(uv);dx.x-=floor(dx.x+0.5);dy.x-=floor(dy.x+0.5);\n' +
     ' float mag=max(length(dx*vec2(4096.,2048.)),length(dy*vec2(4096.,2048.)));\n' +
-    ' vec3 day=mag<0.7?cubicDay(uv):textureGrad(tDay,uv,dx,dy).rgb;\n' +
-    ' vec3 nit=textureGrad(tNight,uv,dx,dy).rgb;\n' +
+    ' float magN=mag;vec3 day=mag<0.7?cubicTex(tDay,uv):textureGrad(tDay,uv,dx,dy).rgb;\n' +
+    ' vec3 nit=mag<0.7?cubicTex(tNight,uv):textureGrad(tNight,uv,dx,dy).rgb;\n' +
     ' vec4 aux=textureGrad(tAux,uv,dx,dy);\n' +
     /* ostrý detail z dlaždic: barvy zůstanou ze základu, z dlaždic se vezme jen jemná kresba */
     ' if(uPOn>0.5){\n' +
@@ -198,7 +200,10 @@
     ' vec3 h=normalize(uSun+vec3(0.0,0.0,1.0));\n' +
     ' float sp=pow(max(dot(n,h),0.0),70.0)*aux.g*0.55*step(0.0,nd)*(1.0-cl);c+=vec3(1.0,0.95,0.85)*sp;\n' +
     ' float tw=(1.0-dl)*0.92*uDN;\n' +
-    ' c=mix(c,vec3(0.035,0.05,0.095)+nit*vec3(1.25,1.1,0.85),tw);\n' +
+    ' float lz=smoothstep(0.7,0.08,magN);float ll=dot(nit,vec3(0.3,0.6,0.1));\n' +
+    ' if(lz>0.0){vec2 g3=uv*vec2(4096.,2048.)*14.0;float nn=vnoise(g3)*0.5+vnoise(g3*2.1)*0.3+vnoise(g3*4.3)*0.2;float th=1.0-clamp(ll*1.5,0.0,0.97);float dots=smoothstep(th,th+0.12,nn);float st=smoothstep(0.35,0.6,vnoise(uv*vec2(4096.,2048.)*3.0+vnoise(g3*0.5)*2.0));nit=mix(nit,nit*(0.25+1.9*dots)*(0.6+0.8*st),lz);}\n' +
+    ' vec3 moon=day*vec3(0.05,0.07,0.12)*(1.0-cl*0.5);\n' +
+    ' c=mix(c,vec3(0.03,0.042,0.085)+moon+nit*vec3(1.25,1.1,0.85),tw);\n' +
     ' float fr=pow(1.0-cz,2.6);c+=vec3(0.16,0.31,0.78)*fr*(0.25+0.75*clamp(nd+0.3,0.0,1.0));\n' +
     ' o=vec4(c*cov+gc*(1.0-cov)*0.9,cov+ga*0.9*(1.0-cov));\n' +
     '}';
@@ -330,6 +335,10 @@
     function add(src, cb) { var s = document.createElement('script'); s.src = src; s.onload = cb; s.onerror = function () {}; document.head.appendChild(s); }
     function get(res, done) {
       fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-' + res + '.json').then(function (r) { return r.json(); }).then(function (t) {
+        try {
+          var cg = t.objects.countries.geometries.filter(function (g) { return g.id === '203' || g.id === 203 || (g.properties && g.properties.name === 'Czechia'); })[0];
+          if (cg) { var f = topojson.feature(t, cg).geometry; var co = f.type === 'Polygon' ? [f.coordinates] : f.coordinates; setCZ(co.map(function (p) { return p[0]; })); }
+        } catch (e) {}
         var m = topojson.mesh(t, t.objects.countries, function (a, b) { return a !== b; });
         done(lines(m.type === 'MultiLineString' ? m.coordinates : [m.coordinates]));
       }).catch(function () {});
@@ -364,9 +373,54 @@
   function list() { return showWish ? ALL : V; }
   function clusterR() { var m = innerWidth <= 720 ? 15 : 17, k = clamp((z - 1.2) / 2, 0, 1); return m * (1 - .9 * k); }
   function inCont(c) { return !selC || c.cont === CKEY[selC]; }
+
+  /* ---------- Domov: Česko (zlatý okraj) a Praha (paprsek) ---------- */
+  var CZU = null, HU = unit(D.home.lon, D.home.lat), homeVis = false, lastOT = 0;
+  function setCZ(rings) { CZU = rings.map(function (rg) { return rg.map(function (p) { return unit(p[0], p[1]); }); }); }
+  setCZ([[[12.09,50.25],[12.4,50.39],[12.97,50.42],[13.4,50.6],[14.3,50.9],[14.8,50.86],[15.0,51.05],[15.5,50.78],[16.0,50.65],[16.4,50.5],[16.9,50.2],[17.0,50.15],[17.7,50.1],[18.0,50.0],[18.45,49.95],[18.85,49.5],[18.55,49.45],[17.9,49.0],[17.2,48.85],[16.95,48.6],[16.5,48.8],[15.9,48.8],[15.2,49.0],[14.7,48.6],[14.0,48.65],[13.8,48.8],[13.2,49.1],[12.5,49.5],[12.4,49.75],[12.1,50.1]]]);
+  function czPath(r) {
+    cx.beginPath();
+    CZU.forEach(function (rg) {
+      for (var i = 0; i < rg.length; i++) { var q = rot(rg[i]), x = lay.cx + r * q[0], y = lay.cy - r * q[1]; if (i) cx.lineTo(x, y); else cx.moveTo(x, y); }
+      cx.closePath();
+    });
+  }
+  function drawHome(t, big) {
+    homeVis = false;
+    var hq = rot(HU); if (hq[2] < .12) return null;
+    var a = clamp((hq[2] - .12) / .25, 0, 1), r = R(), sz = r * .157, k = clamp(sz / 300, .25, 1);
+    var px = lay.cx + r * hq[0], py = lay.cy - r * hq[1];
+    if (px < -80 || px > W + 80 || py < -160 || py > H + 80) return null;
+    homeVis = true; cx.save(); cx.globalAlpha = a;
+    /* Česko: zlatý okraj + jemná záře dovnitř */
+    czPath(r); cx.save(); cx.clip(); czPath(r); cx.lineWidth = clamp(sz * .075, 2.5, 46); cx.strokeStyle = 'rgba(242,194,77,.2)'; cx.stroke(); cx.restore();
+    czPath(r); cx.fillStyle = 'rgba(242,194,77,.06)'; cx.fill();
+    cx.save(); cx.shadowColor = '#f2c24d'; cx.shadowBlur = clamp(sz * .026, 3, 16); czPath(r); cx.lineWidth = clamp(sz * .004 + 1, 1.2, 2.4); cx.strokeStyle = 'rgba(255,224,138,.95)'; cx.stroke(); cx.restore();
+    /* Praha: vlnky, paprsek, bod */
+    var ph = (t % 2600) / 2600;
+    for (var i = 0; i < 3; i++) {
+      var f = (ph + i / 3) % 1, rr = (6 + f * 36) * k;
+      cx.strokeStyle = 'rgba(255,224,138,' + ((1 - f) * .6).toFixed(2) + ')'; cx.lineWidth = 1.5; cx.beginPath(); cx.ellipse(px, py, rr, rr * .45, 0, 0, TAU); cx.stroke();
+    }
+    var h = clamp(sz * .155, 18, 95), w = clamp(k * 9, 3, 9), g = cx.createLinearGradient(px, py - h, px, py);
+    g.addColorStop(0, 'rgba(255,224,138,0)'); g.addColorStop(1, 'rgba(255,224,138,.85)');
+    cx.fillStyle = g; cx.beginPath(); cx.moveTo(px - 2.5 * k - 1, py); cx.lineTo(px - w, py - h); cx.lineTo(px + w, py - h); cx.lineTo(px + 2.5 * k + 1, py); cx.closePath(); cx.fill();
+    cx.save(); cx.shadowColor = '#f2c24d'; cx.shadowBlur = 22; cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(px, py, clamp(6 * k, 3.2, 6), 0, TAU); cx.fill(); cx.restore();
+    var box = null;
+    if (sz > 80) {
+      var fs = big ? 20 : 16; cx.textAlign = 'center'; cx.textBaseline = 'alphabetic'; cx.lineJoin = 'round';
+      cx.font = '800 ' + fs + 'px Inter,system-ui,sans-serif'; cx.lineWidth = 5; cx.strokeStyle = 'rgba(3,3,12,.9)'; cx.strokeText('PRAGUE', px, py - h - 18); cx.fillStyle = '#ffe9b8'; cx.fillText('PRAGUE', px, py - h - 18);
+      cx.font = '700 11px ui-monospace,Menlo,Consolas,monospace'; cx.fillStyle = '#f2c24d'; cx.fillText('HOME', px, py - h - 3);
+      var tw = cx.measureText('PRAGUE').width + 14; box = { l: px - tw / 2 - 8, r: px + tw / 2 + 8, t: py - h - 18 - fs, b: py + 4 };
+    }
+    cx.restore(); cx.textAlign = 'left'; cx.textBaseline = 'middle';
+    return box;
+  }
   function drawOverlay(t) {
     cx.clearRect(0, 0, W, H); setRot();
     drawBorders(isMoving());
+    var dtO = clamp((t - lastOT) / 1000, .001, .1); lastOT = t; var needAnim = false;
+    var homeBox = drawHome(t, innerWidth > 720);
     var r = R(), L = list(), vis = [];
     L.forEach(function (c) {
       var q = rot(c.u); if (q[2] < .06) return;
@@ -408,32 +462,76 @@
         if (w) {
           cx.strokeStyle = 'rgba(255,224,138,.9)'; cx.setLineDash([3, 3]); cx.lineWidth = 1.4; cx.beginPath(); cx.arc(p.x, p.y, 6, 0, TAU); cx.stroke(); cx.setLineDash([]);
         } else {
+          var pr = isSel ? 12 : (isH ? 10 : 8);
+          /* tmavý podklad, aby pin nezmizel ve světlech měst na noční straně */
+          var bgG = cx.createRadialGradient(p.x, p.y, pr * .5, p.x, p.y, pr + 9); bgG.addColorStop(0, 'rgba(3,3,12,.78)'); bgG.addColorStop(.65, 'rgba(3,3,12,.5)'); bgG.addColorStop(1, 'rgba(3,3,12,0)');
+          cx.fillStyle = bgG; cx.beginPath(); cx.arc(p.x, p.y, pr + 9, 0, TAU); cx.fill();
+          cx.strokeStyle = 'rgba(3,3,12,.9)'; cx.lineWidth = 3.8; cx.beginPath(); cx.arc(p.x, p.y, pr, 0, TAU); cx.stroke();
           cx.save(); cx.shadowColor = '#f2c24d'; cx.shadowBlur = isSel ? 22 : 14; cx.fillStyle = isSel ? '#fff' : '#ffe08a';
           cx.beginPath(); cx.arc(p.x, p.y, isSel ? 5.6 : (isH ? 5 : 3.6), 0, TAU); cx.fill(); cx.restore();
-          cx.strokeStyle = isSel ? '#fff' : 'rgba(255,224,138,.85)'; cx.lineWidth = 1.3; cx.beginPath(); cx.arc(p.x, p.y, isSel ? 12 : (isH ? 10 : 8), 0, TAU); cx.stroke();
+          cx.strokeStyle = isSel ? '#fff' : 'rgba(255,224,138,.95)'; cx.lineWidth = 1.5; cx.beginPath(); cx.arc(p.x, p.y, pr, 0, TAU); cx.stroke();
         }
+        if (isH && !isSel) { var rp = (t % 1100) / 1100; cx.strokeStyle = 'rgba(255,224,138,' + ((1 - rp) * .75).toFixed(2) + ')'; cx.lineWidth = 1.6; cx.beginPath(); cx.arc(p.x, p.y, 9 + rp * 20, 0, TAU); cx.stroke(); }
         if (isSel) { cx.strokeStyle = 'rgba(242,194,77,' + (1 - pulse).toFixed(2) + ')'; cx.lineWidth = 2; cx.beginPath(); cx.arc(p.x, p.y, 12 + pulse * 22, 0, TAU); cx.stroke(); }
       }
     });
-    /* popisky: chamtivě, aby se nepřekrývaly */
-    var fs = big ? 14 : 13, used = [];
+    /* popisky: chamtivě, aby se nepřekrývaly; poloha NEZÁVISÍ na tom, co je pod myší (nic se nehýbe) */
+    var fs = big ? 14 : 13, used = homeBox ? [homeBox] : [], recs = [];
     cx.font = '700 ' + fs + 'px Inter,system-ui,sans-serif'; cx.textBaseline = 'middle'; cx.lineJoin = 'round';
-    var cand = out.filter(function (p) { return !p.k && !p.dim; }).sort(function (a, b) { return (b.c === sel) - (a.c === sel) || (b.c === hov) - (a.c === hov) || b.z - a.z; });
+    var spots = [[12, 0, 'l'], [-12, 0, 'r'], [0, -18, 'c'], [0, 19, 'c'], [12, -15, 'l'], [-12, -15, 'r'], [12, 15, 'l'], [-12, 15, 'r']];
+    var cand = out.filter(function (p) { return !p.k && !p.dim; }).sort(function (a, b) { return (b.c === sel) - (a.c === sel) || b.z - a.z; });
+    function boxOf(p, s2, w, h) {
+      var px = p.x + s2[0], py = p.y + s2[1], l = s2[2] === 'l' ? px : s2[2] === 'r' ? px - w : px - w / 2;
+      return { px: px, py: py, B: { l: l - 1, r: l + w + 1, t: py - h / 2, b: py + h / 2 } };
+    }
     cand.forEach(function (p) {
-      var c = p.c, w = cx.measureText(c.name).width + 4, h = fs + 5, force = c === sel || c === hov;
-      var spots = [[12, 0, 'l'], [-12, 0, 'r'], [0, -18, 'c'], [0, 19, 'c'], [12, -15, 'l'], [-12, -15, 'r'], [12, 15, 'l'], [-12, 15, 'r']];
+      var c = p.c, w = cx.measureText(c.name).width + 4, h = fs + 5, force = c === sel, placed = false;
       for (var i = 0; i < spots.length; i++) {
-        var s2 = spots[i], px = p.x + s2[0], py = p.y + s2[1], l = s2[2] === 'l' ? px : s2[2] === 'r' ? px - w : px - w / 2;
-        var B = { l: l - 1, r: l + w + 1, t: py - h / 2, b: py + h / 2 };
+        var s2 = spots[i], bx = boxOf(p, s2, w, h), B = bx.B;
         if (!force && used.some(function (u) { return !(B.r < u.l || B.l > u.r || B.b < u.t || B.t > u.b); })) continue;
         if (!force && out.some(function (m) { return m !== p && m.x > B.l - 6 && m.x < B.r + 6 && m.y > B.t - 5 && m.y < B.b + 5; })) continue;
-        used.push(B); cx.globalAlpha = clamp((p.z - .06) / .22, 0, 1);
-        cx.textAlign = s2[2] === 'l' ? 'left' : s2[2] === 'r' ? 'right' : 'center';
-        cx.lineWidth = 4; cx.strokeStyle = 'rgba(3,3,12,.85)'; cx.strokeText(c.name, px, py);
-        cx.fillStyle = c === sel ? '#ffe9b8' : c.wish ? 'rgba(255,255,255,.7)' : '#fff'; cx.fillText(c.name, px, py);
-        break;
+        used.push(B); recs.push({ p: p, px: bx.px, py: bx.py, al: s2[2], w: w }); placed = true; break;
       }
+      /* popisek, na který se najelo, ale pro který nebylo místo, se ukáže na prvním místě (ostatní se kvůli tomu nehýbou) */
+      if (!placed && c === hov) { var b0 = boxOf(p, spots[0], w, h); recs.push({ p: p, px: b0.px, py: b0.py, al: 'l', w: w }); }
     });
+    var hovRec = null;
+    recs.forEach(function (rc) {
+      var c = rc.p.c, tg = c === hov ? 1 : 0, h0 = c._h || 0;
+      h0 += (tg - h0) * (1 - Math.exp(-dtO * 16)); if (Math.abs(tg - h0) < .01) h0 = tg; else needAnim = true; c._h = h0;
+      if (h0 > .01 || c === hov) { rc.h = h0; if (c === hov) hovRec = rc; }
+    });
+    var FLC = {};
+    function flagC(country) { if (!FLC[country]) { var c2 = document.createElement('canvas'); c2.width = 48; c2.height = 32; drawFlag(c2, country); FLC[country] = c2; } return FLC[country]; }
+    function drawRec(rc) {
+      var p = rc.p, c = p.c, h0 = rc.h || c._h || 0, al0 = clamp((p.z - .06) / .22, 0, 1);
+      /* běžný popisek (při najetí plynule zhasne a nahradí ho skleněný štítek) */
+      if (h0 < .98) {
+        cx.globalAlpha = al0 * (1 - h0); cx.save(); cx.translate(rc.px, rc.py);
+        cx.textAlign = rc.al === 'l' ? 'left' : rc.al === 'r' ? 'right' : 'center';
+        cx.lineWidth = 4; cx.strokeStyle = 'rgba(3,3,12,.85)'; cx.strokeText(c.name, 0, 0);
+        cx.fillStyle = c === sel ? '#ffe9b8' : c.wish ? 'rgba(255,255,255,.7)' : '#fff'; cx.fillText(c.name, 0, 0); cx.restore();
+      }
+      if (h0 < .02) return;
+      /* skleněný štítek s vlajkou: kreslí se přes ostatní, nic neposouvá */
+      var tw = cx.measureText(c.name).width, pw = tw + 50, ph = 30, gap = 14, X, Y;
+      if (rc.al === 'l') { X = p.x + gap + 4; Y = p.y + (rc.py - p.y) - ph / 2; }
+      else if (rc.al === 'r') { X = p.x - gap - 4 - pw; Y = p.y + (rc.py - p.y) - ph / 2; }
+      else { X = p.x - pw / 2; Y = p.y + (rc.py - p.y) + (rc.py < p.y ? -12 : 12) - ph / 2; }
+      var ax = rc.al === 'r' ? X + pw : rc.al === 'l' ? X : X + pw / 2, ay = Y + ph / 2, sc = .88 + .12 * h0;
+      cx.globalAlpha = al0 * h0; cx.save(); cx.translate(ax, ay); cx.scale(sc, sc); cx.translate(-ax, -ay);
+      cx.shadowColor = 'rgba(0,0,0,.55)'; cx.shadowBlur = 16; cx.fillStyle = 'rgba(8,8,20,.8)'; cx.beginPath(); cx.roundRect(X, Y, pw, ph, 15); cx.fill(); cx.shadowBlur = 0;
+      var gr = cx.createLinearGradient(X, Y, X, Y + ph); gr.addColorStop(0, 'rgba(255,255,255,.15)'); gr.addColorStop(.5, 'rgba(255,255,255,0)');
+      cx.fillStyle = gr; cx.beginPath(); cx.roundRect(X, Y, pw, ph, 15); cx.fill();
+      cx.strokeStyle = 'rgba(255,216,115,.85)'; cx.lineWidth = 1.2; cx.beginPath(); cx.roundRect(X, Y, pw, ph, 15); cx.stroke();
+      cx.save(); cx.beginPath(); cx.arc(X + 16, Y + ph / 2, 9, 0, TAU); cx.clip(); cx.drawImage(flagC(c.country), X + 16 - 12, Y + ph / 2 - 8, 24, 16); cx.restore();
+      cx.strokeStyle = 'rgba(255,255,255,.55)'; cx.lineWidth = 1; cx.beginPath(); cx.arc(X + 16, Y + ph / 2, 9, 0, TAU); cx.stroke();
+      cx.textAlign = 'left'; cx.fillStyle = '#fff'; cx.fillText(c.name, X + 32, Y + ph / 2 + .5);
+      cx.restore();
+    }
+    recs.forEach(function (rc) { if (rc !== hovRec) drawRec(rc); });
+    if (hovRec) drawRec(hovRec);
+    if (needAnim || hov) ovDirty = true;
     cx.globalAlpha = 1; cx.textAlign = 'left';
   }
 
@@ -460,7 +558,7 @@
       /* tažení řídí ukazatel, nic nepřidáváme */
     } else if (vl || va) {
       lon0 = wrapLon(lon0 + vl * dt); lat0 = clamp(lat0 + va * dt, -LATMAX, LATMAX);
-      var f = Math.exp(-dt * 3.4); vl *= f; va *= f; if (Math.hypot(vl, va) < .02) vl = va = 0; chg = true;
+      var f = Math.exp(-dt * 4.6); vl *= f; va *= f; if (Math.hypot(vl, va) < .02) vl = va = 0; chg = true;
     } else if (fresh && !reduce && !sel && !selC && z < 1.5 && !document.hidden) {
       lon0 = wrapLon(lon0 - dt * .016); chg = true;                  /* jen úplně na začátku, než se někdo dotkne */
     }
@@ -486,19 +584,19 @@
     if (t - lastPatch > (moving ? 350 : 120)) { lastPatch = t; patchUpdate(); }
     var drew = false;
     if (dirty) { drawGlobe(); dirty = false; drew = true; }
-    if (drew || ovDirty || sel) { setRot(); drawOverlay(t); ovDirty = false; }
+    if (drew || ovDirty || sel || (homeVis && t - lastOT > 50)) { setRot(); ovDirty = false; drawOverlay(t); }
     requestAnimationFrame(frame);
   }
 
   /* ---------- Ovládání: tažení, kolečko, štípnutí, dvojklik, klik ---------- */
-  var ptrs = {}, down = false, moved = 0, grab = null, pinch = null, hist = [], tapAt = 0, tapX = -99, tapY = -99, touchLike = false;
+  var DRAG_K = .55, ptrs = {}, gx0 = 0, gy0 = 0, down = false, moved = 0, grab = null, pinch = null, hist = [], tapAt = 0, tapX = -99, tapY = -99, touchLike = false;
   function pcount() { return Object.keys(ptrs).length; }
   function startGesture() {
     var k = Object.keys(ptrs);
     if (k.length >= 2) {
       var a = ptrs[k[0]], b = ptrs[k[1]], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
       pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), z: z, g: pick3(mx, my) }; grab = null;
-    } else if (k.length === 1) { var p = ptrs[k[0]]; grab = pick3(p[0], p[1]); pinch = null; }
+    } else if (k.length === 1) { var p = ptrs[k[0]]; grab = pick3(p[0], p[1]); gx0 = p[0]; gy0 = p[1]; pinch = null; }
     else { grab = null; pinch = null; }
     hist = [];
   }
@@ -522,7 +620,7 @@
       dirty = true; return;
     }
     if (moved < 3) return;                                           /* drobné chvění prstu se ignoruje */
-    if (grab) solveGrab(grab, e.clientX, e.clientY);
+    if (grab) solveGrab(grab, gx0 + (e.clientX - gx0) * DRAG_K, gy0 + (e.clientY - gy0) * DRAG_K);   /* DRAG_K < 1 = zem jede pomaleji než prst */
     else { var r = R(); lon0 = wrapLon(lon0 - dx / (r * Math.max(.3, Math.cos(lat0)))); lat0 = clamp(lat0 + dy / r, -LATMAX, LATMAX); }
     var now = performance.now(); hist.push({ t: now, lon: lon0, lat: lat0 }); while (hist.length > 2 && now - hist[0].t > 140) hist.shift();
     dirty = true;
@@ -548,7 +646,7 @@
       var last = hist[hist.length - 1], first = hist[0], dtm = (last.t - first.t) / 1000;
       if (now - last.t < 70 && dtm > .02) {
         vl = wrapLon(last.lon - first.lon) / dtm; va = (last.lat - first.lat) / dtm;
-        var sp = Math.hypot(vl, va), cap = 5 / Math.max(1, Math.sqrt(z)); if (sp > cap) { vl *= cap / sp; va *= cap / sp; }
+        var sp = Math.hypot(vl, va), cap = 3 / Math.max(1, Math.sqrt(z)); if (sp > cap) { vl *= cap / sp; va *= cap / sp; }
         if (sp < .1) vl = va = 0;
       }
     }
@@ -596,7 +694,7 @@
   var FLAGCODE = { 'Austria': 'AT', 'Slovakia': 'SK', 'Hungary': 'HU', 'Croatia': 'HR', 'Germany': 'DE', 'Italy': 'IT', 'Bulgaria': 'BG', 'Poland': 'PL',
     'Czechia': 'CZ', 'Czech Republic': 'CZ', 'USA': 'US', 'United States': 'US', 'United Arab Emirates': 'AE', 'France': 'FR', 'Netherlands': 'NL',
     'Belgium': 'BE', 'Spain': 'ES', 'Romania': 'RO', 'Ireland': 'IE', 'Russia': 'RU', 'Ukraine': 'UA', 'Slovenia': 'SI', 'Sweden': 'SE',
-    'Switzerland': 'CH', 'Denmark': 'DK', 'Finland': 'FI', 'Japan': 'JP', 'Lithuania': 'LT', 'Estonia': 'EE', 'Luxembourg': 'LU' };
+    'Switzerland': 'CH', 'Denmark': 'DK', 'Finland': 'FI', 'Japan': 'JP', 'Lithuania': 'LT', 'Estonia': 'EE', 'Luxembourg': 'LU', 'Egypt': 'EG', 'Cape Verde': 'CV', 'Tunisia': 'TN', 'United Kingdom': 'GB' };
   function drawFlag(cv2, country) {
     var code = FLAGCODE[country] || '', g = cv2.getContext('2d'), w = cv2.width, h = cv2.height;
     function S3(cols, vert) { cols.forEach(function (c, i) { g.fillStyle = c; vert ? g.fillRect(i * w / cols.length, 0, w / cols.length + .5, h) : g.fillRect(0, i * h / cols.length, w, h / cols.length + .5); }); }
@@ -617,6 +715,10 @@
       LT: function () { S3(['#fdb913', '#006a44', '#c1272d']); }, EE: function () { S3(['#0072ce', '#000', '#fff']); }, LU: function () { S3(['#ed2939', '#fff', '#00a1de']); },
       SE: function () { cross('#006aa7', '#fecc00'); }, DK: function () { cross('#c8102e', '#fff'); }, FI: function () { cross('#fff', '#003580'); },
       CH: function () { g.fillStyle = '#d52b1e'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.fillRect(w * .43, h * .2, w * .14, h * .6); g.fillRect(w * .3, h * .43, w * .4, h * .14); },
+      EG: function () { S3(['#ce1126', '#fff', '#000']); g.fillStyle = '#c09300'; g.fillRect(w * .44, h * .38, w * .12, h * .24); },
+      TN: function () { g.fillStyle = '#e70013'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.beginPath(); g.arc(w / 2, h / 2, h * .32, 0, 7); g.fill(); g.fillStyle = '#e70013'; g.beginPath(); g.arc(w / 2 - h * .03, h / 2, h * .22, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(w / 2 + h * .03, h / 2, h * .17, 0, 7); g.fill(); g.fillStyle = '#e70013'; g.beginPath(); g.arc(w / 2 + h * .05, h / 2, h * .09, 0, 7); g.fill(); },
+      GB: function () { g.fillStyle = '#012169'; g.fillRect(0, 0, w, h); g.lineCap = 'butt'; g.strokeStyle = '#fff'; g.lineWidth = h * .22; g.beginPath(); g.moveTo(0, 0); g.lineTo(w, h); g.moveTo(w, 0); g.lineTo(0, h); g.stroke(); g.strokeStyle = '#c8102e'; g.lineWidth = h * .09; g.stroke(); g.fillStyle = '#fff'; g.fillRect(w * .4, 0, w * .2, h); g.fillRect(0, h * .35, w, h * .3); g.fillStyle = '#c8102e'; g.fillRect(w * .44, 0, w * .12, h); g.fillRect(0, h * .41, w, h * .18); },
+      CV: function () { g.fillStyle = '#003893'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.fillRect(0, h * .56, w, h * .22); g.fillStyle = '#cf2027'; g.fillRect(0, h * .62, w, h * .1); g.fillStyle = '#f7d116'; for (var i = 0; i < 10; i++) { g.beginPath(); g.arc(w * .4 + Math.cos(i * .628) * h * .32, h * .5 + Math.sin(i * .628) * h * .32, h * .045, 0, 7); g.fill(); } },
       JP: function () { g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.fillStyle = '#bc002d'; g.beginPath(); g.arc(w / 2, h / 2, h * .3, 0, 7); g.fill(); }
     };
     if (F[code]) F[code](); else { g.fillStyle = '#3a2f14'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffe9b8'; g.font = '700 ' + Math.round(h * .45) + 'px ui-monospace,monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(country.slice(0, 2).toUpperCase(), w / 2, h / 2 + 1); }
@@ -645,7 +747,7 @@
     if (c.transport) tags += '<span>' + icon(c.transport) + esc(c.transport.toUpperCase()) + '</span>';
     if (!c.wish && c.nv > 1) tags += '<span>' + c.nv + ' VISITS</span>';
     if (c.nights) tags += '<span>' + String(c.nights).padStart(2, '0') + ' NIGHTS</span>';
-    else if (!c.wish && c.visits.length) tags += '<span>DAY TRIP</span>';
+    else if (!c.wish && c.visits.length && !c.yearOnly) tags += '<span>DAY TRIP</span>';
     tags += '<span>' + Math.abs(c.lat).toFixed(2) + (c.lat >= 0 ? 'N ' : 'S ') + Math.abs(c.lon).toFixed(2) + (c.lon >= 0 ? 'E' : 'W') + '</span>';
     h += '<div class="tags">' + tags + '</div>';
     if (c.wish) {
@@ -761,7 +863,7 @@
     var facts = [];
     if (cs.length) {
       var most = cs.slice().sort(function (a, b) { return b.nv - a.nv || b.nights - a.nights; })[0];
-      facts.push(most.nv > 1 ? 'Most visited: ' + most.name + ' (' + most.nv + '×)' : 'Longest stay: ' + most.name + ' (' + most.nights + ' nights)');
+      facts.push(most.nv > 1 ? 'Most visited: ' + most.name + ' (' + most.nv + '×)' : most.nights ? 'Longest stay: ' + most.name + ' (' + most.nights + ' nights)' : 'Visited: ' + most.name);
       var far = cs.slice().sort(function (a, b) { return dist(D.home, b) - dist(D.home, a); })[0];
       if (dist(D.home, far) > 100) facts.push('Farthest from ' + D.home.name + ': ' + far.name + ', ' + fmt(dist(D.home, far)) + ' km');
       if (cs.length > 2) {
@@ -779,7 +881,7 @@
       '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="#f2c24d" stroke-width="8" stroke-dasharray="' + (C2 * st.pct / 100).toFixed(1) + ' ' + C2.toFixed(1) + '" transform="rotate(-90 50 50)"/>' +
       '<text x="50" y="57" text-anchor="middle" fill="#fff" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="22">' + st.pct + '%</text></svg>' +
       '<div><b>' + st.nC + ' / ' + st.tot + '</b><small>COUNTRIES VISITED</small></div></div>';
-    h += '<div class="gr"><div><b>' + st.cs.length + '</b><small>CITIES</small></div><div><b>' + st.nights + '</b><small>NIGHTS</small></div><div><b>' + st.trips + '</b><small>TRIPS</small></div></div>';
+    h += '<div class="gr"><div><b>' + st.cs.length + '</b><small>CITIES</small></div><div><b>' + (st.nights || '–') + '</b><small>NIGHTS</small></div><div><b>' + st.trips + '</b><small>TRIPS</small></div></div>';
     if (st.facts.length) h += '<div class="h">DID YOU KNOW</div>' + st.facts.map(function (f) { return '<div class="t"><b>›</b>' + esc(f) + '</div>'; }).join('');
     else h += '<div class="note">NOT VISITED YET.<br>The lights here are still off.</div>';
     if (st.co.length) h += '<div class="h">COUNTRIES</div><div class="fls" id="fls"></div>';
@@ -840,6 +942,7 @@
     state: function () { return { lon: lon0 / DEG, lat: lat0 / DEG, z: z, tex: texReady, items: items.length, glq: GLQ, anim: !!anim, zt: !!zT, vel: Math.hypot(vl, va), patch: PT.on, pz: PT.Z, fail: PT.fail, pend: PT.pending }; },
     screenOf: function (lo, la) { setRot(); var q = rot(unit(lo, la)), r = R(); return { x: lay.cx + r * q[0], y: lay.cy - r * q[1], z: q[2] }; },
     geoAt: function (x, y) { var g = pick3(x, y); return g ? { lon: Math.atan2(g[0], g[2]) / DEG, lat: Math.asin(g[1]) / DEG } : null; },
+    sunSet: function (lo, la) { sunLon = lo * DEG; sunLat = la * DEG; dirty = true; },
     grabTest: function (x, y) { var g = pick3(x, y), a = lon0, b = lat0; solveGrab(g, x, y); var r = [lon0 - a, lat0 - b]; lon0 = a; lat0 = b; return r; },
     lay: function () { return { cx: lay.cx, cy: lay.cy, R: R() }; } };
 })();
