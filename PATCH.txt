@@ -22,6 +22,6 @@ FUN – napojení na hlavní web (4 malé úpravy tvých stávajících souborů
   html[data-vt="fun"]::view-transition-new(letter) { animation: gl-new 1.25s step-end both; mix-blend-mode: normal; }
 }
 
-4) Nahraj do hlavní složky: fun.html, fun.js, fun3d.js, fun-data.js, fun-print.jpg
+4) Nahraj do hlavní složky: fun.html, fun.js, fun-data.js, fun-table.png
 
 Pozn.: sdílecí obrázek (og-image) má pruh F pořád červený – až bude čas, přebarvíme na zelený.

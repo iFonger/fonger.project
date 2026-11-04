@@ -13,34 +13,6 @@ window.OUTINGS = {
   home: { name: 'Prague', code: 'PRG', lon: 14.42, lat: 50.08 },
 
   visited: [
-    /* --- starší cesty (zatím jen rok; až budeš znát datum, napiš 'RRRR-MM-DD') --- */
-    { id: 'hurghada', name: 'Hurghada', country: 'Egypt', cont: 'AF', lon: 33.8116, lat: 27.2579,
-      visits: [{ from: '2002' }] },
-
-    { id: 'zurich', name: 'Zurich', country: 'Switzerland', cont: 'EU', lon: 8.5417, lat: 47.3769,
-      visits: [{ from: '2003' }] },
-
-    { id: 'marsaalam', name: 'Marsa Alam', country: 'Egypt', cont: 'AF', lon: 34.8950, lat: 25.0676,
-      visits: [{ from: '2008' }, { from: '2009' }, { from: '2010' }, { from: '2012' }, { from: '2013' }, { from: '2014' }, { from: '2015' }] },
-
-    { id: 'liptovskamara', name: 'Liptovská Mara', country: 'Slovakia', cont: 'EU', lon: 19.4500, lat: 49.0900,
-      visits: [{ from: '2013' }] },
-
-    { id: 'monastir', name: 'Monastir', country: 'Tunisia', cont: 'AF', lon: 10.8113, lat: 35.7643,
-      visits: [{ from: '2014' }] },
-
-    { id: 'london', name: 'London', country: 'United Kingdom', cont: 'EU', lon: -0.1276, lat: 51.5072,
-      visits: [{ from: '2014' }] },
-
-    { id: 'brighton', name: 'Brighton', country: 'United Kingdom', cont: 'EU', lon: -0.1372, lat: 50.8225,
-      visits: [{ from: '2014' }] },
-
-    { id: 'hammamet', name: 'Hammamet', country: 'Tunisia', cont: 'AF', lon: 10.6222, lat: 36.4000,
-      visits: [{ from: '2015' }] },
-
-    { id: 'sal', name: 'Sal', country: 'Cape Verde', cont: 'AF', lon: -22.9042, lat: 16.5992,
-      visits: [{ from: '2016' }, { from: '2017' }] },
-
     { id: 'kaltenbach', name: 'Kaltenbach', country: 'Austria', cont: 'EU', lon: 11.883, lat: 47.233,
       visits: [{ from: '2018-03-12', to: '2018-03-18' }] },
 
@@ -54,57 +26,19 @@ window.OUTINGS = {
       visits: [{ from: '2019-06-28', to: '2019-06-29' }] },
 
     { id: 'liptovskymikulas', name: 'Liptovský Mikuláš', country: 'Slovakia', cont: 'EU', lon: 19.6167, lat: 49.0833,
-      visits: [{ from: '2013' }, { from: '2020-07-09', to: '2020-07-15' }] },
+      visits: [{ from: '2020-07-09', to: '2020-07-15' }] },
 
     { id: 'linz', name: 'Linz', country: 'Austria', cont: 'EU', lon: 14.2858, lat: 48.3069,
       visits: [{ from: '2020-08-14', to: '2020-08-17' }] },
 
     { id: 'newyork', name: 'New York', country: 'USA', cont: 'NA', lon: -74.006, lat: 40.7128,
-      visits: [{ from: '2022-07-20', to: '2022-08-11' }],
-      photos: [
-        'outings/newyork-1.jpg',
-        'outings/newyork-2.jpg',
-        'outings/newyork-3.jpg',
-        'outings/newyork-4.jpg',
-        'outings/newyork-5.jpg',
-        'outings/newyork-6.jpg',
-        'outings/newyork-7.jpg',
-        'outings/newyork-8.jpg',
-        'outings/newyork-9.jpg',
-        'outings/newyork-10.jpg',
-        'outings/newyork-11.jpg'
-      ] },
+      visits: [{ from: '2022-07-20', to: '2022-08-11' }] },
 
     { id: 'niagarafalls', name: 'Niagara Falls', country: 'USA', cont: 'NA', lon: -79.0377, lat: 43.0962,
-      visits: [{ from: '2022-07-29', to: '2022-07-30' }],
-      photos: [
-        'outings/niagarafalls-1.jpg',
-        'outings/niagarafalls-2.jpg',
-        'outings/niagarafalls-3.jpg',
-        'outings/niagarafalls-4.jpg',
-        'outings/niagarafalls-5.jpg',
-        'outings/niagarafalls-6.jpg'
-      ] },
+      visits: [{ from: '2022-07-29', to: '2022-07-30' }] },
 
     { id: 'washingtondc', name: 'Washington D.C.', country: 'USA', cont: 'NA', lon: -77.0369, lat: 38.9072,
-      visits: [{ from: '2022-08-02', to: '2022-08-03' }],
-      photos: [
-        'outings/washingtondc-1.jpg',
-        'outings/washingtondc-2.jpg',
-        'outings/washingtondc-3.jpg',
-        'outings/washingtondc-4.jpg',
-        'outings/washingtondc-5.jpg'
-      ] },
-
-    { id: 'margaretville', name: 'Margaretville', country: 'USA', cont: 'NA', lon: -74.6532, lat: 42.1459,
-      visits: [{ from: '2022-07-22', to: '2022-07-23' }],
-      photos: [
-        'outings/margaretville-1.jpg',
-        'outings/margaretville-2.jpg',
-        'outings/margaretville-3.jpg',
-        'outings/margaretville-4.jpg',
-        'outings/margaretville-5.jpg'
-      ] },
+      visits: [{ from: '2022-08-02', to: '2022-08-03' }] },
 
     { id: 'vodice', name: 'Vodice', country: 'Croatia', cont: 'EU', lon: 15.7778, lat: 43.7608,
       visits: [{ from: '2022-08-20', to: '2022-08-28' }] },
@@ -123,12 +57,6 @@ window.OUTINGS = {
 
     { id: 'venice', name: 'Venice', country: 'Italy', cont: 'EU', lon: 12.3155, lat: 45.4408,
       visits: [{ from: '2023-06-29', to: '2023-06-29' }] },
-
-    { id: 'alicante', name: 'Alicante', country: 'Spain', cont: 'EU', lon: -0.4907, lat: 38.3452,
-      visits: [{ from: '2023-09-18', to: '2023-09-24' }] },
-
-    { id: 'valencia', name: 'Valencia', country: 'Spain', cont: 'EU', lon: -0.3763, lat: 39.4699,
-      visits: [{ from: '2023-09-21', to: '2023-09-21' }] },
 
     { id: 'dubai', name: 'Dubai', country: 'United Arab Emirates', cont: 'AS', lon: 55.2708, lat: 25.2048,
       visits: [{ from: '2023-11-16', to: '2023-11-23' }] },

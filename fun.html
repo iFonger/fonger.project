@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FUN · Fonger</title>
 <link rel="stylesheet" href="style.css">
 <link rel="expect" href="#mark" blocking="render">
@@ -17,7 +17,7 @@ body.detail #world{filter:blur(3px) brightness(.5)}
 .top{position:absolute;top:30px;left:44px;right:44px;display:flex;justify-content:space-between;font-size:13px;letter-spacing:.2em;color:#8a96c4;z-index:5}
 .card{position:absolute;background:rgba(10,15,42,.72);backdrop-filter:blur(6px);border:1px solid #27366f;border-radius:16px;padding:16px 18px;z-index:4}
 .card h4{font-size:11px;letter-spacing:.22em;color:#3dff9a;margin-bottom:10px}
-.dock{position:absolute;left:0;right:0;bottom:0;height:150px;background:none;z-index:3;text-align:center;padding-top:40px}
+.dock{position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(transparent,#05071aee 55%);z-index:3;text-align:center;padding-top:40px}
 .dock .nm{font-size:44px;font-weight:900;letter-spacing:.06em;color:#06130d;-webkit-text-stroke:2px #3dff9a;text-shadow:0 0 16px #3dff9a}
 .dock .sb{font-size:14px;color:#9fb0d8;margin-top:4px;letter-spacing:.08em}
 .arr{position:absolute;bottom:60px;font-size:26px;font-weight:800;letter-spacing:.12em;color:#8a96c4;z-index:4}
@@ -93,10 +93,12 @@ body.hp #c-hp,body.kb #c-kb,body.ms #c-ms{display:flex}
 @keyframes br{0%,100%{opacity:.25}50%{opacity:.55}}
 body.pc .nb-pc,body.kb .nb-kb,body.ms .nb-ms,body.hp .nb-hp{animation:none;opacity:1;stroke-width:1.8}
 
+#stage{position:absolute;left:0;top:0;width:1440px;height:900px;transform-origin:0 0;overflow:hidden;background:#05071a}
+#world{position:absolute;inset:0;transform-origin:0 0;transition:transform .9s cubic-bezier(.3,.1,.2,1),filter .3s}
 .hit{cursor:pointer}
 .arr{cursor:pointer;user-select:none}.arr:hover{color:#fff}.pips i{cursor:pointer}
 .top a{color:inherit;text-decoration:none}
-body.bh #ui>.card,body.bh .dock,body.bh .arr,body.bh .pips,body.bh #panel,body.bh #bpanel{display:none}
+body.bh #stage>.card,body.bh .dock,body.bh .arr,body.bh .pips,body.bh #panel,body.bh #bpanel{display:none}
 body.bh #world{visibility:hidden}
 #bh svg{position:static;display:block}
 #bh{display:none;position:absolute;inset:0;z-index:30;background:radial-gradient(900px 500px at 50% -10%,#1b2450,#0a0d1c 60%);color:#e8ecff;overflow:hidden}
@@ -143,129 +145,132 @@ body.bh #bh{display:block}
 #bh .card.go{cursor:pointer;transition:transform .2s,box-shadow .2s}#bh .card.go:hover{transform:translateY(-3px)}
 #bh .tb{cursor:pointer}#bh .tb.on{cursor:default}
 
-
-#view{position:fixed;inset:0;overflow:hidden;background:#05071a}
-#world{position:absolute;left:0;top:0;width:1440px;height:900px;transform-origin:0 0;transition:transform .9s cubic-bezier(.3,.1,.2,1),filter .3s}
-#world svg#scene{overflow:visible}
-#ui{text-align:left;position:absolute;left:0;top:0;width:1440px;height:900px;transform-origin:0 0;pointer-events:none;z-index:30}
-#ui>*{pointer-events:auto}
-#ui>.top,#ui>.dock,#ui>.pips{pointer-events:none}#ui>.pips i{pointer-events:auto}
-.dock::before{content:"";position:absolute;left:-1600px;right:-1600px;top:0;bottom:0;background:linear-gradient(transparent,#05071aee 55%);z-index:-1}
-body.focus #ui>.card{opacity:0;pointer-events:none}
-#ui>.card{transition:opacity .4s}
-#veil{position:fixed;inset:0;background:#080b1e;display:none;z-index:20}
-body.bh #veil,body.games #veil{display:block}
-.home{z-index:40}
-.hc,.lb{transform:scale(var(--inv,1));transform-origin:0 0}
-#bh svg{width:100%;height:auto}
-#bh .two{display:flex;gap:20px;padding:0 48px}
-#bh .colL{width:820px;flex:none}#bh .colL .card{width:100%;height:760px}
-#bh .colR{flex:1}#bh .colR .card{height:760px}
-#bh .colA{flex:1}#bh .colA .card{height:760px;overflow:auto}
-#bh .colB{width:520px;flex:none}#bh .colB .card{height:760px}
-#bh .card{overflow:hidden}#bh .card.scroll{overflow:auto}
-@media (max-width:1100px){
- #ui{width:100vw;height:100vh;height:100dvh;transform:none!important}
- .top{left:16px;right:16px;top:22px}
- .top span{font-size:11px}
- #ui>.card{display:none}
- body:not(.detail):not(.beer):not(.games):not(.bh) #ui>.card{display:block;left:16px!important;right:16px!important;top:auto!important;bottom:150px;width:auto!important}
- .dock{height:128px;padding-top:30px}.dock .nm{font-size:30px;-webkit-text-stroke:1.4px #3dff9a}.dock .sb{font-size:10px;letter-spacing:.04em;padding:0 56px}
- .arr{bottom:78px;font-size:22px;padding:10px 12px}.arr small{font-size:9px;letter-spacing:.12em}
- #aL{left:2px!important}#aR{right:2px!important}
- .pips{bottom:12px}
- #panel{left:14px;right:14px;top:64px;bottom:20px;width:auto;padding:22px 20px;overflow:auto}
- #panel h1{font-size:34px}.dig b{font-size:30px}
- #bpanel{left:14px!important;right:14px!important;top:64px;bottom:20px;width:auto!important;padding:22px 20px;overflow:auto}
- #bpanel h1{font-size:34px}
- #gv{overflow:auto}.gtop{left:16px;right:16px;top:22px}
- .mon{position:relative;left:auto;top:auto;margin:64px 14px 0;width:auto;height:250px;padding:8px}
- .mon .scr{display:grid;grid-template-columns:repeat(3,1fr);align-content:center;gap:12px;padding:10px}
- .ic{position:static!important;width:auto;font-size:11px}.ic b{width:62px;height:62px;font-size:20px;border-radius:16px}
- .stand,.base{display:none}
- .gp{position:relative;right:auto;top:auto;bottom:auto;width:auto;margin:16px 14px 24px;padding:22px 20px}
- .gp h1{font-size:32px}
- body.games #gv{display:block}
- #bh{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
- #bh .top{padding:60px 16px 12px}
- #bh h1{font-size:12px}
- #bh .strip{flex-wrap:wrap;padding:0 16px;gap:10px}#bh .k{flex:1 1 44%;padding:12px 14px}#bh .k b{font-size:24px}
- #bh .cards{flex-direction:column;padding:16px;gap:16px}
- #bh .card{height:auto!important;width:auto!important;padding:20px 16px 76px}
- #bh .cta{left:16px;right:16px}
- #bh .two{flex-direction:column;padding:0 16px;gap:16px}
- #bh .colL,#bh .colB{width:auto}
- #bh .card.scroll,#bh .colL .card,#bh .colA .card{overflow-x:auto}
- #bh .row{flex-wrap:wrap}#bh .row .m{flex:1 1 40%}
- #bh .h2{font-size:21px}
- #bh .opp{display:none}#bh table{font-size:12px}#bh td,#bh th{padding:7px 4px}#bh .chip{min-width:30px;padding:3px 4px;margin:1px}
- #bh .tabs{flex-wrap:wrap}
- .hc{width:300px!important}
-}
-
-#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;transition:filter .3s}
-body.detail #c,body.beer #c,body.games #c,body.bh #c{filter:blur(4px) brightness(.45)}
-#ui{position:fixed;inset:0;width:auto;height:auto;transform:none}
-.hc{position:fixed;left:auto;right:44px;top:50%;margin-top:-170px;transform:none}
-.lb{position:fixed;left:50%;top:calc(50% + 46px);transform:translateX(-50%)}
-#hud{position:fixed;inset:0;pointer-events:none;display:none;z-index:6}
-#hud.on{display:block}
-#hud .x{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:#fff;opacity:.55;box-shadow:0 0 0 1px #0008}
-#prompt{position:absolute;left:50%;bottom:34px;transform:translate(-50%,12px);opacity:0;transition:.25s;padding:10px 18px;border:1px solid var(--c,#3dff9a);border-radius:99px;background:rgba(9,14,40,.82);backdrop-filter:blur(6px);font-size:13px;letter-spacing:.14em;color:#cfd8ff;white-space:nowrap;pointer-events:auto}
-#prompt.on{opacity:1;transform:translate(-50%,0)}
-#prompt kbd{font:700 12px ui-monospace,monospace;padding:2px 8px;border-radius:6px;background:var(--c);color:#04110a;margin-right:8px}
-#prompt b{color:#fff;letter-spacing:.2em;margin-left:6px}
-#sum{text-align:left;position:absolute;left:44px;top:50%;margin-top:-100px;width:260px;padding:18px 20px;border:1px solid #27366f;border-left:3px solid var(--c,#3dff9a);border-radius:16px;background:rgba(10,15,42,.78);backdrop-filter:blur(8px);opacity:0;transform:translateX(-14px);transition:.3s}
-#sum.on{opacity:1;transform:none}
-#sum h4{font-size:11px;letter-spacing:.24em;color:var(--c);margin-bottom:6px}
-#sum p{font-size:13px;color:#9fb0d8;margin-bottom:12px}
-#sum div{display:flex;gap:14px;flex-wrap:wrap}#sum span b{display:block;font-size:24px;font-weight:800;color:#fff}#sum span i{font-style:normal;font-size:9px;letter-spacing:.16em;color:#7d8bc4}
-#start{position:fixed;inset:0;z-index:25;display:none;place-items:center;text-align:center;background:radial-gradient(800px 500px at 50% 45%,#0b1236cc,#05071aee);cursor:pointer}
-#start.on{display:grid}
-#start h1{font-size:64px;font-weight:900;color:#06130d;-webkit-text-stroke:2px #3dff9a;text-shadow:0 0 22px #3dff9a;letter-spacing:.06em}
-#start p{margin-top:10px;color:#9fb0d8;letter-spacing:.14em;font-size:13px}
-#start .keys{margin-top:26px;display:flex;gap:26px;justify-content:center;font-size:12px;color:#8a96c4;letter-spacing:.1em}
-#start kbd{font:700 12px ui-monospace,monospace;padding:4px 9px;border-radius:7px;border:1px solid #3a4a99;background:#0c1330;color:#cfd8ff;margin:0 2px}
-#start .go{margin-top:30px;display:inline-block;padding:13px 30px;border-radius:99px;border:1px solid #3dff9a;color:#3dff9a;letter-spacing:.24em;font-size:13px;font-weight:700}
-#joy,#act{display:none}
-body.touch #hud.on #joy{display:block}
-body.touch #hud.on #act{display:grid}
-#joy{position:absolute;left:28px;bottom:34px;width:130px;height:130px;border-radius:50%;border:2px solid #ffffff33;background:#ffffff0d;pointer-events:auto;touch-action:none}
-#knob{position:absolute;left:35px;top:35px;width:60px;height:60px;border-radius:50%;background:#ffffff40;border:1px solid #fff6}
-#act{position:absolute;right:28px;bottom:48px;width:84px;height:84px;border-radius:50%;place-items:center;border:2px solid #3dff9a;background:#3dff9a22;color:#3dff9a;font:800 22px Inter,Arial;pointer-events:auto}
-body.touch #prompt{bottom:190px}
-body.touch #sum{left:14px;right:14px;top:auto;bottom:auto;margin:0;top:70px;width:auto}
-body.touch .hc{right:14px;left:14px;top:70px;margin-top:0;width:auto!important}
-body.touch .lb{top:30%}
-body.detail #start,body.beer #start,body.games #start,body.bh #start{display:none!important}
-body.detail #hud,body.beer #hud,body.games #hud,body.bh #hud{display:none}
-.top{z-index:7}
-#start .keys.t{display:none}body.touch #start .keys{display:none}body.touch #start .keys.t{display:flex}
-.gtop span:first-child{margin-left:60px}
-#bh .top{padding-left:96px}
-@media (max-width:1100px){#bh .top{padding-left:16px;padding-top:64px}.gtop span:first-child{margin-left:56px}body.touch #sum{padding:12px 16px}body.touch #sum p{margin-bottom:6px}}
 </style></head><body>
 <a class="home" id="mark" href="index.html" aria-label="Zpět na hlavní stránku">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
 </a>
-<canvas id="c"></canvas>
-<div id="hud"><div class="x"></div><div id="prompt"><kbd class="k">E</kbd><span class="tp">OTEVŘÍT</span><b></b></div><div id="sum"></div><div id="joy"><div id="knob"></div></div><div id="act">E</div></div>
-<div id="start" class="on"><div><h1>FUN</h1><p>PROCHÁZEJ POKOJ · PŘIJĎ K PRVKU A OTEVŘI</p>
-<div class="keys"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> chůze</span><span>myš · rozhlížení</span><span><kbd>E</kbd> otevřít</span><span><kbd>Esc</kbd> zpět</span></div>
-<div class="keys t"><span>levý joystick · chůze</span><span>tažení vpravo · rozhlížení</span><span>tlačítko E · otevřít</span></div>
-<div class="go">KLIKNI A VSTOUP</div></div></div>
-<div id="ui">
-<div class=top><span></span><span class=mono>F · FUN</span></div>
-<div class=hc id=c-pc><h5>THE RIG</h5><h3>Custom gaming PC</h3>
+<div id="stage">
+<div id="world">
+<svg id=scene width=1440 height=900 viewBox="0 0 1440 900">
+<defs>
+<linearGradient id=wall x1=0 y1=0 x2=0 y2=1><stop offset=0 stop-color="#0a0f2c"/><stop offset=1 stop-color="#141b46"/></linearGradient>
+<linearGradient id=floor x1=0 y1=0 x2=0 y2=1><stop offset=0 stop-color="#1b1633"/><stop offset=1 stop-color="#0b0a1c"/></linearGradient>
+<radialGradient id=gl><stop offset=0 stop-color="#fff" stop-opacity=".22"/><stop offset=1 stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id=cone x1=0 y1=0 x2=0 y2=1><stop offset=0 stop-color="#bff" stop-opacity=".16"/><stop offset=1 stop-color="#bff" stop-opacity=".02"/></linearGradient>
+<radialGradient id=mon><stop offset=0 stop-color="#3a5cff" stop-opacity=".5"/><stop offset=1 stop-color="#3a5cff" stop-opacity="0"/></radialGradient>
+<linearGradient id=scr x1=0 y1=0 x2=1 y2=1><stop offset=0 stop-color="#1d6bff"/><stop offset=.5 stop-color="#b266ff"/><stop offset=1 stop-color="#ff4fa6"/></linearGradient>
+<pattern id=net width=9 height=9 patternUnits=userSpaceOnUse><path d="M0 0H9M0 0V9" stroke="#e8f4ff" stroke-opacity=".55" stroke-width="1"/></pattern>
+<filter id=glow x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5" result=b /><feMerge><feMergeNode in=b /><feMergeNode in=SourceGraphic /></feMerge></filter>
+</defs>
+<rect width=1440 height=520 fill="url(#wall)"/>
+<g stroke="#1f2a62" stroke-width="2" opacity=".6"><line x1=480 y1=0 x2=480 y2=520 /><line x1=960 y1=0 x2=960 y2=520 /><line x1=0 y1=100 x2=1440 y2=100 /></g>
+<!-- floor -->
+<rect y=520 width=1440 height=380 fill="url(#floor)"/>
+<g stroke="#2a2250" stroke-width="1.5" opacity=".7" id=boards></g>
+<rect y=514 width=1440 height=10 fill="#26307a"/>
+<!-- neon sign -->
+<text x=720 y=170 text-anchor=middle font-size=118 font-weight=900 fill="#06130d" stroke="#3dff9a" stroke-width="3" filter="url(#glow)" style="font-family:Inter,Arial">FUN</text>
+<!-- scoreboard -->
+<rect x=600 y=215 width=240 height=88 rx=10 fill="#04060f" stroke="#14503a" stroke-width="2"/>
+<text x=720 y=268 text-anchor=middle font-size=46 font-weight=800 fill="#3dff9a" filter="url(#glow)" font-family="ui-monospace,Menlo,monospace"><tspan id=sbn>0 : 0</tspan></text>
+<text x=720 y=290 text-anchor=middle font-size=11 letter-spacing=3 fill="#5e8f7c"><tspan id=sbl></tspan></text>
+<!-- climbing wall -->
+<rect x=50 y=240 width=370 height=278 rx=8 fill="#1a2250" stroke="#2f3d86" stroke-width="3"/>
+<g id=holds></g>
+<path d="M95 485 L150 430 L130 370 L215 330 L260 365 L330 300 L375 265" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round" fill="none"/>
+<g transform="translate(-80 0)"><!-- strava ring -->
+<g filter="url(#glow)"><circle cx=1040 cy=250 r=62 fill="none" stroke="#2a2250" stroke-width="14"/><circle cx=1040 cy=250 r=62 fill="none" stroke="#fc4c02" stroke-width="14" stroke-linecap="round" stroke-dasharray="235 400" transform="rotate(-90 1040 250)"/></g>
+<text x=1040 y=252 text-anchor=middle font-size=30 font-weight=800 fill="#fff">12<tspan font-size=16 fill="#b8a9c9">/20</tspan></text><text x=1040 y=272 text-anchor=middle font-size=9 letter-spacing=3 fill="#b8a9c9">ACTIVE DAYS</text>
+<g font-size=11 font-weight=700 letter-spacing=1.5><rect x=962 y=332 width=156 height=26 rx=13 fill="#0a0f2ccc" stroke="#3dff9a" stroke-opacity=".6"/><text x=1040 y=349 text-anchor=middle fill="#3dff9a">👣 9 400 STEPS / DAY</text>
+<rect x=962 y=366 width=156 height=22 rx=11 fill="#0a0f2ccc" stroke="#35417f"/><text x=1040 y=381 text-anchor=middle fill="#9fb0d8" font-size=10>GYM 3× · YOGA 2× · WALKS</text></g>
+</g>
+<!-- gaming desk / Fonger setup -->
+<ellipse cx=1290 cy=420 rx=260 ry=170 fill="url(#mon)"/>
+<!-- desk -->
+<rect x=1040 y=466 width=330 height=14 rx=3 fill="#0c1022" stroke="#27306a" stroke-width="1.5"/>
+<rect x=1058 y=480 width=9 height=42 fill="#0c1022"/><rect x=1345 y=480 width=9 height=42 fill="#0c1022"/>
+<rect x=1040 y=479 width=330 height=3 fill="#3a5cff" opacity=".7" filter="url(#glow)"/>
+<!-- left monitor: FONGER -->
+<rect x=1062 y=346 width=140 height=88 rx=5 fill="#05060f" stroke="#2a3370" stroke-width="2.5"/>
+<rect x=1067 y=351 width=130 height=75 rx=2 fill="#12062a"/>
+<g stroke="#ff4fa6" stroke-width="1" fill="none" opacity=".7"><path d="M1072 360 q12 10 6 22 q-6 12 8 20"/><path d="M1190 356 q-12 14 -4 26 q8 10 -4 22"/><path d="M1100 420 q14 -8 26 -2"/><path d="M1150 358 q10 8 20 4"/></g>
+<text x=1132 y=395 text-anchor=middle font-size=22 font-weight=900 fill="#2a0a2e" stroke="#ff4f8a" stroke-width="1.6" filter="url(#glow)" style="font-family:Inter,Arial;letter-spacing:1px">FONGER</text>
+<rect x=1122 y=434 width=20 height=8 fill="#1a2250"/><ellipse cx=1132 cy=466 rx=20 ry=4 fill="#161d44"/>
+<!-- right monitor: Drippy hall -->
+<rect x=1210 y=336 width=156 height=98 rx=5 fill="#05060f" stroke="#2a3370" stroke-width="2.5"/>
+<rect x=1215 y=341 width=146 height=85 rx=2 fill="url(#scr)" opacity=".55"/><rect x=1215 y=341 width=146 height=85 rx=2 fill="#0b1236" opacity=".5"/><rect x=1224 y=348 width=24 height=24 rx=6 fill="#ff4655"/><rect x=1254 y=348 width=24 height=24 rx=6 fill="#1b3a8a"/><rect x=1284 y=348 width=24 height=24 rx=6 fill="#e8793a"/><rect x=1224 y=378 width=24 height=24 rx=6 fill="#1e7bff"/><rect x=1254 y=378 width=24 height=24 rx=6 fill="#1fb89a"/><rect x=1284 y=378 width=24 height=24 rx=6 fill="#6a3ad0"/><rect x=1215 y=416 width=146 height=10 fill="#05060f" opacity=".85"/><rect x=1219 y=419 width=5 height=5 rx=1 fill="#38e8ff"/>
+<rect x=1280 y=434 width=16 height=8 fill="#1a2250"/><ellipse cx=1288 cy=466 rx=22 ry=4 fill="#161d44"/>
+<!-- keyboard, mouse, headphones, mic -->
+<rect x=1196 y=456 width=96 height=9 rx=2 fill="#070a1c" stroke="#3a5cff" stroke-width="1.2" filter="url(#glow)"/><g fill="#6d86ff" opacity=".8"><rect x=1200 y=458 width=86 height=1.4 /><rect x=1200 y=461 width=86 height=1.4 /></g>
+<ellipse cx=1312 cy=461 rx=6 ry=4 fill="#10163a" stroke="#3a5cff"/>
+<path d="M1076 464 q0 -14 14 -14 q14 0 14 14" stroke="#e8924a" stroke-width="3" fill="none"/><rect x=1072 y=460 width=7 height=8 rx=2 fill="#e8924a"/><rect x=1101 y=460 width=7 height=8 rx=2 fill="#e8924a"/>
+<rect x=1340 y=432 width=6 height=34 rx=3 fill="#161d44"/>
+<!-- PC tower with blue fans -->
+<rect x=1372 y=372 width=62 height=150 rx=5 fill="#080a18" stroke="#26306a" stroke-width="2"/>
+<g filter="url(#glow)"><circle cx=1403 cy=406 r=17 fill="#1c3cff" opacity=".85"/><circle cx=1403 cy=446 r=17 fill="#1c3cff" opacity=".85"/><circle cx=1403 cy=486 r=17 fill="#1c3cff" opacity=".85"/></g>
+<g fill="#0a0f3a"><circle cx=1403 cy=406 r=5 /><circle cx=1403 cy=446 r=5 /><circle cx=1403 cy=486 r=5 /></g>
+<path d="M1190 540 q-10 -60 30 -70 q40 0 40 60 l-6 30 h-60z" fill="#10163a" stroke="#2c3a80" stroke-width="2"/>
+<!-- spotlight on court -->
+<polygon points="520,0 640,0 960,640 150,640" fill="url(#cone)"/>
+<!-- court (perspective) -->
+<polygon points="330,585 770,585 900,790 90,790" fill="#16345a" opacity=".92"/>
+<g stroke="#e8f4ff" stroke-width="3" fill="none" stroke-linejoin="round">
+<polygon points="330,585 770,585 900,790 90,790"/>
+<polygon points="318,613 782,613 880,757 110,757" stroke-opacity=".0"/>
+<line x1=550 y1=585 x2=495 y2=790 opacity=".0"/>
+<line x1=550 y1=585 x2=495 y2=790 />
+<line x1=315 y1=610 x2=785 y2=610 /><line x1=102 y1=760 x2=898 y2=760 />
+<line x1=550 y1=585 x2=550 y2=585 />
+</g>
+<ellipse cx=500 cy=730 rx=420 ry=90 fill="url(#gl)"/>
+<!-- net -->
+<polygon points="219,525 830,525 830,601 219,601" fill="url(#net)" stroke="#fff" stroke-width="2" opacity=".85"/>
+<rect x=219 y=523 width=611 height=6 fill="#fff"/>
+<rect x=212 y=523 width=8 height=158 fill="#aab6e8"/><rect x=829 y=523 width=8 height=158 fill="#aab6e8"/>
+<line x1=219 y1=680 x2=830 y2=680 stroke="#fff" stroke-width="2" opacity=".5"/>
+<!-- shuttle + trail -->
+<path d="M300 560 Q420 400 560 470" stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-dasharray="2 9" stroke-linecap="round" fill="none"/>
+<g transform="translate(572 478) rotate(-35)"><circle r=7 fill="#fff"/><path d="M0 -4 L22 -14 L22 14 L0 4z" fill="#fff" opacity=".85"/><path d="M6 -3 L22 -8 M6 0 L22 0 M6 3 L22 8" stroke="#9fb0d8" stroke-width="1"/></g>
+<!-- selection ring on court -->
+<polygon points="330,585 770,585 900,790 90,790" fill="none" stroke="#3dff9a" stroke-width="3" filter="url(#glow)" opacity=".9"/>
+<!-- hotspot pills -->
+<g font-size=12 font-weight=700 letter-spacing=2 id=pills></g>
+<defs><filter id=g2 x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.6" result=b /><feMerge><feMergeNode in=b /><feMergeNode in=SourceGraphic /></feMerge></filter></defs>
+<g fill="none" stroke-width="1.2" filter="url(#g2)" stroke-linejoin="round">
+<rect class="nb nb-pc" x=1371 y=371 width=64 height=152 rx=6 stroke="#6d86ff"/>
+<rect class="nb nb-kb" x=1195 y=455 width=98 height=11 rx=3 stroke="#6d86ff"/>
+<ellipse class="nb nb-ms" cx=1312 cy=461 rx=7.5 ry=5.5 stroke="#3dff9a"/>
+<g class="nb nb-hp" stroke="#ff9a4a"><path d="M1075 464 q0 -15 15 -15 q15 0 15 15"/><rect x=1071 y=459 width=9 height=10 rx=3 /><rect x=1100 y=459 width=9 height=10 rx=3 /></g>
+</g>
+<g id=hits>
+<rect class="hit stn" data-k=climb x=50 y=225 width=370 height=295 fill="transparent"/>
+<polygon class="hit stn" data-k=bad points="219,500 830,500 900,790 90,790" fill="transparent"/>
+<rect class="hit stn" data-k=strava x=880 y=170 width=180 height=230 fill="transparent"/>
+<rect class="hit stn" data-k=games x=1205 y=330 width=170 height=110 fill="transparent"/>
+<rect class="hit stn" data-k=beer x=905 y=622 width=450 height=200 fill="transparent"/>
+<rect class=hit data-h=pc x=1371 y=371 width=64 height=152 fill="transparent"/>
+<rect class=hit data-h=kb x=1195 y=452 width=100 height=16 fill="transparent"/>
+<ellipse class=hit data-h=ms cx=1312 cy=461 rx=12 ry=10 fill="transparent"/>
+<rect class=hit data-h=hp x=1068 y=444 width=44 height=28 fill="transparent"/>
+</g></svg>
+<img id=bp src="fun-table.png" alt="">
+<div class=hc id=c-pc style="left:1020px;top:96px;width:340px"><h5>THE RIG</h5><h3>Custom gaming PC</h3>
 <div class=r><span class=d style="color:#ff4f4f"></span><i>CPU</i><b>AMD Ryzen 9 7900X</b></div>
 <div class=r><span class=d style="color:#38e8ff"></span><i>BOARD</i><b>GIGABYTE X670 AORUS ELITE AX</b></div>
 <div class=r><span class=d style="color:#b266ff"></span><i>RAM</i><b>32 GB DDR5</b></div>
 <div class=r><span class=d style="color:#3dff9a"></span><i>GPU</i><b>GeForce RTX 4070 Ti X3 12G</b></div>
 <div class=r><span class=d style="color:#ff9a4a"></span><i>PSU</i><b>Fractal Design Ion+ 2 Platinum 760W</b></div>
 <div class=r><span class=d style="color:#6d86ff"></span><i>COOLER</i><b>ARCTIC Liquid Freezer II 280 A-RGB</b></div></div>
-<div class=lb id=c-hp><span class=br>audio-technica</span><span class=nm>ATH-M50x</span></div>
-<div class=lb id=c-kb><span class=br>RAZER</span><span class=nm>DeathStalker V2 Pro TKL</span></div>
-<div class=lb id=c-ms><span class=br>Logitech G</span><span class=nm>PRO X SUPERLIGHT 2c</span></div>
+<div class=lb id=c-hp style="left:1030px;top:392px;border-color:#ff9a4a"><span class=br>audio-technica</span><span class=nm>ATH-M50x</span></div>
+<div class=lb id=c-kb style="left:1150px;top:400px;border-color:#6d86ff"><span class=br>RAZER</span><span class=nm>DeathStalker V2 Pro TKL</span></div>
+<div class=lb id=c-ms style="left:1150px;top:400px;border-color:#3dff9a"><span class=br>Logitech G</span><span class=nm>PRO X SUPERLIGHT 2c</span></div>
+</div>
+<div class=top><span></span><span class=mono>F · FUN</span></div>
+<div class=card style="left:44px;top:70px;width:270px"><h4>LATEST · HOBBYLIGA</h4><div style="font-size:15px;font-weight:600">🏆 Champion 2026</div><div style="height:10px"></div><h4 style="margin-top:6px">YOUR FORM</h4><div class=form id=lf></div></div>
+<div class=arr id=aL style="left:44px;text-align:left">‹‹‹<small></small></div>
+<div class=arr id=aR style="right:44px;text-align:right">›››<small></small></div>
+<div class=dock><div class=nm id=nm></div><div class=sb id=sb></div></div>
+<div class=pips><i></i><i></i><i></i><i></i><i></i></div>
 <div id=bpanel></div>
 <div id=gv><div class=gtop><span data-close style="cursor:pointer">← FUN</span><span style="font-family:ui-monospace,Menlo,monospace">GAMES</span></div>
 <div class=mon><div class=scr id=desk><div class=tb><i></i><span>21:36</span></div></div></div><div class=stand></div><div class=base></div>
@@ -273,7 +278,6 @@ body.detail #hud,body.beer #hud,body.games #hud,body.bh #hud{display:none}
 <div id=panel></div>
 <div id=bh></div>
 </div>
-<script src="fun-data.js?v=3"></script>
-<script src="fun.js?v=3"></script>
-<script src="fun3d.js?v=3"></script>
+<script src="fun-data.js"></script>
+<script src="fun.js"></script>
 </body></html>
