@@ -384,14 +384,6 @@ function vit(g, w, h) { B(g, w, h, 0.03, S(0x0e0e10, .5), 0, h / 2 + 0.2, -0.18)
   const rows = 4; for (let r = 0; r < rows; r++) { const y = 0.45 + r * ((h - 0.5) / rows); B(g, w - 0.1, 0.02, 0.34, S(0x3a3a40, .3, .4), 0, y, 0); B(g, w - 0.1, 0.01, 0.01, glow(0xdfeaff, 5), 0, y - 0.015, 0.14); for (let k = 0; k < 4; k++) { if ((r + k) % 3 === 0) trophy(g, -w / 2 + 0.25 + k * (w - 0.5) / 3, y + 0.01, 0, 0.3 + rnd() * 0.12, [0xd4a62a, 0xc0c4c8][k % 2]); else B(g, 0.16, 0.12 + rnd() * 0.05, 0.14, S([0x2b4fff, 0xff3b3b, 0x1ea05a, 0xc9843a][k], .5), -w / 2 + 0.25 + k * (w - 0.5) / 3, y + 0.07, 0); } } }
 
 // ---- game props ----
-// --- FOOSBALL ---
-(function () {
-  const g = new THREE.Group(); g.position.set(-0.6, 0, 0.4); g.rotation.y = Math.PI / 2; main.add(g);
-  const cb = (() => { const c = cv(512, 256), q = c.getContext('2d'); q.fillStyle = '#2e7d3a'; q.fillRect(0, 0, 512, 256); q.strokeStyle = 'rgba(255,255,255,.8)'; q.lineWidth = 3; q.strokeRect(14, 14, 484, 228); q.beginPath(); q.moveTo(256, 14); q.lineTo(256, 242); q.stroke(); q.beginPath(); q.arc(256, 128, 34, 0, 7); q.stroke(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
-  B(g, 1.35, 0.22, 0.78, S(0x1a1a1c, .4), 0, 0.84, 0); const f = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.58), new THREE.MeshStandardMaterial({ map: cb, roughness: .6 })); f.rotation.x = -Math.PI / 2; f.position.y = 0.955; g.add(f);
-  for (const [x, z] of [[-.62, -.34], [.62, -.34], [-.62, .34], [.62, .34]]) B(g, 0.08, 0.84, 0.08, S(0x1a1a1c, .4), x, 0.42, z);
-  const rods = [-0.5, -0.25, 0, 0.25, 0.5]; rods.forEach((rx, i) => { const rd = Cy(g, 0.009, 0.009, 0.95, S(0xcccccc, .15, 1), rx * 1.0, 1.02, 0); rd.rotation.x = Math.PI / 2; for (let k = 0; k < (i == 1 ? 5 : 3); k++) { const zz = -0.2 + k * (0.4 / (i == 1 ? 4 : 2)); B(g, 0.03, 0.09, 0.04, S(i % 2 ? 0xe03030 : 0x2f6bd9, .5), rx, 1.0, zz); } for (const zz of [-0.5, 0.5]) Cy(g, 0.03, 0.03, 0.08, S(0x111), rx, 1.02, zz).rotation.x = Math.PI / 2; });
-})();
 // --- DARTS (right wall) ---
 (function () {
   const g = new THREE.Group(); g.position.set(-8.675, 0, -2.6); g.rotation.y = Math.PI / 2; main.add(g);
@@ -784,34 +776,136 @@ floorPoly(lk, [[-3.6, 3.85], [0.4, 3.85], [0.4, 7.7], [-3.6, 7.7]], floorMat('gr
 ceilPoly([[-12.4, -5.45], [-8.8, -5.45], [-8.8, 3.85], [-12.4, 3.85]], LH, S(0xe4e4e2, .9));
 ceilPoly([[-12.4, 3.85], [-3.6, 3.85], [-3.6, 7.7], [-12.4, 7.7]], LH, S(0xe4e4e2, .9));
 ceilPoly([[-3.6, 3.85], [0.4, 3.85], [0.4, 7.7], [-3.6, 7.7]], LH, S(0x25262c, .9));
-wall(lk, -12.4, -5.45, -12.4, 7.7, LH, plasterWall);                       // west outer wall
-wall(lk, -8.8, -5.45, -8.8, -3.85, LH, plasterWall);                        // leg east wall north of the main hall
+wall(lk, -12.4, -5.37, -12.4, 7.7, LH, plasterWall);                       // west outer wall
+wall(lk, -8.8, -5.37, -8.8, -3.85, LH, plasterWall);                        // leg east wall north of the main hall
 wall(lk, -3.6, 3.85, -3.6, 7.7, LH, tileWall);                              // showers | foyer
 wall(lk, 0.4, 3.85, 0.4, 7.7, LH, wallDark);                                // foyer east wall
 // LED strips
 for (const [x, z, w, d] of [[-10.6, -1.0, 3.4, 0.08], [-10.6, 2.6, 3.4, 0.08], [-8.2, 5.8, 0.08, 3.4], [-6.2, 5.8, 3.4, 0.08]]) B(ceilings, w, 0.03, d, glow(0xf4f8ff, 6), x, LH - 0.02, z);
-// ----- changing room (leg, x -12.4..-8.8) -----
+const chrome = S(0xd8dbe0, .14, 1), ceramic = S(0xf4f4f1, .12, 0.02), steelM = S(0xaeb3bb, .3, 0.9), rubberM = S(0x16171b, .8);
+const shadeC = (hex, f) => { const n = parseInt(hex.slice(1), 16); const r = Math.min(255, ((n >> 16) & 255) * f) | 0, g = Math.min(255, ((n >> 8) & 255) * f) | 0, b = Math.min(255, (n & 255) * f) | 0; return `rgb(${r},${g},${b})`; };
+const mesh = (g, geo, m, x, y, z, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+const CylG = (r1, r2, h, s = 20) => new THREE.CylinderGeometry(r1, r2, h, s);
+
+// ----- changing room (leg, x -12.4..-8.8): lockers with louvre doors, numbers, handles, a few ajar; benches with shoe racks -----
 (function () {
-  const lock = S(0x3b4a63, .45, .35), lock2 = S(0x2a3240, .5, .3);
-  for (let i = 0; i < 14; i++) { const z = -4.7 + i * 0.5 + 0.0; B(lk, 0.45, 1.95, 0.48, i % 2 ? lock : lock2, -12.17, 1.0, z); B(lk, 0.01, 0.55, 0.3, S(0x1b2230, .6), -11.94, 1.5, z); B(lk, 0.012, 0.2, 0.012, S(0xd5d7dc, .2, 1), -11.94, 1.1, z + 0.12); B(lk, 0.012, 0.03, 0.2, glow(0x38d8ff, 1.2), -11.94, 1.92, z); }
-  B(lk, 0.46, 0.06, 7.1, S(0x2a2f3a, .5), -12.17, 1.98, -1.1);
-  for (const z0 of [-3.6, 0.9]) { B(lk, 0.45, 0.06, 2.6, S(0x7a5a38, .45), -10.9, 0.46, z0 + 1.0); for (const dz of [0.1, 2.0]) B(lk, 0.4, 0.44, 0.06, S(0x15151a, .4, .5), -10.9, 0.22, z0 + dz); B(lk, 0.1, 0.04, 2.6, S(0xcfd2d8, .3, 1), -10.55, 0.9, z0 + 1.0).visible = false; }
-  for (let i = 0; i < 6; i++) { B(lk, 0.04, 0.04, 0.04, S(0xcfd2d8, .3, 1), -8.9, 1.7, -5.2 + i * 0.25); }
-  B(lk, 0.03, 1.4, 1.2, new THREE.MeshStandardMaterial({ color: 0xcfe9ff, roughness: .04, metalness: .6 }), -8.93, 1.4, -4.7);      // mirror
+  const colA = '#27406e', colB = '#1f3052', ROWZ0 = -4.7, N = 14, FX = -11.8;
+  const lockerTex = (n, col, ajar) => ctex(160, 480, (q, W, H) => {
+    const g = q.createLinearGradient(0, 0, W, 0); g.addColorStop(0, shadeC(col, 1.18)); g.addColorStop(.5, col); g.addColorStop(1, shadeC(col, .82)); q.fillStyle = g; q.fillRect(0, 0, W, H);
+    q.strokeStyle = 'rgba(0,0,0,.5)'; q.lineWidth = 5; q.strokeRect(3, 3, W - 6, H - 6); q.strokeStyle = 'rgba(255,255,255,.07)'; q.lineWidth = 2; q.strokeRect(9, 9, W - 18, H - 18);
+    q.fillStyle = 'rgba(0,0,0,.7)'; for (let i = 0; i < 8; i++) q.fillRect(24, 30 + i * 13, W - 48, 5); for (let i = 0; i < 6; i++) q.fillRect(24, H - 118 + i * 13, W - 48, 5);
+    q.fillStyle = '#dfe2e7'; q.fillRect(W / 2 - 27, 156, 54, 28); q.fillStyle = '#12151c'; q.font = 'bold 22px Arial'; q.textAlign = 'center'; q.fillText(String(n), W / 2, 178);
+    q.fillStyle = '#c9ccd2'; q.fillRect(W - 40, 222, 11, 96); q.fillStyle = '#7d818a'; q.fillRect(W - 41, 222, 2, 96);
+    q.fillStyle = '#b9bdc5'; q.beginPath(); q.arc(W - 34, 344, 9, 0, 7); q.fill(); q.fillStyle = '#1a1a1a'; q.fillRect(W - 35, 338, 2.5, 12);
+    q.fillStyle = 'rgba(255,255,255,.05)'; q.fillRect(0, 0, 14, H);
+  });
+  const inside = ctex(160, 480, (q, W, H) => {
+    const g = q.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#2a2f3b'); g.addColorStop(1, '#0f1116'); q.fillStyle = g; q.fillRect(0, 0, W, H);
+    q.fillStyle = '#4b5160'; q.fillRect(8, 90, W - 16, 6); q.fillStyle = '#9aa0ab'; q.fillRect(8, 60, W - 16, 4);
+    q.fillStyle = '#c2c6cf'; q.fillRect(W / 2 - 3, 60, 6, 3);
+    q.fillStyle = '#c0392b'; q.beginPath(); q.moveTo(W / 2 - 40, 66); q.lineTo(W / 2 + 40, 66); q.lineTo(W / 2 + 50, 300); q.lineTo(W / 2 - 50, 300); q.closePath(); q.fill();   // hoodie on the hanger
+    q.fillStyle = 'rgba(0,0,0,.25)'; q.fillRect(W / 2 - 4, 90, 8, 210); q.fillStyle = '#2a2d35'; q.fillRect(14, H - 90, W - 28, 50);
+  });
+  const body = S(0x161c2a, .45, .4), cap = S(0x2a3144, .4, .5), plinth = S(0x0c0e14, .6);
+  const bodyDepth = 0.46, bx = -12.275 + bodyDepth / 2;
+  for (let i = 0; i < N; i++) {
+    const z = ROWZ0 + i * 0.5, ajar = (i === 3 || i === 9);
+    B(lk, bodyDepth, 1.9, 0.488, body, bx, 1.05, z);
+    const tex = lockerTex(i + 1, i % 2 ? colB : colA, ajar), dm = new THREE.MeshStandardMaterial({ map: tex, roughness: .4, metalness: .35, side: THREE.DoubleSide });
+    if (!ajar) mesh(lk, new THREE.PlaneGeometry(0.472, 1.88), dm, FX + 0.006, 1.05, z, 0, Math.PI / 2, 0);
+    else {
+      mesh(lk, new THREE.PlaneGeometry(0.46, 1.86), new THREE.MeshStandardMaterial({ map: inside, roughness: .7 }), FX + 0.004, 1.05, z, 0, Math.PI / 2, 0);
+      const hinge = new THREE.Group(); hinge.position.set(FX + 0.01, 1.05, z - 0.236); hinge.rotation.y = i === 3 ? 1.15 : 1.5; lk.add(hinge);
+      mesh(hinge, new THREE.PlaneGeometry(0.472, 1.88), dm, 0, 0, 0.236, 0, Math.PI / 2, 0);
+      B(hinge, 0.012, 1.88, 0.012, chrome, 0, 0, 0);
+      if (i === 9) { B(lk, 0.2, 0.32, 0.26, S(0x1f6b44, .8), bx + 0.06, 0.34, z + 0.02); B(lk, 0.2, 0.04, 0.2, S(0x161a22, .6), bx + 0.06, 0.52, z + 0.02); }   // gym bag on the floor
+    }
+    B(lk, 0.012, 1.9, 0.012, chrome, FX + 0.003, 1.05, z - 0.25);   // seam
+  }
+  const rowC = ROWZ0 + (N - 1) * 0.25, rowL = N * 0.5;
+  B(lk, 0.5, 0.05, rowL + 0.04, cap, -12.03, 2.03, rowC); B(lk, bodyDepth + 0.02, 0.1, rowL, plinth, bx + 0.01, 0.05, rowC);
+  B(lk, bodyDepth, 1.9, 0.02, body, bx, 1.05, ROWZ0 - 0.255); B(lk, bodyDepth, 1.9, 0.02, body, bx, 1.05, ROWZ0 + (N - 1) * 0.5 + 0.255);
+  B(lk, 0.5, 0.88, rowL + 0.04, S(0x232b3d, .6), -12.03, 2.51, rowC).visible = false;
+  // benches: wooden slats on a steel frame, shoe rack underneath
+  const slat = S(0x9a6f42, .5);
+  for (const zc of [-2.6, 1.9]) {
+    for (let k = 0; k < 4; k++) B(lk, 0.1, 0.035, 2.6, slat, -11.05 + k * 0.105, 0.46, zc);
+    for (const dz of [-1.2, 0, 1.2]) { B(lk, 0.42, 0.035, 0.05, steelM, -10.9, 0.43, zc + dz); for (const dx of [-0.19, 0.19]) B(lk, 0.04, 0.43, 0.04, steelM, -10.9 + dx, 0.215, zc + dz); }
+    B(lk, 0.34, 0.02, 2.4, S(0x57595f, .5, .5), -10.9, 0.16, zc);
+    for (let k = 0; k < 4; k++) { const sx = -10.9 + (k % 2 ? 0.05 : -0.05), sz = zc - 0.9 + k * 0.55, col = [0xe8e8e8, 0xd9482b, 0x2b6fd9, 0x2f2f33][k]; RBm(lk, 0.11, 0.07, 0.29, S(col, .6), sx, 0.205, sz, 0.025); RBm(lk, 0.09, 0.03, 0.14, S(0xdadada, .7), sx, 0.245, sz - 0.07, 0.01); }
+  }
+  RBm(lk, 0.3, 0.28, 0.5, S(0x20242d, .7), -10.88, 0.62, -2.0, 0.07); B(lk, 0.02, 0.03, 0.46, S(0xd9482b, .5), -10.74, 0.7, -2.0); Cy(lk, 0.035, 0.035, 0.19, new THREE.MeshStandardMaterial({ color: 0x66c6ff, transparent: true, opacity: .6, roughness: .1 }), -10.9, 0.58, -3.25, 14); Cy(lk, 0.036, 0.036, 0.04, S(0xe8e8e8, .4), -10.9, 0.69, -3.25, 14);   // bag + bottle
+  B(lk, 0.34, 0.05, 0.46, S(0xf2f2f2, .95), -10.9, 0.5, 1.3); B(lk, 0.34, 0.16, 0.05, S(0xf2f2f2, .95), -10.9, 0.43, 1.52);                                         // towel on the bench
+  // wall hooks with hoodies + mirror with frame on the east wall
+  B(lk, 0.04, 0.05, 1.5, steelM, -8.92, 1.78, -4.65);
+  [[-5.25, 0xc0392b], [-4.95, 0x2b5fa8], [-4.3, 0x2f2f33], [-4.05, 0xe8e8e8]].forEach(([z, col]) => { Cy(lk, 0.012, 0.012, 0.06, chrome, -8.88, 1.74, z, 8).rotation.z = Math.PI / 2; RBm(lk, 0.1, 0.62, 0.34, S(col, .9), -8.84, 1.4, z, 0.04); });
+  B(lk, 0.03, 1.4, 1.2, new THREE.MeshStandardMaterial({ color: 0xcfe9ff, roughness: .04, metalness: .85 }), -8.93, 1.4, -2.55);
+  B(lk, 0.036, 1.48, 0.05, S(0x111318, .5), -8.925, 1.4, -1.97); B(lk, 0.036, 1.48, 0.05, S(0x111318, .5), -8.925, 1.4, -3.13); B(lk, 0.036, 0.05, 1.24, S(0x111318, .5), -8.925, 2.12, -2.55); B(lk, 0.036, 0.05, 1.24, S(0x111318, .5), -8.925, 0.68, -2.55);
   label(lk, 'ŠATNA', 1.5, 0.4, '#7fd0ff', -8.93, 2.6, 0.1, -Math.PI / 2, 'bold 170px Arial Black', undefined, false);
   plight(lk, -10.6, 2.6, -2.0, 0xf4f8ff, 7, 8); plight(lk, -10.6, 2.6, 2.4, 0xf4f8ff, 6, 8);
 })();
-// ----- showers + WC + basins (foot) -----
+
+// ----- showers + WC + urinals + basins (foot, x -12.4..-3.6, z 3.85..7.7), inspired by the washrooms in games -----
 (function () {
-  const glass = new THREE.MeshStandardMaterial({ color: 0xbfe8ff, transparent: true, opacity: .18, roughness: .02 }), steel = S(0xd5d7dc, .2, 1), tile = S(0xb9bcc2, .3);
-  for (let i = 0; i < 4; i++) { const x = -8.0 + i * 1.1; B(lk, 1.05, 0.02, 1.2, tile, x, 0.011, 4.45);
-    B(lk, 0.02, 2.0, 1.2, glass, x + 0.55, 1.0, 4.45); B(lk, 1.05, 2.0, 0.02, glass, x, 1.0, 5.07);
-    Cy(lk, 0.012, 0.012, 1.0, steel, x, 1.9, 3.95, 8); const hd = Cy(lk, 0.1, 0.1, 0.012, steel, x, 2.25, 4.1, 16); hd.rotation.x = 0.4; Cy(lk, 0.06, 0.06, 0.004, S(0x111, .5), x, 0.016, 4.5, 14); }
-  B(lk, 0.02, 2.0, 1.2, glass, -8.55, 1.0, 4.45);
-  for (let i = 0; i < 3; i++) { const x = -6.0 + i * 0.9; B(lk, 0.55, 0.1, 0.4, S(0xf2f2f2, .2), x, 0.9, 7.45); Cy(lk, 0.012, 0.012, 0.12, steel, x, 1.0, 7.6, 8); B(lk, 0.6, 0.9, 0.02, new THREE.MeshStandardMaterial({ color: 0xcfe9ff, roughness: .04, metalness: .6 }), x, 1.55, 7.64); }
-  for (let i = 0; i < 3; i++) { B(lk, 1.0, 2.0, 0.03, S(0xe4e4e2, .6), -9.1 - 0 + 0, 1.0, 7.0 - i * 0.9).visible = false; B(lk, 0.03, 2.0, 0.88, S(0xe4e4e2, .6), -11.8 + 0, 1.0, 4.6 + i * 1.0).visible = false; }
-  // WC cubicles along the west wall of the corner
-  for (let i = 0; i < 3; i++) { const z = 4.4 + i * 1.0; B(lk, 1.0, 1.95, 0.03, S(0xe4e4e2, .6), -11.9, 1.0, z + 0.5); B(lk, 0.03, 1.4, 0.8, S(0x2a6f78, .5), -11.4, 0.85, z + 0.05).visible = false; Cy(lk, 0.17, 0.2, 0.4, S(0xf2f2f2, .2), -12.1, 0.2, z, 16); }
+  const frosted = new THREE.MeshStandardMaterial({ color: 0xe3f3ff, transparent: true, opacity: .34, roughness: .12, side: THREE.DoubleSide, depthWrite: false });
+  const bottle = (col) => new THREE.MeshStandardMaterial({ color: col, roughness: .35 });
+  // ---- 4 shower stalls along the north wall (z 3.99) ----
+  const trayM = S(0xcfd3d9, .35), drainM = S(0x30343a, .5, .8);
+  B(lk, 5.2, 0.14, 0.012, S(0x2a6f78, .35), -6.2, 1.08, 3.99);                       // accent tile band
+  for (let i = 0; i < 4; i++) {
+    const x = -8.0 + i * 1.1, ajar = (i === 1 || i === 3);
+    B(lk, 1.04, 0.04, 1.02, trayM, x, 0.02, 4.5); Cy(lk, 0.07, 0.07, 0.012, drainM, x, 0.046, 4.5, 18); for (let k = 0; k < 3; k++) B(lk, 0.1, 0.004, 0.012, S(0x9aa0a8, .4, 1), x, 0.053, 4.47 + k * 0.03);
+    B(lk, 1.04, 0.012, 0.03, S(0xffc82e, .6), x, 0.046, 5.0);                           // anti-slip edge
+    // shower head: wall arm + rain head + hand shower holder
+    Cy(lk, 0.012, 0.012, 0.36, chrome, x, 2.12, 4.17, 12).rotation.x = Math.PI / 2; mesh(lk, CylG(0.115, 0.115, 0.018, 28), chrome, x, 2.1, 4.38); mesh(lk, CylG(0.096, 0.096, 0.004, 28), S(0x20242a, .5, .6), x, 2.09, 4.38);
+    for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; mesh(lk, CylG(0.007, 0.007, 0.006, 6), S(0x8b9099, .3, 1), x + Math.cos(a) * 0.06, 2.088, 4.38 + Math.sin(a) * 0.06); }
+    B(lk, 0.2, 0.13, 0.025, chrome, x, 1.15, 4.012); mesh(lk, CylG(0.03, 0.03, 0.03, 16), chrome, x - 0.05, 1.15, 4.04, Math.PI / 2); mesh(lk, CylG(0.022, 0.022, 0.03, 16), chrome, x + 0.055, 1.15, 4.04, Math.PI / 2); B(lk, 0.012, 0.05, 0.012, S(0xd62d2d, .4), x + 0.055, 1.18, 4.06); B(lk, 0.012, 0.05, 0.012, S(0x2f6bd9, .4), x - 0.05, 1.18, 4.06);
+    B(lk, 0.04, 0.4, 0.04, chrome, x + 0.28, 1.5, 4.03); mesh(lk, CylG(0.014, 0.014, 0.16, 8), chrome, x + 0.28, 1.65, 4.12, Math.PI / 2 - 0.5); mesh(lk, CylG(0.03, 0.022, 0.2, 10), S(0x1b1d22, .5), x + 0.28, 1.42, 4.12, Math.PI / 2 - 0.5);   // hand shower
+    mesh(lk, CylG(0.025, 0.025, 0.14, 10), bottle([0xd9482b, 0x2f6bd9, 0x3dae6a, 0xe8e8e8][i]), x - 0.36, 1.37, 4.07); mesh(lk, CylG(0.028, 0.028, 0.18, 10), bottle(0xf2f2f2), x - 0.3, 1.39, 4.07); B(lk, 0.3, 0.012, 0.1, S(0xcfe9ff, .1, .3), x - 0.33, 1.27, 4.05);   // shelf + shampoo
+    B(lk, 0.26, 0.012, 0.14, S(0x2a6f78, .5), x + 0.27, 0.75, 4.065).visible = false;
+    // partition (right side) + door
+    B(lk, 0.026, 1.9, 0.96, frosted, x + 0.55, 1.07, 4.5); B(lk, 0.03, 0.03, 0.98, chrome, x + 0.55, 2.04, 4.5); B(lk, 0.03, 1.95, 0.03, chrome, x + 0.55, 1.05, 4.99); B(lk, 0.03, 0.03, 0.04, chrome, x + 0.55, 2.0, 4.0);
+    const hinge = new THREE.Group(); hinge.position.set(x - 0.5, 1.05, 5.0); hinge.rotation.y = ajar ? (i === 1 ? -1.2 : -0.7) : 0; lk.add(hinge);
+    B(hinge, 0.98, 1.9, 0.022, frosted, 0.5, 0, 0); B(hinge, 0.98, 0.03, 0.03, chrome, 0.5, 0.94, 0); B(hinge, 0.03, 0.1, 0.1, chrome, 0.88, 0, 0.03).visible = true; for (const yy of [-0.7, 0.7]) B(hinge, 0.04, 0.08, 0.04, chrome, 0.0, yy, 0);
+  }
+  B(lk, 0.026, 1.9, 0.96, frosted, -8.55, 1.07, 4.5); B(lk, 0.03, 0.03, 0.98, chrome, -8.55, 2.04, 4.5);
+  // ---- WC cubicles along the west wall, 3 stalls with partitions, ajar doors, toilets ----
+  const lam = S(0x86aeb6, .5), lamD = S(0x4b7078, .5), zP = [4.15, 5.15, 6.15, 7.15];
+  zP.forEach(z => { B(lk, 1.5, 1.75, 0.04, lam, -11.53, 1.03, z); B(lk, 1.52, 0.03, 0.05, chrome, -11.53, 1.92, z); Cy(lk, 0.014, 0.014, 0.16, chrome, -10.85, 0.08, z, 8); });
+  const toilet = (z) => {
+    B(lk, 0.22, 0.42, 0.4, ceramic, -12.16, 0.64, z); B(lk, 0.24, 0.035, 0.42, ceramic, -12.16, 0.86, z); mesh(lk, CylG(0.028, 0.028, 0.014, 14), chrome, -12.16, 0.885, z);
+    const pts = [[0, 0.0], [0.08, 0.0], [0.1, 0.12], [0.17, 0.28], [0.2, 0.4], [0.19, 0.43], [0.165, 0.43], [0.15, 0.36], [0.0, 0.3]].map(p => new THREE.Vector2(p[0], p[1]));
+    const bowl = mesh(lk, new THREE.LatheGeometry(pts, 28), new THREE.MeshStandardMaterial({ color: 0xf4f4f1, roughness: .12, side: THREE.DoubleSide }), -11.86, 0, z); bowl.scale.set(1.45, 1, 1);
+    const seat = mesh(lk, new THREE.TorusGeometry(0.155, 0.022, 10, 28), S(0x1a1d23, .35), -11.86, 0.452, z, Math.PI / 2); seat.scale.set(1.45, 1, 1.0);
+    const lidP = new THREE.Group(); lidP.position.set(-12.01, 0.46, z); lidP.rotation.z = 1.38; lk.add(lidP); const lid = mesh(lidP, CylG(0.17, 0.17, 0.02, 24), S(0x1a1d23, .35), 0.27, 0.0, 0); lid.scale.set(1.5, 1, 1);
+    B(lk, 0.1, 0.12, 0.12, chrome, -11.56, 0.7, z + 0.46); Cy(lk, 0.045, 0.045, 0.1, S(0xffffff, .9), -11.56, 0.7, z + 0.46, 14).rotation.x = Math.PI / 2;    // paper holder on the partition
+  };
+  [4.65, 5.65, 6.65].forEach((z, i) => {
+    toilet(z);
+    const hinge = new THREE.Group(); hinge.position.set(-10.83, 1.0, z - 0.45); hinge.rotation.y = [1.15, 0, 0.8][i]; lk.add(hinge);
+    B(hinge, 0.03, 1.72, 0.9, lamD, 0, 0.0, 0.45); B(hinge, 0.032, 0.05, 0.1, chrome, 0.002, 0.0, 0.78); B(hinge, 0.034, 0.03, 0.06, S(i === 1 ? 0xd62d2d : 0x3dae6a, .4), -0.002, 0.07, 0.78); B(hinge, 0.032, 0.03, 0.9, chrome, 0.0, 0.86, 0.45);
+    for (const yy of [-0.6, 0.6]) B(hinge, 0.04, 0.07, 0.03, chrome, 0.0, yy, 0.01);
+    Cy(lk, 0.04, 0.04, 0.02, S(0xe8e8e8, .5), -12.25, 1.6, z, 14).rotation.z = Math.PI / 2;
+  });
+  B(lk, 0.2, 0.34, 0.2, S(0x6b7078, .5, .6), -11.0, 0.17, 6.95);   // bin in the last stall
+  // ---- 3 urinals with privacy dividers on the south wall ----
+  [-10.2, -9.6, -9.0].forEach(x => {
+    const u = mesh(lk, new THREE.CapsuleGeometry(0.12, 0.24, 6, 14), ceramic, x, 1.0, 7.46); u.scale.set(1, 1, 0.55);
+    B(lk, 0.2, 0.34, 0.06, ceramic, x, 0.78, 7.52); mesh(lk, CylG(0.012, 0.012, 0.5, 8), chrome, x, 1.45, 7.55); B(lk, 0.1, 0.07, 0.03, chrome, x, 1.3, 7.55); mesh(lk, CylG(0.012, 0.012, 0.06, 8), S(0x30343a, .6), x, 0.7, 7.425);
+    Cy(lk, 0.06, 0.06, 0.012, S(0x30343a, .5, .7), x, 0.007, 7.3, 14);
+  });
+  [-10.5, -9.9, -9.3, -8.7].forEach(x => B(lk, 0.03, 0.78, 0.34, lam, x, 1.05, 7.38));
+  // ---- 3 basins with mirrors, soap, paper towels, hand dryer ----
+  [-6.0, -5.1, -4.2].forEach(x => {
+    B(lk, 0.52, 0.1, 0.42, ceramic, x, 0.86, 7.36); B(lk, 0.4, 0.02, 0.3, S(0xcfd4da, .2), x, 0.915, 7.37); Cy(lk, 0.025, 0.025, 0.004, S(0x30343a, .5, .8), x, 0.926, 7.4, 12);
+    mesh(lk, CylG(0.014, 0.014, 0.14, 10), chrome, x, 0.99, 7.52); mesh(lk, CylG(0.012, 0.012, 0.12, 10), chrome, x, 1.05, 7.46, Math.PI / 2); B(lk, 0.03, 0.03, 0.03, chrome, x + 0.07, 0.95, 7.52);
+    B(lk, 0.7, 0.9, 0.02, new THREE.MeshStandardMaterial({ color: 0xdff1ff, roughness: .03, metalness: .9 }), x, 1.62, 7.56); B(lk, 0.74, 0.94, 0.012, S(0x15171c, .5), x, 1.62, 7.572); B(lk, 0.66, 0.012, 0.012, glow(0xeaf4ff, 3), x, 2.12, 7.55);
+  });
+  [-5.55, -4.65].forEach(x => { B(lk, 0.07, 0.17, 0.07, S(0xf7f7f7, .3), x, 1.14, 7.53); mesh(lk, CylG(0.012, 0.012, 0.05, 8), chrome, x, 1.25, 7.5, Math.PI / 2); });
+  RBm(lk, 0.14, 0.36, 0.26, S(0xb8bcc4, .25, .9), -3.82, 1.42, 6.75, 0.03); B(lk, 0.016, 0.02, 0.18, S(0x15171c, .4), -3.74, 1.28, 6.75);   // paper towels
+  RBm(lk, 0.16, 0.28, 0.24, S(0xe8e9ec, .3, .5), -3.82, 1.35, 5.95, 0.05); mesh(lk, CylG(0.035, 0.03, 0.08, 14), S(0x20242a, .4), -3.82, 1.2, 5.95);   // hand dryer
+  Cy(lk, 0.15, 0.13, 0.55, S(0x6b7078, .35, .85), -3.95, 0.28, 7.2, 18); Cy(lk, 0.155, 0.155, 0.03, S(0x30343a, .5), -3.95, 0.57, 7.2, 18);   // bin
+  for (const [x, z] of [[-7.3, 6.2], [-5.0, 5.8]]) { Cy(lk, 0.1, 0.1, 0.008, S(0x6a6f77, .4, .8), x, 0.006, z, 18); for (let k = 0; k < 3; k++) B(lk, 0.14, 0.004, 0.012, S(0x30343a, .5), x, 0.011, z - 0.04 + k * 0.04); }   // floor drains
   label(lk, 'SPRCHY · WC', 2.4, 0.4, '#7fd0ff', -6.2, 2.6, 4.0, 0, 'bold 140px Arial Black', undefined, false);
   plight(lk, -6.2, 2.6, 5.7, 0xeaf4ff, 7, 8);
 })();
@@ -826,6 +920,63 @@ for (const [x, z, w, d] of [[-10.6, -1.0, 3.4, 0.08], [-10.6, 2.6, 3.4, 0.08], [
 // white/tiled cladding on the service-block side of the dark main-hall walls
 B(lk, 5.2, LH, 0.03, tileWall(5.2, LH), -6.2, LH / 2, 3.99); B(lk, 0.03, 2.85, 2.85, plasterWall(2.85, 2.85), -8.94, 2.85 / 2 + 0.0, -2.425); B(lk, 0.03, LH, 2.65, plasterWall(2.65, LH), -8.94, LH / 2, 2.525);
 B(lk, 0.03, 0.15, 2.2, S(0x15161a, .6), -8.94, 0.075, 0.1).visible = false;
+// --- FOOSBALL: full-size table (8 rods, 22 players, scoring beads, ball return, tapered legs) ---
+(function () {
+  const g = new THREE.Group(); g.position.set(-0.6, 0, 0.4); g.rotation.y = Math.PI / 2; main.add(g);
+  const FL = 1.2, FWd = 0.68, topY = 0.93;
+  const pitch = ctex(1200, 680, (q, W, H) => {
+    for (let i = 0; i < 12; i++) { q.fillStyle = i % 2 ? '#2d8a40' : '#34964a'; q.fillRect(i * W / 12, 0, W / 12 + 1, H); }
+    noise(q, W, H, 10);
+    q.strokeStyle = 'rgba(255,255,255,.92)'; q.lineWidth = 6; q.strokeRect(12, 12, W - 24, H - 24);
+    q.beginPath(); q.moveTo(W / 2, 12); q.lineTo(W / 2, H - 12); q.stroke(); q.beginPath(); q.arc(W / 2, H / 2, 82, 0, 7); q.stroke();
+    q.fillStyle = '#fff'; q.beginPath(); q.arc(W / 2, H / 2, 9, 0, 7); q.fill();
+    for (const s of [0, 1]) { const x0 = s ? W - 12 : 12, d = s ? -1 : 1; q.strokeRect(s ? W - 12 - 150 : 12, H / 2 - 170, 150, 340); q.strokeRect(s ? W - 12 - 62 : 12, H / 2 - 92, 62, 184); q.beginPath(); q.arc(x0 + d * 150, H / 2, 72, -Math.PI / 2, Math.PI / 2, s === 1); q.stroke(); q.fillStyle = '#fff'; q.beginPath(); q.arc(x0 + d * 105, H / 2, 7, 0, 7); q.fill(); }
+  });
+  const black = S(0x15161a, .42, .1), blackSoft = S(0x1e2026, .55), red = 0xd62d2d, blue = 0x2f66d6;
+  // cabinet body, rails with goal openings, corner wedges
+  B(g, 1.36, 0.14, 0.72, black, 0, topY - 0.1, 0);
+  const field = new THREE.Mesh(new THREE.PlaneGeometry(FL, FWd), new THREE.MeshStandardMaterial({ map: pitch, roughness: .55 })); field.rotation.x = -Math.PI / 2; field.position.y = topY; g.add(field);
+  for (const s of [-1, 1]) { RBm(g, 1.44, 0.14, 0.07, black, 0, topY + 0.035, s * 0.375, 0.02); B(g, 1.46, 0.012, 0.075, S(0xd8dbe0, .2, 1), 0, topY + 0.108, s * 0.375); }
+  for (const s of [-1, 1]) {
+    for (const t of [-1, 1]) RBm(g, 0.07, 0.14, 0.27, black, s * 0.665, topY + 0.035, t * 0.2 + t * 0.02, 0.02);
+    B(g, 0.07, 0.05, 0.22, blackSoft, s * 0.665, topY + 0.075, 0);                                                                       // goal lintel
+    B(g, 0.2, 0.012, 0.19, S(0x07080a, .8), s * 0.74, topY - 0.032, 0);                                                                  // goal chute
+    const tray = B(g, 0.16, 0.02, 0.2, S(0x2a2c33, .5), s * 0.8, topY - 0.07, 0); tray.rotation.z = -s * 0.22;
+    B(g, 0.012, 0.045, 0.2, S(0x2a2c33, .5), s * 0.875, topY - 0.04, 0); B(g, 0.14, 0.045, 0.012, S(0x2a2c33, .5), s * 0.8, topY - 0.045, 0.098); B(g, 0.14, 0.045, 0.012, S(0x2a2c33, .5), s * 0.8, topY - 0.045, -0.098);
+    for (const t of [-1, 1]) { const w = B(g, 0.12, 0.05, 0.12, blackSoft, s * 0.6, topY + 0.025, t * 0.3); w.rotation.y = Math.PI / 4; }                    // corner wedges
+    B(g, 0.016, 0.02, 0.6, glow(s > 0 ? 0xd62d2d : 0x2f66d6, 1.6), s * 0.69, topY - 0.17, 0);                                                // end LED
+  }
+  B(g, 1.3, 0.01, 0.01, glow(0x38d8ff, 2.2), 0, topY - 0.175, 0.365); B(g, 1.3, 0.01, 0.01, glow(0x38d8ff, 2.2), 0, topY - 0.175, -0.365);
+  // legs, cross rails, levelling feet
+  for (const [x, z] of [[-0.6, -0.31], [0.6, -0.31], [-0.6, 0.31], [0.6, 0.31]]) { Cy(g, 0.036, 0.026, 0.82, black, x, 0.41, z, 14); Cy(g, 0.02, 0.026, 0.03, S(0xc8cbd2, .2, 1), x, 0.014, z, 12); B(g, 0.07, 0.04, 0.07, S(0x2a2c33, .5), x, 0.84, z); }
+  B(g, 1.2, 0.035, 0.03, black, 0, 0.3, 0.31); B(g, 1.2, 0.035, 0.03, black, 0, 0.3, -0.31); B(g, 0.03, 0.035, 0.62, black, -0.6, 0.3, 0); B(g, 0.03, 0.035, 0.62, black, 0.6, 0.3, 0);
+  // 8 rods: goalie 1, defence 2, midfield 5, attack 3 (A = red, B = blue)
+  const setup = [['A', 1], ['A', 2], ['B', 3], ['A', 5], ['B', 5], ['A', 3], ['B', 2], ['B', 1]], spacing = { 1: 0, 2: 0.24, 3: 0.2, 5: 0.115 };
+  const rodY = topY + 0.075, chromeM = S(0xd8dbe0, .15, 1), grip = S(0x0c0d10, .6);
+  setup.forEach(([team, n], i) => {
+    const x = -0.518 + i * 0.148, col = team === 'A' ? red : blue, dir = team === 'A' ? 1 : -1;
+    const rod = new THREE.Group(); rod.position.set(x, rodY, (i * 37 % 7 - 3) * 0.012); g.add(rod);
+    const L1 = 0.7, L2 = 0.5;                                                                                             // rod sticks out 0.7 on the handle side, 0.5 on the other
+    const sideH = team === 'A' ? 1 : -1;
+    mesh(rod, CylG(0.0075, 0.0075, L1 + L2, 10), chromeM, 0, 0, sideH * (L1 - L2) / 2, Math.PI / 2);
+    mesh(rod, CylG(0.0205, 0.0205, 0.16, 14), grip, 0, 0, sideH * (L1 - 0.05), Math.PI / 2); mesh(rod, CylG(0.022, 0.022, 0.012, 14), S(0xe8e8e8, .4), 0, 0, sideH * (L1 - 0.135), Math.PI / 2); mesh(rod, CylG(0.0215, 0.0215, 0.012, 14), chromeM, 0, 0, sideH * L1, Math.PI / 2);
+    mesh(rod, CylG(0.014, 0.014, 0.02, 12), grip, 0, 0, -sideH * 0.4, Math.PI / 2);                                         // rubber bumper
+    const sw = (i % 3 - 1) * 0.35;                                                                                         // men swing a little differently on every rod
+    for (let k = 0; k < n; k++) {
+      const z = n === 1 ? 0 : (k - (n - 1) / 2) * spacing[n], man = new THREE.Group(); man.position.set(0, 0, z); man.rotation.z = sw * dir * 0.5; rod.add(man);
+      B(man, 0.03, 0.058, 0.04, S(col, .55), 0, -0.02, 0); B(man, 0.026, 0.034, 0.03, S(shadeD(col), .6), 0, -0.067, 0); B(man, 0.04, 0.012, 0.05, grip, dir * 0.008, -0.088, 0);
+      mesh(man, new THREE.SphereGeometry(0.014, 10, 8), S(0xf0d3b0, .6), 0, 0.02, 0);
+    }
+  });
+  function shadeD(c) { return ((c >> 16 & 255) * 0.55 << 16) | ((c >> 8 & 255) * 0.55 << 8) | ((c & 255) * 0.55); }
+  mesh(g, new THREE.SphereGeometry(0.019, 14, 10), S(0xf7f7f7, .35), 0.08, topY + 0.02, 0.06);                                // ball
+  // score beads (5 per team) on rails over the long sides + cup holders
+  for (const [z, col, sc] of [[0.44, red, 3], [-0.44, blue, 5]]) {
+    mesh(g, CylG(0.005, 0.005, 0.6, 8), chromeM, 0, topY + 0.19, z, 0, 0, Math.PI / 2); for (const s of [-1, 1]) B(g, 0.014, 0.19, 0.014, chromeM, s * 0.3, topY + 0.095, z);
+    for (let b = 0; b < 10; b++) { const slid = b < sc; mesh(g, CylG(0.013, 0.013, 0.025, 12), S(slid ? col : 0xe8e8e8, .4), (slid ? -0.27 : 0.27) + (slid ? b : b - 10) * 0.028 + (slid ? 0 : 0.0), topY + 0.19, z, 0, 0, Math.PI / 2); }
+  }
+  for (const [x, z] of [[-0.74, 0.34], [0.74, -0.34]]) { Cy(g, 0.04, 0.032, 0.09, S(0xcfd3da, .25, .9), x, topY - 0.015, z, 14); Cy(g, 0.034, 0.034, 0.004, S(0x15161a, .5), x, topY + 0.031, z, 14); }
+})();
 
 // =====================================================================
 //  5) BADMINTON HALL – 18 m wide, vaulted (inverted U) with exposed steel truss ribs
