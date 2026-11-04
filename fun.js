@@ -11,12 +11,15 @@ if($('#lf'))$('#lf').innerHTML=H.matches.slice(-5).map(m=>`<b class="${m[3]>m[4]
 /* ---------- opening / closing views ---------- */
 function mode(m){['detail','beer','games','bh'].forEach(c=>document.body.classList.toggle(c,c==m))}
 function closeAll(){mode(null)}
+let direct=false;   // opened straight from a league board in the hall (back/Esc closes instead of going to the hub)
 const OPEN={
  climb(){panel('WALL','Climbing',`<div class=sec>${X.climbing.note.toUpperCase()}</div>`)},
  strava(){const a=X.strava;panel('STRAVA · ACTIVITY','Active days',`<div class=board><div class=dig><b>${a.active}<small style="font-size:18px">/${a.goal}</small></b><i>ACTIVE DAYS</i></div><div class=dig><b>${a.steps}</b><i>STEPS / DAY</i></div></div><div class=board><div class=dig><b>${a.gym}</b><i>GYM</i></div><div class=dig><b>${a.yoga}</b><i>YOGA</i></div></div><div class=sec>${a.note.toUpperCase()}</div>`)},
  games(){mode('games')},
  beer(){mode('beer')},
- bad(){mode('bh');bh('hub')}
+ bad(){direct=false;mode('bh');bh('hub')},
+ vl(){direct=true;mode('bh');bh('vl')},
+ hl(){direct=true;mode('bh');bh('hl')}
 };
 function panel(k,h,body){$('#panel').innerHTML=`<span class=x data-close>✕</span><h2>${k}</h2><h1>${h}</h1>${body}`;mode('detail')}
 /* ---------- games ---------- */
@@ -82,7 +85,7 @@ function bh(v){view=v;let h='';
  bhEl.innerHTML=h;bhEl.scrollTop=0}
 bhEl.addEventListener('click',e=>{
  if(e.target.closest('[data-stop]'))return;
- if(e.target.closest('[data-back]')){view=='hub'?closeAll():bh('hub');return}
+ if(e.target.closest('[data-back]')){view=='hub'||direct?closeAll():bh('hub');return}
  const g=e.target.closest('[data-go]');if(g)bh(g.dataset.go)});
 
 
@@ -91,14 +94,25 @@ const isOpen=()=>/detail|beer|games|bh/.test(document.body.className);
 let onClose=null;
 function closeAll(){mode(null);if(onClose)onClose()}
 document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeAll()});
-document.addEventListener('keydown',e=>{if(e.key=='Escape'&&isOpen()){if(document.body.classList.contains('bh')&&view!='hub')bh('hub');else closeAll()}});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'&&isOpen()){if(document.body.classList.contains('bh')&&view!='hub'&&!direct)bh('hub');else closeAll()}});
 const SUM={
  bad:()=>({t:'BADMINTON',s:'VašeLiga · HobbyLiga',k:[[totW+'–'+totL,'W – L'],[Math.round(totW/totM*100)+'%','WIN RATE'],['🏆','CHAMPION 2026']]}),
+ vl:()=>({t:'VAŠELIGA',s:'Singles · Praha · 2026',k:[[vl.wins+'–'+vl.losses,'W – L'],[vl.rate+'%','WIN RATE'],['#'+vl.rank.split('/')[0],'RANK']]}),
+ hl:()=>({t:'HOBBYLIGA',s:'Singles · Praha · 2026',k:[[hp.wins+'–'+hp.draws+'–'+hp.losses,'W – D – L'],[String(hp.elo),'ELO'],['🏆','CHAMPION 2026']]}),
  climb:()=>({t:'CLIMBING',s:X.climbing.note,k:[['—','ROUTES']]}),
  strava:()=>({t:'STRAVA',s:'This month',k:[[X.strava.active+'/'+X.strava.goal,'ACTIVE DAYS'],[X.strava.steps,'STEPS / DAY']]}),
  games:()=>({t:'GAMES',s:'PC · The rig',k:[[String(X.games.length),'GAMES']]}),
  beer:()=>({t:'BEER PONG',s:'Afterparty',k:[[X.beer.won+'/'+X.beer.tournaments,'WON'],['🏆','TROPHIES']]})
 };
-window.FUNUI={games:X.games,isOpen,closeAll,summary:k=>SUM[k](),open:k=>OPEN[k](),setOnClose:f=>{onClose=f}};
+/* live league boards in the hall: everything is computed from fun-data.js, so editing the data updates the boards */
+const LG={
+ vl:()=>{const r=V.rounds[V.rounds.length-1];return{name:'VAŠELIGA',sub:'Singles · Praha',acc:'#45e08a',big:vl.rank.split('/')[0],bigL:'RANK  /'+vl.rank.split('/')[1],
+  stats:[[vl.wins+'–'+vl.losses,'W – L'],[vl.rate+'%','WIN RATE'],[String(vl.matches),'MATCHES']],form:vl.form.map(f=>f=='W'?1:0),
+  head:r.s+' · '+r.m+' · Level '+r.lvl+' · place '+r.pl,rows:r.res.map(m=>[m[0],m[3]=='np'?'–':m[3]=='wo'?'W/O':m[1]+':'+m[2],m[3]?'n':m[1]>m[2]?'w':'l']),foot:'Next: '+V.next.m+' · Level '+V.next.lvl}},
+ hl:()=>{const l5=H.matches.slice(-5).reverse();return{name:'HOBBYLIGA',sub:'Singles · Praha',acc:'#ffcf3a',big:String(hp.elo),bigL:'ELO  ·  🏆 CHAMPION 2026',
+  stats:[[hp.wins+'–'+hp.draws+'–'+hp.losses,'W – D – L'],[hp.setsW+':'+hp.setsL,'SETS'],[String(hp.matches),'MATCHES']],form:H.matches.slice(-5).map(m=>m[3]>m[4]?1:m[3]==m[4]?2:0),
+  head:'Last results · season 2026',rows:l5.map(m=>[m[0]+'  '+m[1]+' · '+m[2],m[3]+':'+m[4],m[3]>m[4]?'w':m[3]==m[4]?'d':'l']),foot:'Playoff '+H.playoff.group+' · winner'}}
+};
+window.FUNUI={league:k=>LG[k](),games:X.games,isOpen,closeAll,summary:k=>SUM[k](),open:k=>OPEN[k](),setOnClose:f=>{onClose=f}};
 if(location.hash=='#badminton')OPEN.bad();
 })();
