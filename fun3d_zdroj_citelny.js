@@ -817,7 +817,7 @@ for (const [x, z, w, d] of [[-10.6, -1.0, 3.4, 0.08], [-10.6, 2.6, 3.4, 0.08], [
 })();
 // ----- foyer -----
 (function () {
-  B(lk, 2.6, 0.42, 0.45, S(0x2a2c33, .6), -1.7, 0.21, 7.4); B(lk, 2.6, 0.06, 0.5, S(0x7a5a38, .45), -1.7, 0.45, 7.4);
+  B(lk, 0.45, 0.42, 2.0, S(0x2a2c33, .6), 0.15, 0.21, 6.0); B(lk, 0.5, 0.06, 2.0, S(0x7a5a38, .45), 0.15, 0.45, 6.0);   // bench along the east wall – the doorway to the hall stays free
   label(lk, 'BADMINTON  ›', 2.2, 0.36, '#6fd0ff', -1.9, 2.6, 7.45, Math.PI, 'bold 140px Arial Black', undefined, false);
   for (const x of [-3.3, 0.1]) { Cy(lk, 0.2, 0.15, 0.4, S(0x24262b, .6), x, 0.2, 4.2, 16); Cy(lk, 0.03, 0.03, 0.6, S(0x2a6f3a, .8), x, 0.7, 4.2, 6); const lf = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 9), S(0x1f6a34, .8)); lf.scale.y = 1.2; lf.position.set(x, 1.15, 4.2); lk.add(lf); }
   plight(lk, -1.6, 2.6, 5.8, 0xffe8cc, 6, 7);
@@ -897,7 +897,7 @@ for (const x of [HALL.x0 + 0.13, HALL.x1 - 0.13]) for (let i = 0; i < 6; i++) { 
 })();
 // scoreboard, benches, racks, shuttle tubes
 label(bh, (window.FUNUI ? FUNUI.summary('bad').k[0][0] : '0–0').replace('–', ' : '), 2.2, 0.8, '#ffcf3a', HALL.x1 - 0.14, 3.2, COURT_Z, -Math.PI / 2, 'bold 280px Arial Black', '#0b0b0b', false);
-label(bh, 'BADMINTON · LIGA', 5, 0.6, '#2b4fff', HALL.cx, 6.0, HALL.z0 + 0.14, 0, 'bold 190px Arial Black', undefined, false);
+label(bh, 'BADMINTON · LIGA', 5, 0.6, '#2b4fff', HALL.cx, 6.0, HALL.z0 + 0.14, 0, 'bold 84px Arial Black, Arial', undefined, false);
 for (const x of [-9, -3.4, 2.2]) { B(bh, 2.6, 0.05, 0.4, S(0x3a2d22, .5), x, 0.45, HALL.z1 - 0.5); B(bh, 0.06, 0.44, 0.35, S(0x151515), x - 1.2, 0.22, HALL.z1 - 0.5); B(bh, 0.06, 0.44, 0.35, S(0x151515), x + 1.2, 0.22, HALL.z1 - 0.5); }
 for (let i = 0; i < 6; i++) { const t = Cy(bh, 0.04, 0.04, 0.3, S(0xffd43a), -11 + i * 0.12, 0.6, HALL.z1 - 0.6, 10); t.rotation.x = 0.2; }
 
@@ -1007,7 +1007,7 @@ seg(-8.3, -3.45, -5.5, -3.45, 0.22); seg(-3.55, -7.2, -3.55, -6.0, 0.15); seg(3.
 circles.push([BO.cx, BO.cz, 2.15]);
 // locker block
 seg(-11.95, -4.7, -11.95, 2.3, 0.12); seg(-10.9, -3.6, -10.9, -1.0, 0.25); seg(-10.9, 0.9, -10.9, 3.5, 0.25);
-seg(-8.5, 4.35, -4.1, 4.35, 0.55); seg(-6.4, 7.4, -4.0, 7.4, 0.3); seg(-11.9, 4.4, -11.9, 7.4, 0.5); seg(-2.9, 7.4, -0.5, 7.4, 0.3); circles.push([-3.3, 4.2, 0.3], [0.1, 4.2, 0.3]);
+seg(-8.5, 4.35, -4.1, 4.35, 0.55); seg(-6.4, 7.4, -4.0, 7.4, 0.3); seg(-11.9, 4.4, -11.9, 7.4, 0.5); seg(0.15, 5.1, 0.15, 6.9, 0.3); circles.push([-3.3, 4.2, 0.3], [0.1, 4.2, 0.3]);
 // badminton hall
 for (const cx of COURT_X) { seg(cx - 3.05, COURT_Z, cx + 3.05, COURT_Z, 0.22); circles.push([cx + 3.7, COURT_Z, 0.35]); }
 seg(HALL.x0 + 1.0, HALL.z1 - 0.5, HALL.x1 - 1.0, HALL.z1 - 0.5, 0.25);
@@ -1019,7 +1019,17 @@ const keys = {}; let started = false, locked = false;
 const joy = { x: 0, y: 0 };
 addEventListener('keydown', e => { if (!started || UI.isOpen()) return; keys[e.code] = true; if (e.code === 'KeyE' || e.code === 'Enter') interact(); if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault(); });
 addEventListener('keyup', e => { keys[e.code] = false; });
-document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === canvas; if (!locked && started && !UI.isOpen()) $('#start').classList.add('on'), $('#start').dataset.paused = '1'; });
+const startEl = $('#start'), goEl = startEl.querySelector('.go'), GO_TXT = goEl ? goEl.textContent : '';
+const pst = document.createElement('style');   // after the first entry the intro text never comes back – only a small "continue" prompt
+pst.textContent = '#start[data-paused="1"] .keys,#start[data-paused="1"] p{display:none!important}#start[data-paused="1"] h1{opacity:.55}';
+document.head.appendChild(pst);
+function showPaused() { startEl.classList.add('on'); startEl.dataset.paused = '1'; if (goEl) goEl.textContent = 'POKRAČOVAT · KLIKNI'; }
+function tryRelock() {   // back from a panel: go straight back into the room if the browser allows it, otherwise show only the small prompt
+  if (coarse || !canvas.requestPointerLock) return;
+  try { const pr = canvas.requestPointerLock(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { }
+  setTimeout(() => { if (started && !UI.isOpen() && document.pointerLockElement !== canvas) showPaused(); }, 350);
+}
+document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === canvas; if (!locked && started && !UI.isOpen() && !coarse) showPaused(); });
 addEventListener('mousemove', e => { if (!started || UI.isOpen()) return; if (locked || dragging) { P.yaw -= e.movementX * 0.0022; P.pitch = Math.max(-1.2, Math.min(1.2, P.pitch - e.movementY * 0.0022)); } });
 let dragging = false;
 canvas.addEventListener('mousedown', () => { dragging = true; if (locked && hovered && (hovered === 'mon' || hovered.startsWith('st:'))) return interact(); });
@@ -1029,7 +1039,7 @@ function startWalking() {
   if (!coarse && canvas.requestPointerLock) { try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
 }
 $('#start').addEventListener('click', startWalking);
-UI.setOnClose(() => { if (!coarse) { $('#start').classList.add('on'); $('#start').dataset.paused = '1'; } });
+UI.setOnClose(() => { keys.KeyE = false; tryRelock(); });
 if (coarse) {   // touch: joystick + look
   const jb = $('#joy'), kn = $('#knob'); let jid = null, lid = null, lx = 0, ly = 0;
   const mv = e => { const r = jb.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; let dx = (e.clientX - cx) / (r.width / 2), dy = (e.clientY - cy) / (r.height / 2); const m = Math.hypot(dx, dy); if (m > 1) { dx /= m; dy /= m; } joy.x = dx; joy.y = dy; kn.style.transform = `translate(${dx * 34}px,${dy * 34}px)`; };
@@ -1110,6 +1120,7 @@ window.__scene = scene;
 window.__fun = {
   go(x, z, yaw = 0, pitch = 0) { P.x = x; P.z = z; P.yaw = yaw; P.pitch = pitch; P.vx = P.vz = 0; },
   pos() { return [P.x, P.z]; },
+  blocked(x, z) { if (!walkable(x, z)) return true; for (const [cx, cz, r] of circles) if (Math.hypot(x - cx, z - cz) < r + 0.28) return true; return false; },
   sim(x, z, tx, tz, n = 400) { P.x = x; P.z = z; for (let i = 0; i < n; i++) { const ox = P.x, oz = P.z; P.x += Math.sign(tx - P.x) * Math.min(0.05, Math.abs(tx - P.x)); P.z += Math.sign(tz - P.z) * Math.min(0.05, Math.abs(tz - P.z)); collide(ox, oz); } return [+P.x.toFixed(2), +P.z.toFixed(2)]; },
   start() { started = true; $('#start').classList.remove('on'); $('#hud').classList.add('on'); }, interact,
   view(px, py, pz, lx, ly, lz, fov = 68, ceil = true) { window.__camLock = true; ceilings.visible = ceil; camera.fov = fov; camera.updateProjectionMatrix(); camera.position.set(px, py, pz); camera.up.set(0, 1, 0); camera.lookAt(lx, ly, lz); },
