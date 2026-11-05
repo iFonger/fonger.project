@@ -56,6 +56,11 @@ module.exports = async (req, res) => {
         const html = await (await fetch(url, { headers: UA })).text();
         const items = parse(html, url);
         dbg[k] = { bytes: html.length, found: items.length, first: items.slice(0, 5) };
+        if (q.debug == 2) {
+          const i = html.search(/\d\s*(Kč|CZK)/i);
+          dbg[k].kc = i < 0 ? 'no Kč in html' : html.slice(Math.max(0, i - 1500), i + 300);
+          dbg[k].imgs = (html.match(/<img[^>]*>/gi) || []).slice(0, 12);
+        }
         if (!items.length) return;
         const dated = items.filter(i => i._t).sort((a, b) => b._t - a._t);
         const it = dated[0] || items[0];
