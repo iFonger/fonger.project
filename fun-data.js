@@ -48,3 +48,12 @@ const FUN_EXTRA = {
 // ---- Yonex poster in the hall: newest racket + shoes from yonex.cz ----
 // "api" is the small serverless function (api/yonex.js in the repo) that reads yonex.cz and returns the newest items as JSON.
 window.YONEX_FEED = { api: "/api/yonex" };
+
+// MŮJ BADMINTON BAG (lavička v hale). Přepiš si texty, co se zobrazí u raket / bagu / bot / míčků.
+// rows = řádky karty: ['ŠTÍTEK', 'hodnota']
+window.GEAR = {
+  rackets: [
+    { brand: 'YONEX', name: 'Raketa 1', rows: [['MODEL', 'doplním doma']] },
+    { brand: 'YONEX', name: 'Raketa 2', rows: [['MODEL', 'doplním doma']] }
+  ]
+};
