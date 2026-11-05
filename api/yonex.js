@@ -20,21 +20,16 @@ const fmt = d => d ? `${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}` :
 
 function parse(html, base) {
   const items = [];
-  const re = /<img[^>]+(?:data-src|data-original|src)=["']([^"']+\.(?:jpe?g|png|webp)[^"']*)["'][^>]*>/gi;
-  let m;
-  while ((m = re.exec(html))) {
-    const img = abs(m[1], base);
-    if (!/produkt|product|upload|image|obr/i.test(img) || /logo|icon|banner|flag/i.test(img)) continue;
-    const before = html.slice(Math.max(0, m.index - 900), m.index);
-    const after = html.slice(m.index, m.index + 1800);
-    const a = /<a[^>]+href=["']([^"']+)["'][^>]*>(?![\s\S]*<a )/i.exec(before) || /<a[^>]+href=["']([^"']+)["']/i.exec(after);
-    const alt = /alt=["']([^"']+)["']/i.exec(m[0]);
-    const name = clean((/<(?:h2|h3|h4)[^>]*>([\s\S]*?)<\/(?:h2|h3|h4)>/i.exec(after) || [])[1]) || clean(alt && alt[1]);
-    const price = (/(\d[\d\s .]{2,9})\s*(?:Kč|CZK)/i.exec(after) || [])[1];
-    if (!name || !price) continue;
-    if (items.some(i => i.img === img)) continue;
-    const d = stamp(img);
-    items.push({ name, price: clean(price).replace(/\s+/g, ' ') + ' Kč', img, url: a ? abs(a[1], base) : base, _t: d ? +d : 0, date: fmt(d) });
+  const parts = html.split(/<li[^>]*class="items__item"[^>]*>/i).slice(1);
+  for (const p of parts) {
+    const a = /<a[^>]*class="items__text-main"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i.exec(p) || /<a[^>]*href="([^"]+)"[^>]*class="items__text-main"[^>]*>([\s\S]*?)<\/a>/i.exec(p);
+    const pr = /items__text-secondary[^>]*>([\s\S]*?)<\/p>/i.exec(p);
+    const im = /<img[^>]*class="items__img"[^>]*src="([^"]+)"/i.exec(p);
+    if (!a || !im) continue;
+    const img = abs(im[1], base);
+    const m = /\/(20\d{2})(\d{2})(\d{2})(\d{6})?\d*\.\w+$/.exec(img);
+    const d = m ? new Date(`${m[1]}-${m[2]}-${m[3]}T12:00:00`) : null;
+    items.push({ name: clean(a[2]), price: pr ? clean(pr[1]) : '', img, url: abs(a[1], base), _t: d ? +d : 0, date: fmt(d) });
   }
   return items;
 }
