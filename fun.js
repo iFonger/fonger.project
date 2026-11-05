@@ -102,7 +102,8 @@ const SUM={
  climb:()=>({t:'CLIMBING',s:X.climbing.note,k:[['—','ROUTES']]}),
  strava:()=>({t:'STRAVA',s:'This month',k:[[X.strava.active+'/'+X.strava.goal,'ACTIVE DAYS'],[X.strava.steps,'STEPS / DAY']]}),
  games:()=>({t:'GAMES',s:'PC · The rig',k:[[String(X.games.length),'GAMES']]}),
- beer:()=>({t:'BEER PONG',s:'Afterparty',k:[[X.beer.won+'/'+X.beer.tournaments,'WON'],['🏆','TROPHIES']]})
+ beer:()=>({t:'BEER PONG',s:'Afterparty',k:[[X.beer.won+'/'+X.beer.tournaments,'WON'],['🏆','TROPHIES']]}),
+ water:()=>({t:'PÍTKO',s:'Čerstvá voda · stiskni E',k:[['💧','NAPÍT SE']]})
 };
 /* live league boards in the hall: everything is computed from fun-data.js, so editing the data updates the boards */
 const LG={
