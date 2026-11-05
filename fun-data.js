@@ -49,11 +49,11 @@ const FUN_EXTRA = {
 // "api" is the small serverless function (api/yonex.js in the repo) that reads yonex.cz and returns the newest items as JSON.
 window.YONEX_FEED = { api: "/api/yonex" };
 
-// MŮJ BADMINTON BAG (lavička v hale). Přepiš si texty, co se zobrazí u raket / bagu / bot / míčků.
-// rows = řádky karty: ['ŠTÍTEK', 'hodnota']
+// MY BADMINTON BAG (the bench in the hall). Edit the texts shown on the rackets / bag / shoes / shuttles.
+// rows = card rows: ['LABEL', 'value']
 window.GEAR = {
   rackets: [
-    { brand: 'YONEX', name: 'Raketa 1', rows: [['MODEL', 'doplním doma']] },
-    { brand: 'YONEX', name: 'Raketa 2', rows: [['MODEL', 'doplním doma']] }
+    { brand: 'YONEX', name: 'ARCSABER 2 ABILITY', rows: [['COLOR', 'Black / Pink'], ['LENGTH', '675 mm']] },
+    { brand: 'YONEX', name: 'ASTROX 77 PLAY', rows: [['COLOR', 'High Orange'], ['LENGTH', '675 mm']] }
   ]
 };
