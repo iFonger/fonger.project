@@ -8,6 +8,7 @@
   <link rel="expect" href="#mark" blocking="render">
   <script src="transition.js"></script>
   <script src="stats.js"></script>
+  <script src="nick.js?v=1" data-accent="#ff4fa0"></script>
   <style>
     /* Úhel pro točící se rámečky v tabuli */
     @property --ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
@@ -1875,6 +1876,8 @@ html.hallon .home { position: absolute !important; }
     }
 
     const PLAYER_ID = getPlayerId();
+    // jedna přezdívka pro celý web: hned při vstupu se zeptáme (nick.js), pak už platí napořád ve všech hrách
+    try { FongerNick.ensure(); } catch (e) {}
 
     // Kde jsem teď: pořadí v tomto týdnu a jestli jsem nejlepší za celou dobu
     let myStatus = { rank: null, champ: false };
@@ -3012,7 +3015,8 @@ html.hallon .home { position: absolute !important; }
         $('btnSubmit').disabled = false;
         $('nameInput').disabled = false;
         $('nameForm').style.display = 'flex';
-        $('nameInput').value = localStorage.getItem('fonger-name') || '';
+        $('nameInput').value = (window.FongerNick && FongerNick.name()) || localStorage.getItem('fonger-name') || '';
+        $('nameInput').readOnly = true;                     // přezdívka je napořád, mění se jen přes nick.js
         $('overLvl').textContent = 'LEVEL ' + (sim.lv + 1) + ' · ' + LEVELS[sim.lv].name.toUpperCase();
         $('overLvl').style.color = LEVELS[sim.lv].accent;
         if (START_T) $('nameForm').style.display = 'none';
@@ -3731,7 +3735,10 @@ html.hallon .home { position: absolute !important; }
         $('nameForm').style.display = 'none';
         refreshBoards();
       } catch (err) {
-        if (err.code === 'taken') {
+        if (err.code === 'nick') {
+          $('submitMsg').textContent = 'Pick your nickname first.';
+          try { FongerNick.ensure({ force: true }); } catch (x) {}
+        } else if (err.code === 'taken') {
           $('submitMsg').textContent = 'That name is already taken. Pick another one.';
         } else if (err.code === 'locked' && err.name2) {
           // tenhle hráč už jméno má, předvyplníme mu ho
@@ -4324,7 +4331,7 @@ html.hallon .home { position: absolute !important; }
     });
 
     renderRules();
-    try { if (!localStorage.getItem(RULES_SEEN)) setTimeout(openRules, 1500); } catch (err) { setTimeout(openRules, 1500); }
+    try { if (!localStorage.getItem(RULES_SEEN)) { const later = () => setTimeout(openRules, 900); if (window.FongerNick) FongerNick.whenReady(later); else setTimeout(openRules, 1500); } } catch (err) { setTimeout(openRules, 1500); }
 
     /* ================= HUDBA (lehká smyčka přímo z kódu, bez souborů) ================= */
 
