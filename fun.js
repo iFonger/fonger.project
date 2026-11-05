@@ -31,7 +31,7 @@ X.games.forEach((g,i)=>{const d=document.createElement('div');d.className='ic';d
 const be=X.beer;
 $('#bpanel').innerHTML=`<span data-close style="position:absolute;right:26px;top:20px;color:#8a96c4;font-size:22px">✕</span><h2>AFTERPARTY · BEER PONG</h2><h1>Beer pong</h1>
 <div class=big3><div class=dig><b>${be.tournaments}</b><i>TOURNAMENTS</i></div><div class=dig><b>${be.won}</b><i>WON</i></div><div class=dig><b>${Math.round(be.won/be.tournaments*100)}%</b><i>WIN RATE</i></div></div>
-<div class=sec>BEST RESULT</div><div style="font-size:22px;font-weight:800">🏆 ${be.best}</div><div class=sec>TOURNAMENTS</div>
+<div class=sec>BEST RESULT</div><div style="font-size:22px;font-weight:800">${be.best}</div><div class=sec>TOURNAMENTS</div>
 ${be.list.map(r=>`<div class=m><span class="w ${r[0]=='1'?'W':'L'}">${r[0]}</span>${r[1]}<em>${r[2]}</em></div>`).join('')}`;
 
 /* ---------- badminton views ---------- */
@@ -60,7 +60,7 @@ function bh(v){view=v;let h='';
    <div class=sec>FORM · LAST 5 MATCHES</div><div>${vl.form.map(f=>`<span class="chip ${f=='W'?'w':'l'}">${f}</span>`).join('')}</div>
    <div class=cta>OPEN VAŠELIGA →</div></div>
   <div class="card rd go" data-go=hl><div class=tag>HOBBYLIGA · PRAHA</div><div class=h2>Weekly duels + playoff</div><div class=tabs><span class="tb on">Singles</span><span class=tb data-stop>Elo ${hp.elo} · HL index ${hp.hlIndex}</span></div>
-   <div class=row><div class=m><b>${hp.matches}</b><span>Matches</span></div><div class=m><b>${hp.wins}–${hp.draws}–${hp.losses}</b><span>W – D – L</span></div><div class=m><b>${hp.setsW}:${hp.setsL}</b><span>Sets</span></div><div class=m><b style="color:#ffd56b">🏆 WINNER</b><span>Playoff 2026</span></div></div>
+   <div class=row><div class=m><b>${hp.matches}</b><span>Matches</span></div><div class=m><b>${hp.wins}–${hp.draws}–${hp.losses}</b><span>W – D – L</span></div><div class=m><b>${hp.setsW}:${hp.setsL}</b><span>Sets</span></div><div class=m><b style="color:#ffd56b">WINNER</b><span>Playoff 2026</span></div></div>
    <div class=sec>ELO DEVELOPMENT</div>${elo(560,95)}<div class=sec>PLAYOFF 2026 · ROAD TO THE TITLE</div>${bracket()}
    <div class=sec>LAST RESULTS</div><div>${chips(H.matches.slice(-8))}</div>
    <div class=cta>OPEN HOBBYLIGA →</div></div></div>`;
@@ -68,18 +68,18 @@ function bh(v){view=v;let h='';
  if(v=='vl'){
   h=top('VAŠELIGA · SINGLES',`Prague badminton · 2026 · ${V.rounds.length} rounds played`,'BADMINTON')+
   `<div class=two><div class=colL><div class=card><div class=tag style="color:#45e08a">ALL RESULTS</div>
-  <table><tr><th>Round</th><th>Lvl</th><th>Place</th><th>Results</th><th>Sets</th><th>Rank</th></tr>${V.rounds.map(r=>`<tr><td>${r.s} · ${r.m}</td><td style="color:#45e08a">${r.lvl}</td><td>${r.pl==1?'🥇':r.pl==2?'🥈':'#'+r.pl}</td><td>${r.res.map(m=>`<span class="chip ${m[3]?'n':m[1]>m[2]?'w':'l'}">${m[3]=='np'?'–':m[3]=='wo'?'W/O':m[1]+':'+m[2]}</span><span class=opp style="font-size:10px;color:#6e78a8">${m[0]}</span>`).join(' ')}</td><td>${roundSum(r)}</td><td>${r.rank}.</td></tr>`).join('')}</table>
+  <table><tr><th>Round</th><th>Lvl</th><th>Place</th><th>Results</th><th>Sets</th><th>Rank</th></tr>${V.rounds.map(r=>`<tr><td>${r.s} · ${r.m}</td><td style="color:#45e08a">${r.lvl}</td><td>${r.pl==1?'1st':r.pl==2?'2nd':'#'+r.pl}</td><td>${r.res.map(m=>`<span class="chip ${m[3]?'n':m[1]>m[2]?'w':'l'}">${m[3]=='np'?'–':m[3]=='wo'?'W/O':m[1]+':'+m[2]}</span><span class=opp style="font-size:10px;color:#6e78a8">${m[0]}</span>`).join(' ')}</td><td>${roundSum(r)}</td><td>${r.rank}.</td></tr>`).join('')}</table>
   <div class=sec style="margin-top:18px">W/O = walkover win (not counted) · – = not played</div></div></div>
   <div class=colR><div class=card><div class=tag style="color:#45e08a">RANK</div><div style="font-size:54px;font-weight:800">${vl.rank.split('/')[0]}<small style="font-size:18px;color:#8b95c9"> /${vl.rank.split('/')[1]}</small></div>${rankChart(480,190)}
   <div class=row style="margin-top:16px"><div class=m><b>${vl.wins}–${vl.losses}</b><span>Matches</span></div><div class=m><b>${V.rounds.reduce((a,r)=>a+r.res.reduce((b,m)=>b+(m[3]?0:m[1]),0),0)}:${V.rounds.reduce((a,r)=>a+r.res.reduce((b,m)=>b+(m[3]?0:m[2]),0),0)}</b><span>Sets</span></div></div>
-  <div class=row><div class=m><b>${vl.rate}%</b><span>Win rate</span></div><div class=m><b>${V.rounds.filter(r=>r.pl==1).length} 🥇</b><span>Group wins</span></div></div>
+  <div class=row><div class=m><b>${vl.rate}%</b><span>Win rate</span></div><div class=m><b>${V.rounds.filter(r=>r.pl==1).length}</b><span>Group wins</span></div></div>
   <div class=sec>NEXT</div><div class=m style="margin-bottom:8px"><b style="font-size:16px">${V.next.m} · Level ${V.next.lvl}</b><span>Starts ${V.next.pts} pts · place ${V.next.pl}</span></div><div class=m><b style="font-size:16px">Doubles from 1 Nov</b><span>Team "${B.vaseliga.doubles.team}" · with ${B.vaseliga.doubles.partner}</span></div></div></div></div>`;
  }
  if(v=='hl'){
   const hm=H.matches.slice().reverse();
   h=top('HOBBYLIGA · SINGLES','Prague badminton · 2026','BADMINTON')+
   `<div class=two><div class=colA><div class="card rd scroll"><div class=tag>MATCH LOG · ${H.matches.length} OF ${hp.matches} LISTED</div><table><tr><th>Date</th><th>Stage</th><th>Opponent</th><th>Score</th></tr>${hm.map(m=>`<tr><td>${m[0]}</td><td style="color:${m[1]=='FINAL'?'#ffd56b':'#8b95c9'}">${m[1]}</td><td>${m[2]}</td><td><span class="chip ${m[3]>m[4]?'w':m[3]==m[4]?'d':'l'}">${m[3]}:${m[4]}</span></td></tr>`).join('')}</table></div></div>
-  <div class=colB><div class="card rd"><div class=tag>CHAMPION 2026</div><div style="font-size:40px;font-weight:800;color:#ffd56b;margin:6px 0">🏆 Final 3:0</div><div class=sub>Playoff ${H.playoff.group} · ${H.playoff.seed}rd seed after the group</div><div class=sec>ELO</div><div style="font-size:44px;font-weight:800">${hp.elo}</div>${elo(470,140)}
+  <div class=colB><div class="card rd"><div class=tag>CHAMPION 2026</div><div style="font-size:40px;font-weight:800;color:#ffd56b;margin:6px 0">Final 3:0</div><div class=sub>Playoff ${H.playoff.group} · ${H.playoff.seed}rd seed after the group</div><div class=sec>ELO</div><div style="font-size:44px;font-weight:800">${hp.elo}</div>${elo(470,140)}
   <div class=row><div class=m><b>${hp.wins}–${hp.draws}–${hp.losses}</b><span>W–D–L</span></div><div class=m><b>${hp.pointsW}:${hp.pointsL}</b><span>Rallies</span></div></div><div class=row><div class=m><b>${hp.hlIndex}</b><span>HL index</span></div><div class=m><b>${hp.achievements}</b><span>Achievements</span></div></div>${bracket()}</div></div></div>`;
  }
  bhEl.innerHTML=h;bhEl.scrollTop=0}
@@ -96,21 +96,21 @@ function closeAll(){mode(null);if(onClose)onClose()}
 document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeAll()});
 document.addEventListener('keydown',e=>{if(e.key=='Escape'&&isOpen()){if(document.body.classList.contains('bh')&&view!='hub'&&!direct)bh('hub');else closeAll()}});
 const SUM={
- bad:()=>({t:'BADMINTON',s:'VašeLiga · HobbyLiga',k:[[totW+'–'+totL,'W – L'],[Math.round(totW/totM*100)+'%','WIN RATE'],['🏆','CHAMPION 2026']]}),
+ bad:()=>({t:'BADMINTON',s:'VašeLiga · HobbyLiga',k:[[totW+'–'+totL,'W – L'],[Math.round(totW/totM*100)+'%','WIN RATE'],['Champion','2026']]}),
  vl:()=>({t:'VAŠELIGA',s:'Singles · Praha · 2026',k:[[vl.wins+'–'+vl.losses,'W – L'],[vl.rate+'%','WIN RATE'],['#'+vl.rank.split('/')[0],'RANK']]}),
- hl:()=>({t:'HOBBYLIGA',s:'Singles · Praha · 2026',k:[[hp.wins+'–'+hp.draws+'–'+hp.losses,'W – D – L'],[String(hp.elo),'ELO'],['🏆','CHAMPION 2026']]}),
+ hl:()=>({t:'HOBBYLIGA',s:'Singles · Praha · 2026',k:[[hp.wins+'–'+hp.draws+'–'+hp.losses,'W – D – L'],[String(hp.elo),'ELO'],['Champion','2026']]}),
  climb:()=>({t:'CLIMBING',s:X.climbing.note,k:[['—','ROUTES']]}),
  strava:()=>({t:'STRAVA',s:'This month',k:[[X.strava.active+'/'+X.strava.goal,'ACTIVE DAYS'],[X.strava.steps,'STEPS / DAY']]}),
  games:()=>({t:'GAMES',s:'PC · The rig',k:[[String(X.games.length),'GAMES']]}),
- beer:()=>({t:'BEER PONG',s:'Afterparty',k:[[X.beer.won+'/'+X.beer.tournaments,'WON'],['🏆','TROPHIES']]}),
- water:()=>({t:'WATER',s:'Fresh water · press E',k:[['💧','DRINK']]})
+ beer:()=>({t:'BEER PONG',s:'Afterparty',k:[[X.beer.won+'/'+X.beer.tournaments,'WON'],[String(X.beer.won),'TROPHIES']]}),
+ water:()=>({t:'WATER',s:'Fresh water · press E',k:[['E','DRINK']]})
 };
 /* live league boards in the hall: everything is computed from fun-data.js, so editing the data updates the boards */
 const LG={
  vl:()=>{const r=V.rounds[V.rounds.length-1];return{name:'VAŠELIGA',sub:'Singles · Praha',acc:'#45e08a',bg:['#07281a','#030d08'],big:vl.rank.split('/')[0],bigL:'RANK  /'+vl.rank.split('/')[1],
   stats:[[vl.wins+'–'+vl.losses,'W – L'],[vl.rate+'%','WIN RATE'],[String(vl.matches),'MATCHES']],form:vl.form.map(f=>f=='W'?1:0),
   head:r.s+' · '+r.m+' · Level '+r.lvl+' · place '+r.pl,rows:r.res.map(m=>[m[0],m[3]=='np'?'–':m[3]=='wo'?'W/O':m[1]+':'+m[2],m[3]?'n':m[1]>m[2]?'w':'l']),foot:'Next: '+V.next.m+' · Level '+V.next.lvl}},
- hl:()=>{const l5=H.matches.slice(-5).reverse();return{name:'HOBBYLIGA',sub:'Singles · Praha',acc:'#ff5470',bg:['#2c0b16','#0e0409'],big:String(hp.elo),bigL:'ELO  ·  🏆 CHAMPION 2026',
+ hl:()=>{const l5=H.matches.slice(-5).reverse();return{name:'HOBBYLIGA',sub:'Singles · Praha',acc:'#ff5470',bg:['#2c0b16','#0e0409'],big:String(hp.elo),bigL:'ELO  ·  CHAMPION 2026',
   stats:[[hp.wins+'–'+hp.draws+'–'+hp.losses,'W – D – L'],[hp.setsW+':'+hp.setsL,'SETS'],[String(hp.matches),'MATCHES']],form:H.matches.slice(-5).map(m=>m[3]>m[4]?1:m[3]==m[4]?2:0),
   head:'Last results · season 2026',rows:l5.map(m=>[m[0]+'  '+m[1]+' · '+m[2],m[3]+':'+m[4],m[3]>m[4]?'w':m[3]==m[4]?'d':'l']),foot:'Playoff '+H.playoff.group+' · winner'}}
 };
