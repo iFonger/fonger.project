@@ -106,10 +106,10 @@ const SUM={
 };
 /* live league boards in the hall: everything is computed from fun-data.js, so editing the data updates the boards */
 const LG={
- vl:()=>{const r=V.rounds[V.rounds.length-1];return{name:'VAŠELIGA',sub:'Singles · Praha',acc:'#45e08a',big:vl.rank.split('/')[0],bigL:'RANK  /'+vl.rank.split('/')[1],
+ vl:()=>{const r=V.rounds[V.rounds.length-1];return{name:'VAŠELIGA',sub:'Singles · Praha',acc:'#45e08a',bg:['#07281a','#030d08'],big:vl.rank.split('/')[0],bigL:'RANK  /'+vl.rank.split('/')[1],
   stats:[[vl.wins+'–'+vl.losses,'W – L'],[vl.rate+'%','WIN RATE'],[String(vl.matches),'MATCHES']],form:vl.form.map(f=>f=='W'?1:0),
   head:r.s+' · '+r.m+' · Level '+r.lvl+' · place '+r.pl,rows:r.res.map(m=>[m[0],m[3]=='np'?'–':m[3]=='wo'?'W/O':m[1]+':'+m[2],m[3]?'n':m[1]>m[2]?'w':'l']),foot:'Next: '+V.next.m+' · Level '+V.next.lvl}},
- hl:()=>{const l5=H.matches.slice(-5).reverse();return{name:'HOBBYLIGA',sub:'Singles · Praha',acc:'#ffcf3a',big:String(hp.elo),bigL:'ELO  ·  🏆 CHAMPION 2026',
+ hl:()=>{const l5=H.matches.slice(-5).reverse();return{name:'HOBBYLIGA',sub:'Singles · Praha',acc:'#ff5470',bg:['#2c0b16','#0e0409'],big:String(hp.elo),bigL:'ELO  ·  🏆 CHAMPION 2026',
   stats:[[hp.wins+'–'+hp.draws+'–'+hp.losses,'W – D – L'],[hp.setsW+':'+hp.setsL,'SETS'],[String(hp.matches),'MATCHES']],form:H.matches.slice(-5).map(m=>m[3]>m[4]?1:m[3]==m[4]?2:0),
   head:'Last results · season 2026',rows:l5.map(m=>[m[0]+'  '+m[1]+' · '+m[2],m[3]+':'+m[4],m[3]>m[4]?'w':m[3]==m[4]?'d':'l']),foot:'Playoff '+H.playoff.group+' · winner'}}
 };

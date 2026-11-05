@@ -45,8 +45,6 @@ const FUN_EXTRA = {
   games: [["VAL","Valorant","#ff4655","#fff"],["LoL","League of Legends","#1b3a8a","#e9c46a"],["CS2","CS2","#e8793a","#1a0f05"],["RL","Rocket League","#1e7bff","#ff9a4a"],["ARK","Arkheron","#1fb89a","#032a22"],["S2","SMITE 2","#6a3ad0","#ffd68a"]]
 };
 
-// ---- Yonex poster in the hall: newest racket + shoes from an e-shop ----
-// Shopify stores publish a product list as JSON. Paste the collection URL with /products.json and newest-first sorting, e.g.
-//   racket: "https://SHOP.cz/collections/yonex-rakety/products.json?limit=1&sort_by=created-descending"
-// Leave "" and the poster shows "coming soon". currency/suffix are put before/after the price.
-window.YONEX_FEED = { racket: "", shoes: "", currency: "", suffix: " Kč" };
+// ---- Yonex poster in the hall: newest racket + shoes from yonex.cz ----
+// "api" is the small serverless function (api/yonex.js in the repo) that reads yonex.cz and returns the newest items as JSON.
+window.YONEX_FEED = { api: "/api/yonex" };
